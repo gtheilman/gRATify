@@ -1,0 +1,9 @@
+# Runs the gRATify container
+# Substitue the first "8080" with your desired host port if needed (e.g., 80:8080)
+
+docker run -d \
+  --name gratify \
+  -p 8080:8080 \
+  -v "$(pwd)":/work \
+  --env-file .env \
+  ghcr.io/gtheilman/gratify:latest

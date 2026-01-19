@@ -1,0 +1,48 @@
+# Creates a host-persistent SQLite database at ./database/database.sqlite
+# Needs to be run AFTER the .env file is created
+# Ensures permissions so the container can write 
+# Clears Laravel caches, runs migrations, and seeds the database with demo data
+# Uses the current directory bind-mounted to /work inside the container
+
+docker run --rm \
+  -v "$(pwd)":/work \
+  --env-file .env \
+  --entrypoint sh \
+  ghcr.io/gtheilman/gratify:latest \
+  -lc '
+set -e
+
+DB_DIR=/work/database
+DB_FILE=/work/database/database.sqlite
+
+mkdir -p "$DB_DIR"
+
+if getent passwd www-data >/dev/null 2>&1; then
+  chown -R www-data:www-data "$DB_DIR" || true
+fi
+
+chmod 2775 "$DB_DIR" || true
+
+php -r "\
+\$db=\"${DB_FILE}\"; \
+\$pdo=new PDO(\"sqlite:\".\$db); \
+\$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); \
+\$pdo->exec(\"PRAGMA foreign_keys=ON;\"); \
+echo \"SQLite created/verified: \$db\n\"; \
+"
+
+chmod 664 "$DB_FILE" || true
+chmod 664 "${DB_FILE}-wal" "${DB_FILE}-shm" 2>/dev/null || true
+
+if command -v sqlite3 >/dev/null 2>&1; then
+  sqlite3 "$DB_FILE" "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; VACUUM;" >/dev/null
+fi
+
+cd /var/www/html
+
+php artisan optimize:clear
+php artisan migrate --force
+php artisan db:seed --force
+
+ls -lh "$DB_FILE"
+'

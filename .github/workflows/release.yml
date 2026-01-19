@@ -1,0 +1,199 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: gtheilman/gratify
+  GAR_REGION: ${{ vars.GAR_REGION }}
+  GAR_PROJECT_ID: ${{ vars.GAR_PROJECT_ID }}
+  GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
+  GAR_IMAGE_NAME: gratify
+
+jobs:
+  audit:
+    name: Audit dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Composer audit (high/critical)
+        run: |
+          composer audit --locked --format=json > composer-audit.json || true
+          php -r '$data=json_decode(file_get_contents("composer-audit.json"), true) ?: []; $advisories=$data["advisories"] ?? []; $hits=[]; foreach ($advisories as $package => $items) { foreach ($items as $adv) { $severity=strtolower((string)($adv["severity"] ?? "")); if (in_array($severity, ["high", "critical"], true)) { $title=$adv["title"] ?? "advisory"; $hits[]=$package . ": " . $title . " (" . $severity . ")"; } } } if ($hits) { fwrite(STDERR, "High/Critical Composer advisories:\n" . implode("\n", $hits) . "\n"); exit(1); }'
+
+      - name: NPM audit (high/critical)
+        run: npm audit --audit-level=high
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    needs: audit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          extensions: bcmath, intl, pdo_mysql, pdo_sqlite
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare test environment
+        run: |
+          cat > .env <<'EOF'
+          APP_ENV=testing
+          APP_KEY=base64:Svk0Prp3H6rBCk6JL7AgfXTu6JjCmkW7QW0JdQ0tIF8=
+          APP_DEBUG=true
+          DB_CONNECTION=sqlite
+          DB_DATABASE=:memory:
+          CACHE_DRIVER=array
+          QUEUE_CONNECTION=sync
+          SESSION_DRIVER=array
+          MAIL_MAILER=array
+          BROADCAST_DRIVER=log
+          EOF
+          php artisan config:clear
+
+      - name: Ensure storage directories exist
+        run: |
+          mkdir -p storage/framework/{views,cache,sessions} storage/logs
+          chmod -R ug+rw storage
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install JS dependencies
+        run: npm ci --legacy-peer-deps --ignore-scripts
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Run tests
+        run: |
+          unset DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD
+          APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
+
+  build:
+    name: Build and publish image
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Read Vite env
+        id: vite_env
+        run: |
+          echo "app_env=$(grep '^APP_ENV=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "app_debug=$(grep '^APP_DEBUG=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "api_base=$(grep '^VITE_API_BASE_URL=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "server_url=$(grep '^VITE_SERVER_URL=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "base=$(grep '^VITE_BASE=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_ARTIFACT_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GAR_PROJECT_ID }}
+
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker "${GAR_REGION}-docker.pkg.dev" --quiet
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            ${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.GAR_IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
+
+      - name: Build image (for smoke test)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: prod
+          build-args: |
+            APP_ENV=${{ steps.vite_env.outputs.app_env }}
+            APP_DEBUG=${{ steps.vite_env.outputs.app_debug }}
+            VITE_API_BASE_URL=${{ steps.vite_env.outputs.api_base }}
+            VITE_SERVER_URL=${{ steps.vite_env.outputs.server_url }}
+            VITE_BASE=${{ steps.vite_env.outputs.base }}
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          load: true
+
+      - name: Smoke test image
+        run: |
+          IMAGE_TAG="$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)"
+          docker run --rm \
+            -e APP_KEY=base64:GRATServerSmokeDummyKeybW9ja2tleQ== \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            "${IMAGE_TAG}" \
+            php artisan about
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: prod
+          build-args: |
+            APP_ENV=${{ steps.vite_env.outputs.app_env }}
+            APP_DEBUG=${{ steps.vite_env.outputs.app_debug }}
+            VITE_API_BASE_URL=${{ steps.vite_env.outputs.api_base }}
+            VITE_SERVER_URL=${{ steps.vite_env.outputs.server_url }}
+            VITE_BASE=${{ steps.vite_env.outputs.base }}
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-to: type=inline

@@ -1,0 +1,77 @@
+# ---- OS / Editor junk ----
+.DS_Store
+Thumbs.db
+
+.idea/
+.fleet/
+.zed/
+.nova/
+.phpunit.cache/
+.vscode/*
+
+
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---- Dependencies / build outputs ----
+node_modules/
+vendor/
+public/build/
+public/hot
+public/storage
+dist/
+dist-ssr/
+
+# ---- Laravel runtime ----
+storage/logs/
+!storage/logs/.gitkeep
+storage/framework/cache/
+!storage/framework/cache/data/.gitkeep
+storage/framework/sessions/
+!storage/framework/sessions/.gitkeep
+storage/framework/views/
+!storage/framework/views/.gitkeep
+storage/*.key
+.phpunit.result.cache
+
+# ---- Env / secrets ----
+.env*
+!.env.example
+
+# Non-dot env variants you use privately
+env.*
+env.dev
+env.theilman
+
+# Orphaned/legacy files (safe to ignore)
+database/seeds/DatabaseSeeder.php
+app/Http/Controllers/Auth/LoginController.php
+app/Http/Controllers/Auth/VerificationController.php
+resources/js/app.js
+resources/sass/
+resources/assets/utils/
+resources/assets/css/
+public/phpinfo.php
+
+# Composer auth
+auth.json
+
+# ---- Project-specific ----
+public/mockServiceWorker.js
+vuexy.zip
+TODO
+Deployment_Instructions.md
+# .github/workflows/release.yml
+docker-compose.local.yml
+
+# Local scratch area (do not commit)
+.play/
+*.local
+grat-server_to_gratify
+color-codes

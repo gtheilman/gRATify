@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Aiken Formatting</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
+    code { background: #f4f4f4; padding: 0.15rem 0.35rem; border-radius: 4px; }
+    pre { background: #f4f4f4; padding: 1rem; border-radius: 6px; overflow: auto; }
+    h1, h2, h3 { margin-top: 1.5rem; }
+    .example { border: 1px solid #e3e3e3; border-radius: 8px; padding: 1rem; margin: 1rem 0; background: #fafafa; }
+    .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin-bottom: 0.35rem; }
+    .rendered { background: #fff; border-left: 4px solid #1357c6; padding: 0.75rem 1rem; border-radius: 6px; }
+    .rendered code { background: #eef2ff; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+    th { background: #f0f4ff; }
+  </style>
+  <script>
+    window.MathJax = {
+      loader: { load: ['input/asciimath'] },
+      tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+      asciimath: { delimiters: [['@', '@']] },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+  <h1>Advanced Formatting</h1>
+  <p>
+    This page shows plain-text examples you can paste into the question or answer fields
+    in the assessment editor. 
+    <br>
+    The app supports Markdown, KaTeX, and AsciiMath.
+  </p>
+  <p>
+    Markdown: <a href="https://en.wikipedia.org/wiki/Markdown" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Markdown</a>
+    <br>
+    KaTeX: <a href="https://katex.org/" target="_blank" rel="noopener noreferrer">https://katex.org/</a>
+    <br>
+    AsciiMath: <a href="https://asciimath.org/" target="_blank" rel="noopener noreferrer">https://asciimath.org/</a>
+  </p>
+
+  <h2>Markdown Examples</h2>
+  <p>Use these in question stems or answer choices. Each example shows the plain text first, then the rendered output.</p>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>**Bold text** and _italic text_ and ***bold italic***.
+Strikethrough: ~~outdated~~.
+Inline code: `x = 2`.</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      <strong>Bold text</strong> and <em>italic text</em> and <strong><em>bold italic</em></strong>.<br>
+      Strikethrough: <s>outdated</s>.<br>
+      Inline code: <code>x = 2</code>.
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Line breaks are honored because Markdown is configured with breaks: true.
+This line will display on its own line.</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Line breaks are honored because Markdown is configured with breaks: true.<br>
+      This line will display on its own line.
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Blockquote example:
+> This is a quoted line.
+> It can span multiple lines.</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Blockquote example:
+      <blockquote>
+        This is a quoted line.<br>
+        It can span multiple lines.
+      </blockquote>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Unordered list:
+- Item one
+- Item two
+- Item three</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Unordered list:
+      <ul>
+        <li>Item one</li>
+        <li>Item two</li>
+        <li>Item three</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Ordered list:
+1. First
+2. Second
+3. Third</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Ordered list:
+      <ol>
+        <li>First</li>
+        <li>Second</li>
+        <li>Third</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Horizontal rule:
+---</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Horizontal rule:
+      <hr>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Markdown link:
+[CDC Influenza](https://www.cdc.gov/flu/)</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Markdown link:
+      <a href="https://www.cdc.gov/flu/" target="_blank" rel="noopener noreferrer">CDC Influenza</a>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Auto-linked URL:
+https://www.cdc.gov/flu/</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Auto-linked URL:
+      <a href="https://www.cdc.gov/flu/" target="_blank" rel="noopener noreferrer">https://www.cdc.gov/flu/</a>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Emoji:
+:sunglasses: :rocket: :trophy:</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">Emoji: 😎 🚀 🏆</div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Table:
+| Term | Definition |
+| --- | --- |
+| gRAT | Group readiness assurance test |
+| TBL  | Team-based learning |</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      <table>
+        <thead>
+          <tr><th>Term</th><th>Definition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>gRAT</td><td>Group readiness assurance test</td></tr>
+          <tr><td>TBL</td><td>Team-based learning</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Markdown image:
+![Waterfall](https://upload.wikimedia.org/wikipedia/commons/3/3c/Shaki_waterfall.jpg)</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Shaki_waterfall.jpg" alt="Waterfall" width="220">
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>HTML image (HTML is allowed):
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Shaki_waterfall.jpg" alt="Waterfall" width="120" /&gt;</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Shaki_waterfall.jpg" alt="Waterfall" width="120">
+    </div>
+  </div>
+
+  <h2>KaTeX Examples</h2>
+  <p>Wrap inline math in single dollar signs and display math in double dollar signs.</p>
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Inline LaTeX: $E = mc^2$</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">Inline LaTeX: $E = mc^2$</div>
+  </div>
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Display LaTeX:
+$$a^2 + b^2 = c^2$$</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Display LaTeX:<br>
+      $$a^2 + b^2 = c^2$$
+    </div>
+  </div>
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Fractions and roots:
+$$\frac{y_2 - y_1}{x_2 - x_1}$$
+$$\sqrt{16} = 4$$</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Fractions and roots:<br>
+      $$\frac{y_2 - y_1}{x_2 - x_1}$$
+      $$\sqrt{16} = 4$$
+    </div>
+  </div>
+
+  <h2>AsciiMath Examples</h2>
+  <p>Wrap AsciiMath expressions with @ symbols.</p>
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Inline AsciiMath: @sqrt(16)=4@</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">Inline AsciiMath: @sqrt(16)=4@</div>
+  </div>
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Display AsciiMath:
+@int_0^1 x^2 dx@</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Display AsciiMath:<br>
+      @int_0^1 x^2 dx@
+    </div>
+  </div>
+  <div class="example">
+    <div class="label">Plain text</div>
+    <pre><code>Another example:
+@sum_(i=1)^n i = n(n+1)/2@</code></pre>
+    <div class="label">Rendered</div>
+    <div class="rendered">
+      Another example:<br>
+      @sum_(i=1)^n i = n(n+1)/2@
+    </div>
+  </div>
+</body>
+</html>

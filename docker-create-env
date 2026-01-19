@@ -1,0 +1,6 @@
+# Generates an .env file and generates a Laravel APP_KEY
+# Create a directory (e.g., gratify ) and cd into it first
+# The .env file will be in that directory
+# You'll need to edit it to set the domain where you will be hosting the application
+
+docker run --rm --entrypoint /usr/local/bin/generate-env ghcr.io/gtheilman/gratify:latest > .env 2>/dev/null
