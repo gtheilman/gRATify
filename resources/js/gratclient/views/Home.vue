@@ -59,7 +59,8 @@
 </template>
 
 <script>
-import Assessment from '../components/Assessment.vue'
+// Student entry: caches presentation payloads and auto-resumes using stored identifiers.
+import { defineAsyncComponent } from 'vue'
 import axios from 'axios'
 import { saveIdentifier, loadIdentifier } from '../utils/cache'
 
@@ -148,7 +149,7 @@ export default {
     }
   },
   components: {
-    Assessment
+    Assessment: defineAsyncComponent(() => import('../components/Assessment.vue'))
   },
   props: [],
   created () {
@@ -162,6 +163,7 @@ export default {
       if (this.autoResumeAttempted) return
       this.autoResumeAttempted = true
       this.password = this.$route.params.password
+      // Restore the last identifier for this assessment when available.
       const cachedIdentifier = loadIdentifier(this.password)
       if (cachedIdentifier) {
         this.user_id = cachedIdentifier

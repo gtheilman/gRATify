@@ -1,9 +1,14 @@
 <script setup>
+// Pulls demo warning/mail configuration flags on load for login banner messaging.
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '@/composables/useApi'
 import { useAuthStore } from '@/stores/auth'
-import loginIllustration from '../../assets/images/pages/login.png'
+import { getErrorMessage } from '@/utils/apiError'
+import { formatLoginError } from '@/utils/loginError'
+import { ensureCsrfCookie, fetchJson } from '@/utils/http'
+import { validateResetEmail } from '@/utils/loginReset'
+import loginIllustration from '../../assets/images/pages/login.webp'
 
 const form = ref({
   email: '',
@@ -35,7 +40,7 @@ const handleLogin = async () => {
     await router.push({ name: 'root' })
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Login failed'
+    errorMessage.value = formatLoginError(err)
   }
   finally {
     submitting.value = false
@@ -46,14 +51,15 @@ const handleReset = async () => {
   resetMessage.value = ''
   resetError.value = ''
 
-  if (!form.value.email) {
-    resetError.value = 'Enter your email to receive a reset link.'
+  const validationMessage = validateResetEmail(form.value.email)
+  if (validationMessage) {
+    resetError.value = validationMessage
     return
   }
 
   resetSubmitting.value = true
   try {
-    await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' })
+    await ensureCsrfCookie()
     const { data, error } = await api('/auth/password/email', {
       method: 'POST',
       body: { email: form.value.email },
@@ -65,7 +71,7 @@ const handleReset = async () => {
   }
   catch (err) {
     // API returns 200 even for unknown emails; surface message if provided.
-    resetError.value = err?.message || 'Unable to send reset link right now.'
+    resetError.value = getErrorMessage(err, 'Unable to send reset link right now.')
   }
   finally {
     resetSubmitting.value = false
@@ -74,9 +80,8 @@ const handleReset = async () => {
 
 onMounted(async () => {
   try {
-    const resp = await fetch('/api/demo-warning', { credentials: 'same-origin' })
-    if (resp.ok) {
-      const data = await resp.json()
+    const { data, response } = await fetchJson('/api/demo-warning')
+    if (response.ok) {
       if (typeof data?.mailConfigured === 'boolean') {
         mailConfigured.value = data.mailConfigured
       }
@@ -223,6 +228,11 @@ onMounted(async () => {
                 >
                   Login
                 </VBtn>
+                <div class="text-caption text-medium-emphasis mt-3">
+                  <a href="/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+                  <span class="mx-2">·</span>
+                  <a href="/TERMS.md" target="_blank" rel="noopener">Terms</a>
+                </div>
               </VForm>
             </VCol>
           </VRow>

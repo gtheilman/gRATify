@@ -23,6 +23,7 @@
 </template>
 
 <script>
+// Determines completion state based on attempts and adapts font size to content volume.
 import Answer from './Answer.vue'
 import { renderMarkdown } from '../utils/markdown'
 
@@ -80,6 +81,7 @@ export default {
         return
       }
       const answerIds = new Set(this.question.answers.map(answer => answer.id))
+      // Consider a question complete if any correct attempt exists for one of its answers.
       const hasCorrectAttempt = this.attempts.some(attempt => answerIds.has(attempt.answer_id) && attempt.answer && attempt.answer.correct === true)
       if (hasCorrectAttempt) {
         this.hasCorrect = true
@@ -123,6 +125,7 @@ export default {
       }
       const width = this.window.width
 
+      // Dynamic scaling to keep long questions readable across viewport sizes.
       if (width < 576) {
         proposedFontSize = Math.round(180 / (this.question.answers.length + (textVolume * 70 / width)))
         if (proposedFontSize > 16) {

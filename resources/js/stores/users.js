@@ -1,5 +1,7 @@
+// Admin user management store; normalizes roles for legacy 'poobah' accounts.
 import { defineStore } from 'pinia'
 import { useApi } from '@/composables/useApi'
+import { getErrorMessage } from '@/utils/apiError'
 
 const api = useApi
 
@@ -41,7 +43,7 @@ export const useUsersStore = defineStore('users', {
         }
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to load users')
         throw err
       }
       finally {
@@ -61,7 +63,7 @@ export const useUsersStore = defineStore('users', {
         await this.fetchUsers()
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to load user')
         throw err
       }
       finally {
@@ -83,7 +85,7 @@ export const useUsersStore = defineStore('users', {
         await this.fetchUsers()
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to update user')
         throw err
       }
       finally {
@@ -102,7 +104,7 @@ export const useUsersStore = defineStore('users', {
         await this.fetchUsers()
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to delete user')
         throw err
       }
       finally {

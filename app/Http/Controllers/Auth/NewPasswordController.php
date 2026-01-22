@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 
+/**
+ * Completes password resets using the broker token flow.
+ */
 class NewPasswordController extends Controller
 {
     /**

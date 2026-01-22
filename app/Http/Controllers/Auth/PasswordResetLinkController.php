@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
+/**
+ * Sends reset links without leaking whether an email exists.
+ */
 class PasswordResetLinkController extends Controller
 {
     /**
@@ -17,6 +20,7 @@ class PasswordResetLinkController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
 
+        // Allow disabling password resets entirely in demo/locked-down deployments.
         if (! config('mail.enabled', true)) {
             return response()->json([
                 'status' => __('Password reset is not enabled.'),
@@ -30,6 +34,7 @@ class PasswordResetLinkController extends Controller
             && ! empty($mailerConfig['host'])
             && ! empty($mailerConfig['port']);
 
+        // Short-circuit if the mail transport is not configured.
         if (! $mailEnabled) {
             return response()->json([
                 'status' => __('Password reset email is not configured.'),

@@ -4,6 +4,9 @@ namespace App\Services\Scoring;
 
 use Illuminate\Support\Collection;
 
+/**
+ * Contract for scoring implementations used by the scoring manager.
+ */
 interface ScoringStrategy
 {
     /**

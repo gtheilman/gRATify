@@ -28,3 +28,18 @@ it('returns error when dump tools are missing', function () {
         ->assertStatus(Response::HTTP_INTERNAL_SERVER_ERROR)
         ->assertJsonStructure(['message']);
 });
+
+it('returns error when sqlite database path is invalid', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $missingPath = sys_get_temp_dir() . '/gratify-missing-' . uniqid('', true) . '.sqlite';
+
+    config([
+        'database.default' => 'sqlite',
+        'database.connections.sqlite.database' => $missingPath,
+    ]);
+
+    $this->actingAs($user, 'web')
+        ->getJson('/api/admin/backup/download')
+        ->assertStatus(Response::HTTP_INTERNAL_SERVER_ERROR)
+        ->assertJsonStructure(['message']);
+});

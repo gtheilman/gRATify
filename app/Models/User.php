@@ -58,8 +58,13 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /**
+     * @return HasMany<Assessment, static>
+     */
     public function assessments(): HasMany
     {
-        return $this->hasMany(Assessment::class);
+        /** @var HasMany<Assessment, static> $relation */
+        $relation = $this->hasMany(Assessment::class);
+        return $relation;
     }
 }

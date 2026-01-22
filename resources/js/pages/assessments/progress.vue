@@ -1,7 +1,24 @@
 <script setup>
+// Uses localStorage caching + polling to keep progress view resilient to transient API errors.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ErrorNotice from '@/components/ErrorNotice.vue'
+import { getErrorMessage } from '@/utils/apiError'
+import { formatAssessmentError } from '@/utils/assessmentErrors'
+import { fetchJson } from '@/utils/http'
+import { applyCachedFallback } from '@/utils/cacheFallback'
+import { clearNotice } from '@/utils/staleNotice'
+import { needsSessionRefresh } from '@/utils/errorFlags'
+import { readProgressCache, writeProgressCache } from '@/utils/progressCache'
+import { progressBarColor } from '@/utils/progressBar'
+import { resolveGroupLabel } from '@/utils/progressGroups'
+import { sortProgressRows } from '@/utils/progressSorting'
+import { getFullscreenElement, requestFullscreen } from '@/utils/progressFullscreen'
+import { countCorrectAttempts } from '@/utils/attemptStats'
+import { collectCorrectAnswerIds } from '@/utils/correctAnswers'
+import { calcGroupLabelWidth, calcMaxGroupLength } from '@/utils/progressLayout'
+import { calcPercent } from '@/utils/progressStats'
+import { handleFullscreenShortcut } from '@/utils/fullscreenHandler'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,60 +28,13 @@ const error = ref('')
 const assessment = ref(null)
 const pollingId = ref(null)
 const staleNotice = ref('')
-const needsRefresh = computed(() => String(error.value || '').includes('Session expired'))
+const needsRefresh = computed(() => needsSessionRefresh(error.value))
 
-const progressCacheKey = () => `progress-cache-${route.params.id}`
+const loadProgressCache = () => readProgressCache(route.params.id)
 
-const loadProgressCache = () => {
-  try {
-    const raw = localStorage.getItem(progressCacheKey())
-    if (!raw)
-      return null
-    return JSON.parse(raw)
-  }
-  catch {
-    return null
-  }
-}
+const storeProgressCache = data => writeProgressCache(route.params.id, data)
 
-const storeProgressCache = data => {
-  try {
-    localStorage.setItem(progressCacheKey(), JSON.stringify({
-      data,
-      cachedAt: Date.now(),
-    }))
-  }
-  catch {
-    // Ignore cache write failures.
-  }
-}
-
-const readErrorDetail = async response => {
-  const contentType = response.headers.get('content-type') || ''
-  try {
-    if (contentType.includes('json')) {
-      const json = await response.json()
-      return json?.message || json?.status || JSON.stringify(json)
-    }
-    return (await response.text())?.trim()
-  }
-  catch {
-    return ''
-  }
-}
-
-const formatProgressError = async response => {
-  const detail = await readErrorDetail(response)
-  if (response.status === 401)
-    return detail ? `Unauthorized: ${detail}` : 'Unauthorized: please sign in again.'
-  if (response.status === 403)
-    return detail ? `Forbidden: ${detail}` : 'Forbidden: you do not have access to this progress view.'
-  if (response.status === 404)
-    return detail ? `Not found: ${detail}` : 'Not found: assessment does not exist.'
-  if (response.status >= 500)
-    return detail ? `Server error: ${detail}` : 'Server error: unable to load progress right now.'
-  return detail || 'Unable to load progress'
-}
+const formatProgressError = (response, data) => formatAssessmentError(response, data, 'progress')
 
 const fetchProgress = async (silent = false) => {
   if (!silent)
@@ -73,24 +43,22 @@ const fetchProgress = async (silent = false) => {
   if (!silent)
     staleNotice.value = ''
   try {
-    const response = await fetch(`/api/assessment/attempts/${route.params.id}`, {
-      credentials: 'same-origin',
-    })
+    const { data, response } = await fetchJson(`/api/assessment/attempts/${route.params.id}`)
     if (!response.ok) {
-      const message = await formatProgressError(response)
+      const message = formatProgressError(response, data)
       throw new Error(message)
     }
-    const data = await response.json()
     assessment.value = data
     storeProgressCache(data)
   }
   catch (err) {
-    error.value = err?.message || 'Unable to load progress'
+    error.value = getErrorMessage(err, 'Unable to load progress')
     const cached = loadProgressCache()
-    if (cached?.data) {
-      assessment.value = cached.data
-      staleNotice.value = `Showing cached data from ${new Date(cached.cachedAt).toLocaleString()}`
-    }
+    applyCachedFallback({
+      cached,
+      applyData: data => { assessment.value = data },
+      applyNotice: notice => { staleNotice.value = notice },
+    })
   }
   finally {
     if (!silent)
@@ -110,35 +78,22 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-const correctAnswerIds = computed(() => {
-  const ids = []
-  assessment.value?.questions?.forEach(question => {
-    question.answers?.forEach(ans => {
-      if (Number(ans.correct))
-        ids.push(ans.id)
-    })
-  })
-  return ids
-})
-
-const barColor = pct => {
-  if (pct < 20) return 'error'
-  if (pct < 40) return 'warning'
-  if (pct < 60) return 'secondary'
-  if (pct < 80) return 'primary'
-  return 'success'
+const clearStaleNotice = () => {
+  clearNotice(staleNotice)
 }
 
+const correctAnswerIds = computed(() => {
+  return collectCorrectAnswerIds(assessment.value?.questions)
+})
+
+const barColor = pct => progressBarColor(pct)
+
 const enterFullscreen = () => {
-  const el = document.documentElement
-  if (el.requestFullscreen) el.requestFullscreen()
-  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
-  else if (el.msRequestFullscreen) el.msRequestFullscreen()
+  requestFullscreen(getFullscreenElement())
 }
 
 const handleKeydown = e => {
-  if (e.key && e.key.toLowerCase() === 'f')
-    enterFullscreen()
+  handleFullscreenShortcut(e, enterFullscreen)
 }
 
 const rows = computed(() => {
@@ -149,15 +104,10 @@ const rows = computed(() => {
   const totalCorrect = correctSet.size || 1
 
   return assessment.value.presentations.map(pres => {
-    let correctCount = 0
-    pres.attempts?.forEach(att => {
-      if (correctSet.has(att.answer_id))
-        correctCount += 1
-    })
+    const correctCount = countCorrectAttempts(pres.attempts, correctSet)
 
-    const percent = Math.round((correctCount / totalCorrect) * 100)
-    const rawGroup = pres.group_label ?? pres.group_id ?? pres.user_id ?? pres.id
-    const groupLabel = rawGroup ?? pres.id
+    const percent = calcPercent(correctCount, totalCorrect)
+    const groupLabel = resolveGroupLabel(pres)
     return {
       group: groupLabel,
       percent,
@@ -166,10 +116,10 @@ const rows = computed(() => {
 })
 
 const maxGroupLength = computed(() => {
-  return rows.value.reduce((max, row) => Math.max(max, String(row.group || '').length), 0)
+  return calcMaxGroupLength(rows.value)
 })
 
-const groupLabelWidth = computed(() => `${Math.max(maxGroupLength.value + 2, 8)}ch`)
+const groupLabelWidth = computed(() => calcGroupLabelWidth(rows.value))
 const percentWidth = '6ch'
 
 const sortState = ref({
@@ -178,11 +128,7 @@ const sortState = ref({
 })
 
 const sortedRows = computed(() => {
-  const dir = sortState.value.direction === 'asc' ? 1 : -1
-  if (sortState.value.key === 'percent') {
-    return [...rows.value].sort((a, b) => (a.percent - b.percent) * dir)
-  }
-  return [...rows.value].sort((a, b) => String(a.group).localeCompare(String(b.group)) * dir)
+  return sortProgressRows(rows.value, sortState.value.key, sortState.value.direction)
 })
 
 const toggleSort = key => {
@@ -229,7 +175,7 @@ const goToFeedback = () => {
               variant="tonal"
               class="mb-4"
               closable
-              @click:close="staleNotice = ''"
+              @click:close="clearStaleNotice"
             >
               <div class="d-flex align-center gap-2">
                 <VChip size="x-small" color="warning" variant="tonal">Stale</VChip>

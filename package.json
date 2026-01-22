@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test:client": "vitest --run",
+    "test:client": "LARAVEL_BYPASS_ENV_CHECK=1 vitest --run",
     "lint": "eslint . -c .eslintrc.cjs --fix --ext .ts,.js,.cjs,.vue,.tsx,.jsx",
     "build:icons": "tsx resources/js/plugins/iconify/build-icons.js",
     "msw:init": "msw init public/ --save",
@@ -113,6 +113,7 @@
     "vite-plugin-vue-meta-layouts": "0.6.1",
     "vite-plugin-vuetify": "2.1.2",
     "vite-svg-loader": "5.1.0",
+    "vitest": "^4.0.17",
     "vue-shepherd": "3.0.0"
   },
   "resolutions": {

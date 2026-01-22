@@ -4,6 +4,9 @@ namespace App\Services\Scoring;
 
 use InvalidArgumentException;
 
+/**
+ * Resolves scoring implementations from config to keep controllers decoupled.
+ */
 class ScoringManager
 {
     public function forScheme(?string $scheme = null): ScoringStrategy

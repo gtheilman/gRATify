@@ -97,6 +97,12 @@ jobs:
       - name: Build assets
         run: npm run build
 
+      - name: Run client tests
+        run: npm run test:client
+
+      - name: Run static analysis
+        run: composer stan
+
       - name: Run tests
         run: |
           unset DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD
@@ -166,7 +172,10 @@ jobs:
             VITE_BASE=${{ steps.vite_env.outputs.base }}
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.source=https://github.com/gtheilman/gratify
+            org.opencontainers.image.revision=${{ github.sha }}
           load: true
 
       - name: Smoke test image
@@ -193,7 +202,10 @@ jobs:
             VITE_BASE=${{ steps.vite_env.outputs.base }}
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.source=https://github.com/gtheilman/gratify
+            org.opencontainers.image.revision=${{ github.sha }}
           push: true
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-to: type=inline

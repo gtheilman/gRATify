@@ -5,6 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Public question payload with answers sorted for display.
+ *
+ * @mixin \App\Models\Question
+ */
 class PublicQuestionResource extends JsonResource
 {
     /**
@@ -14,6 +19,7 @@ class PublicQuestionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Ensure deterministic order for the client without exposing correctness.
         $answers = $this->answers ?? collect();
         $sortedAnswers = $answers->sortBy(fn ($answer) => $answer->sequence)->values();
 

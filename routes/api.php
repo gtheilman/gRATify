@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AnswerController;
-use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\AssessmentCrudController;
+use App\Http\Controllers\AssessmentBulkController;
+use App\Http\Controllers\AssessmentProgressController;
 use App\Http\Controllers\AttemptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -10,12 +12,13 @@ use App\Http\Controllers\AdminBackupController;
 use App\Http\Controllers\PresentationController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\UserController;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:web')->get('/user', function (Request $request) {
-    return $request->user();
+    return UserResource::make($request->user());
 });
 
 Route::middleware('api')->prefix('auth')->group(function () {
@@ -26,8 +29,8 @@ Route::middleware('api')->prefix('auth')->group(function () {
 });
 
 Route::middleware('api')->group(function () {
-    Route::apiResource('assessments', AssessmentController::class)->middleware('auth:web');
-    Route::put('assessments/{assessment}/bulk', [AssessmentController::class, 'bulkUpdate'])->middleware('auth:web');
+    Route::apiResource('assessments', AssessmentCrudController::class)->middleware('auth:web');
+    Route::put('assessments/{assessment}/bulk', [AssessmentBulkController::class, 'bulkUpdate'])->middleware('auth:web');
     Route::apiResource('questions', QuestionController::class)->middleware('auth:web');
     Route::apiResource('answers', AnswerController::class)->middleware('auth:web');
     // Attempts are created by unauthenticated participants via the client app.
@@ -54,7 +57,7 @@ Route::middleware(['api', 'auth:web'])->group(function () {
     Route::post('/questions/upload', [QuestionController::class, 'storeUpload'])->name('storeUpload');
     Route::post('/answers/promote', [AnswerController::class, 'promote'])->name('answers.promote');
     Route::post('/answers/demote', [AnswerController::class, 'demote'])->name('answers.demote');
-    Route::get('/list-assessments-by-user/{user_id}', [AssessmentController::class, 'listAssessmentsByUser']);
+    Route::get('/list-assessments-by-user/{user_id}', [AssessmentCrudController::class, 'listAssessmentsByUser']);
 });
 
 Route::middleware('api')->group(function () {
@@ -108,8 +111,8 @@ Route::middleware(['api', 'auth:web'])->group(function () {
         ]);
     });
     Route::get('/presentations/completed', [PresentationController::class, 'completed'])->name('presentations.completed');
-    Route::get('/assessment/attempts/{assessment_id}', [AssessmentController::class, 'assessmentAttempts'])->name('assessment.attempts');
-    Route::get('/assessments/{assessment}/edit', [AssessmentController::class, 'edit']);
+    Route::get('/assessment/attempts/{assessment_id}', [AssessmentProgressController::class, 'attempts'])->name('assessment.attempts');
+    Route::get('/assessments/{assessment}/edit', [AssessmentCrudController::class, 'edit']);
     Route::get('/presentations/score-by-assessment-id/{assessment_id}', [PresentationController::class, 'scoreByAssessmentId'])->name('presentations.scorebyassessmentid');
     Route::post('/change-password/', [UserController::class, 'changePassword'])->name('user.changepassword');
     Route::get('/admin/backup/download', [AdminBackupController::class, 'download'])->name('admin.backup.download');

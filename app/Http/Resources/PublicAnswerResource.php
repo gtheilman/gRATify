@@ -5,6 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Public answer payload (no correctness fields).
+ *
+ * @mixin \App\Models\Answer
+ */
 class PublicAnswerResource extends JsonResource
 {
     /**

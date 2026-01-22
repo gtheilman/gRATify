@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Reset your gRATify password to regain access to the team-based learning assessment platform." />
     <title>Password Reset</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f5; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
@@ -69,7 +70,7 @@
                     }),
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.message || data.status || 'Reset failed');
+                if (!res.ok) throw new Error(data?.error?.message || data.message || data.status || 'Reset failed');
                 msgEl.style.color = 'green';
                 msgEl.textContent = 'Password updated. You can now log in.';
             } catch (e) {

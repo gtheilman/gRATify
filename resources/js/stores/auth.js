@@ -1,6 +1,8 @@
+// Centralizes auth state and keeps the force-password-reset flag in localStorage.
 import { defineStore } from 'pinia'
 import { useApi } from '@/composables/useApi'
-import { getXsrfToken } from '@/utils/csrf'
+import { extractApiErrorMessage, getErrorMessage } from '@/utils/apiError'
+import { ensureCsrfCookie, fetchJson, buildHttpError } from '@/utils/http'
 
 const api = useApi
 
@@ -17,23 +19,16 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true
       this.error = null
       try {
-        await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' })
-        const xsrfToken = getXsrfToken()
-        const response = await fetch('/login', {
+        await ensureCsrfCookie()
+        const { data, response } = await fetchJson('/login', {
           method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
-          },
-          body: JSON.stringify(credentials),
+          body: credentials,
         })
-        const payload = await response.json().catch(() => ({}))
         if (!response.ok) {
-          const message = payload?.message || payload?.error || 'Login failed'
-          throw new Error(message)
+          const message = extractApiErrorMessage(data) || data?.error || 'Login failed'
+          throw buildHttpError(response, data, message)
         }
+        const payload = data || {}
         const needsReset = payload?.force_password_reset ?? false
         this.forcePasswordReset = needsReset
         if (needsReset)
@@ -44,7 +39,7 @@ export const useAuthStore = defineStore('auth', {
         return true
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Login failed')
         throw err
       }
       finally {
@@ -80,15 +75,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async logout() {
       try {
-        const xsrfToken = getXsrfToken()
-        await fetch('/logout', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            Accept: 'application/json',
-            ...(xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {}),
-          },
-        })
+        await fetchJson('/logout', { method: 'POST' })
       }
       catch (e) {
         // ignore logout errors

@@ -58,34 +58,38 @@ namespace App\Libraries;
  */
 class AikenFormat
 {
+    /** @var list<string> */
+    private array $lines = [];
+    /** @var list<string> */
     private array $errors = [];
+    /** @var list<string> */
     private array $warnings = [];
 
-    public function __construct($path = null, $rawContent = null)
+    public function __construct(?string $path = null, ?string $rawContent = null)
     {
         if (!is_null($rawContent)) {
             // Normalize newlines into an array of lines.
-            $this->lines = preg_split('/\r\n|\r|\n/', $rawContent);
+            $this->lines = preg_split('/\r\n|\r|\n/', $rawContent) ?: [];
         } elseif ($path) {
-            $this->lines = file($path);
+            $this->lines = file($path) ?: [];
         } else {
             $this->lines = [];
         }
 
     }
 
-    public function provide_import()
+    public function provide_import(): bool
     {
         return true;
     }
 
-    public function provide_export()
+    public function provide_export(): bool
     {
         return true;
     }
 
     //modification
-    public function get_string($error, $class, $linenumber)
+    public function get_string(string $error, string $class, int $linenumber): string
     {
         $labels = [
             'questionnotstarted' => 'Question Not Started',
@@ -99,11 +103,17 @@ class AikenFormat
         return 'Error:  ' . $label . ' on line ' . $linenumber;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getErrors(): array
     {
         return $this->errors;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getWarnings(): array
     {
         return $this->warnings;
@@ -121,7 +131,10 @@ class AikenFormat
         $this->warnings[] = 'Warning: ' . $detail . ' on line ' . $linenumber;
     }
 
-    public function readquestions()
+    /**
+     * @return array<int, \stdClass>
+     */
+    public function readquestions(): array
     {
         $questions = array();
         $question = null;
@@ -192,6 +205,7 @@ class AikenFormat
                         $sawAnswerLine = false;
                         continue;
                     }
+                    /** @phpstan-ignore-next-line legacy parser state */
                     if ($sawAnswerLine) {
                         $this->addError('Multiple ANSWER lines found for the same question', $linenumber, $nowline);
                         $question = null;
@@ -237,7 +251,7 @@ class AikenFormat
                         $sawAnswerLine = false;
                         continue;
                     }
-                    if ($choiceLetters && !in_array($ans, $choiceLetters, true)) {
+                    if (!in_array($ans, $choiceLetters, true)) {
                         $this->addError('ANSWER letter does not match any provided choice', $linenumber, $nowline);
                         $question = null;
                         $choiceLetters = [];
@@ -287,6 +301,7 @@ class AikenFormat
                     //$question->partiallycorrectfeedback = $this->text_field('');
                     //$question->incorrectfeedback = $this->text_field('');
                 }
+                /** @phpstan-ignore-next-line legacy parser state */
                 if ($question && count($question->answer) > 26) {
                     $this->addError('Questions may not have more than 26 answers', $linenumber);
                 }
@@ -299,49 +314,59 @@ class AikenFormat
     }
 
 
-    protected function text_field($text)
+    /**
+     * @return array{text: string}
+     */
+    protected function text_field(string $text): array
     {
         return array(
             'text' => htmlspecialchars(trim($text), ENT_NOQUOTES)
         );
     }
 
-    public function readquestion($lines)
+    /**
+     * @param array<int, string> $lines
+     */
+    public function readquestion(array $lines): void
     {
         // This is no longer needed but might still be called by default.php.
-        return;
     }
 
-    public function exportpreprocess()
+    public function exportpreprocess(): bool
     {
         // This format is not able to export categories.
         $this->setCattofile(false);
         return true;
     }
 
-    public function writequestion($question)
+    /**
+     * @param object{qtype?: string, options?: object, questiontext?: string, questiontextformat?: mixed} $question
+     */
+    public function writequestion(object $question): ?string
     {
         $endchar = "\n";
 
         // Only export multichoice questions.
-        if ($question->qtype != 'multichoice') {
+        /** @var object{qtype?: string, options?: object, questiontext?: string, questiontextformat?: mixed} $question */
+        if (($question->qtype ?? null) != 'multichoice') {
             return null;
         }
 
         // Do not export multichoice multi questions.
-        if (!$question->options->single) {
+        if (!isset($question->options) || !property_exists($question->options, 'single') || ! $question->options->single) {
             return null;
         }
 
         // Aiken format is not able to handle question with more than 26 answers.
-        if (count($question->options->answers) > 26) {
+        if (!isset($question->options->answers) || count($question->options->answers) > 26) {
             return null;
         }
 
         // Export the question displaying message.
-        $expout = str_replace("\n", '', question_utils::to_plain_text($question->questiontext,
-                $question->questiontextformat, array('para' => false, 'newlines' => false))) . $endchar;
+        $expout = str_replace("\n", '', question_utils::to_plain_text($question->questiontext ?? '',
+                $question->questiontextformat ?? null, array('para' => false, 'newlines' => false))) . $endchar;
         $num = 0;
+        $correctanswer = '';
         foreach ($question->options->answers as $answer) {
             $number = chr(ord('A') + $num);
             $expout .= $number . ') ' . str_replace("\n", '', question_utils::to_plain_text($answer->answer,
@@ -355,5 +380,24 @@ class AikenFormat
         $expout .= 'ANSWER: ' . $correctanswer;
 
         return $expout;
+    }
+
+    protected function setCattofile(bool $enabled): void
+    {
+        // no-op; category export is not supported for Aiken format
+    }
+}
+
+/**
+ * Minimal compatibility shim for legacy Moodle helpers.
+ */
+class question_utils
+{
+    /**
+     * @param array<string, mixed> $options
+     */
+    public static function to_plain_text(mixed $text, mixed $format = null, array $options = []): string
+    {
+        return trim(strip_tags((string) $text));
     }
 }

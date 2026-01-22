@@ -4,12 +4,11 @@ namespace App\Services\Scoring;
 
 use Illuminate\Support\Collection;
 
+/**
+ * Subtracts a fixed fraction of 100 based on answer count (linear decay).
+ */
 class LinearDecayScoring implements ScoringStrategy
 {
-    public function __construct(private int $step = 25)
-    {
-    }
-
     public function scoreQuestions(Collection $questions): array
     {
         $questionScores = [];
@@ -17,6 +16,12 @@ class LinearDecayScoring implements ScoringStrategy
         $count = 0;
 
         foreach ($questions as $question) {
+            $answerCount = $question->answers_count ?? null;
+            if ($answerCount === null && isset($question->answers)) {
+                $answerCount = is_countable($question->answers) ? count($question->answers) : null;
+            }
+            $answerCount = max(1, (int) ($answerCount ?? 1));
+            $step = 100 / $answerCount;
             $score = 100;
             $answeredCorrectly = false;
 
@@ -25,7 +30,8 @@ class LinearDecayScoring implements ScoringStrategy
                     $answeredCorrectly = true;
                     break;
                 }
-                $score = max(0, $score - $this->step);
+                // Penalize by a fixed fraction based on total answer count.
+                $score = max(0, $score - $step);
             }
 
             if (! $answeredCorrectly) {

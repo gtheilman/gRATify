@@ -1,9 +1,14 @@
 <script setup>
+// Includes custom Aiken upload handling with parse/validation hints for instructors.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssessmentsStore } from '@/stores/assessments'
-import { getXsrfToken } from '@/utils/csrf'
 import { useOffline } from '@/composables/useOffline'
+import { extractApiErrorMessage, getErrorMessage } from '@/utils/apiError'
+import { buildSequenceSwap } from '@/utils/sequenceSwap'
+import { buildAssessmentBulkPayload } from '@/utils/assessmentBulkPayload'
+import { buildAikenMessages } from '@/utils/aikenErrors'
+import { fetchJson } from '@/utils/http'
 
 const route = useRoute()
 const router = useRouter()
@@ -175,7 +180,7 @@ const saveQuestionWithAnswers = async question => {
     setTimeout(() => setQuestionStatus(question.id, 'idle'), 1800)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to save question'
+    errorMessage.value = getErrorMessage(err, 'Unable to save question')
     setQuestionStatus(question.id, 'error')
   }
   finally {
@@ -205,7 +210,7 @@ const saveAnswerDirect = async answer => {
     setTimeout(() => setAnswerStatus(answer.id, 'idle'), 1600)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to save answer'
+    errorMessage.value = getErrorMessage(err, 'Unable to save answer')
     answerRetry.value = { ...answer }
     answerRetryMessage.value = 'Answer save failed. Retry?'
     showAnswerRetry.value = true
@@ -265,7 +270,7 @@ const saveField = async (field, value) => {
     formError.value = ''
   }
   catch (err) {
-    formError.value = err?.message || 'Unable to save assessment'
+    formError.value = getErrorMessage(err, 'Unable to save assessment')
   }
   finally {
     saving.value = false
@@ -324,7 +329,7 @@ const save = async () => {
     uploadMessage.value = ''
   }
   catch (err) {
-    formError.value = err?.message || 'Unable to save assessment'
+    formError.value = getErrorMessage(err, 'Unable to save assessment')
   }
   finally {
     saving.value = false
@@ -338,28 +343,14 @@ const saveAll = async () => {
   savingAll.value = true
   try {
     const questionList = questions.value || []
-    await assessmentsStore.bulkUpdateAssessment({
-      assessment: { ...form.value },
-      questions: questionList.map(q => ({
-        id: q.id,
-        title: (q.title || '').trim() || q.stem,
-        stem: q.stem,
-        sequence: q.sequence,
-        answers: (q.answers || []).map(ans => ({
-          id: ans.id,
-          answer_text: ans.answer_text,
-          correct: ans.correct,
-          sequence: ans.sequence,
-        })),
-      })),
-    })
+    await assessmentsStore.bulkUpdateAssessment(buildAssessmentBulkPayload(form.value, questionList))
 
     await assessmentsStore.loadAssessment(form.value.id)
     loadData()
     uploadMessage.value = ''
   }
   catch (err) {
-    formError.value = err?.message || 'Unable to save all changes'
+    formError.value = getErrorMessage(err, 'Unable to save all changes')
   }
   finally {
     savingAll.value = false
@@ -427,7 +418,7 @@ const createQuestion = async () => {
     await assessmentsStore.loadAssessment(form.value.id)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to create question'
+    errorMessage.value = getErrorMessage(err, 'Unable to create question')
   }
   finally {
     busyQuestion.value = null
@@ -447,7 +438,7 @@ const saveQuestion = async question => {
     setTimeout(() => setQuestionStatus(question.id, 'idle'), 1800)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to save question'
+    errorMessage.value = getErrorMessage(err, 'Unable to save question')
     setQuestionStatus(question.id, 'error')
   }
   finally {
@@ -475,7 +466,7 @@ const confirmDeleteQuestion = async () => {
     await assessmentsStore.deleteQuestion(pendingQuestionDelete.value.id)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to delete question'
+    errorMessage.value = getErrorMessage(err, 'Unable to delete question')
   }
   finally {
     busyQuestion.value = null
@@ -514,26 +505,16 @@ const deleteAnswer = async answer => {
 }
 
 const moveAnswer = async (question, answer, direction) => {
-  if (!question?.answers?.length)
+  const swap = buildSequenceSwap(question?.answers, answer?.id, direction)
+  if (!swap)
     return
 
-  const sorted = [...question.answers].sort((a, b) => a.sequence - b.sequence)
-  const index = sorted.findIndex(a => a.id === answer.id)
-  if (index === -1)
-    return
-
-  const targetIndex = direction === 'up' ? index - 1 : index + 1
-  if (targetIndex < 0 || targetIndex >= sorted.length)
-    return
-
-  const neighbor = sorted[targetIndex]
-  const currentSeq = answer.sequence
-  const neighborSeq = neighbor.sequence
+  const { current, neighbor, currentSequence, neighborSequence } = swap
 
   busyAnswer.value = `move-${answer.id}`
   try {
-    await assessmentsStore.updateAnswer({ ...answer, sequence: neighborSeq })
-    await assessmentsStore.updateAnswer({ ...neighbor, sequence: currentSeq })
+    await assessmentsStore.updateAnswer({ ...current, sequence: neighborSequence })
+    await assessmentsStore.updateAnswer({ ...neighbor, sequence: currentSequence })
     await assessmentsStore.loadAssessment(form.value.id)
   }
   finally {
@@ -541,97 +522,6 @@ const moveAnswer = async (question, answer, direction) => {
   }
 }
 
-const normalizeAikenMessage = (message, requireErrorPrefix = true) => {
-  if (!message)
-    return null
-  let cleaned = String(message)
-    .replace(/string\\(\\d+\\)/gi, '')
-    .replace(/["']/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/\\s+/g, ' ')
-    .trim()
-  if (!cleaned)
-    return null
-  if (requireErrorPrefix) {
-    const errorIndex = cleaned.toLowerCase().indexOf('error')
-    if (errorIndex === -1)
-      return null
-    if (errorIndex > 0)
-      cleaned = cleaned.slice(errorIndex)
-    const errorPrefix = /^error\\s*:?\\s*/i
-    if (!errorPrefix.test(cleaned))
-      return null
-    cleaned = cleaned.replace(errorPrefix, '')
-  } else {
-    cleaned = cleaned.replace(/^error\\s*:?\\s*/i, '')
-  }
-  cleaned = cleaned.replace(/questionnotcompleteon line\\s*(\\d+)/i, 'Question not complete on line $1')
-  cleaned = cleaned.replace(/\\s+on\\s+line\\s*(\\d+)/i, ' on line $1')
-  if (cleaned[0] && cleaned[0] === cleaned[0].toLowerCase())
-    cleaned = cleaned[0].toUpperCase() + cleaned.slice(1)
-  return cleaned
-}
-
-const extractAikenErrorLines = text => {
-  if (!text)
-    return []
-  const normalized = String(text)
-    .replace(/\\\\n/g, '\n')
-    .replace(/\\\\r/g, '\r')
-    .replace(/\\"/g, '"')
-  const quotedMatches = []
-  const quotedRegex = /"([^"]*)"/g
-  let match = quotedRegex.exec(normalized)
-  while (match) {
-    if (match[1] && match[1].includes('Error:'))
-      quotedMatches.push(match[1])
-    match = quotedRegex.exec(normalized)
-  }
-  if (quotedMatches.length)
-    return quotedMatches.map(item => item.trim())
-  const matches = normalized.match(/Error:[\\s\\S]*?(?=string\\(\\d+\\)|\\{\\\"status\\\"|$)/gi)
-    || normalized.match(/Error:[^\\n\\r]+/gi)
-    || []
-  return matches.map(item => item.trim())
-}
-
-const buildAikenMessages = (json, rawText) => {
-  const messages = []
-  if (Array.isArray(json?.errors)) {
-    const cleanedErrors = json.errors
-      .map(msg => normalizeAikenMessage(msg, false))
-      .filter(Boolean)
-    return cleanedErrors.length ? cleanedErrors : ['Invalid Aiken format text file.']
-  } else if (json?.errors && typeof json.errors === 'object') {
-    Object.values(json.errors).forEach(value => {
-      if (Array.isArray(value))
-        messages.push(...value)
-      else if (value)
-        messages.push(value)
-    })
-  }
-  if (json?.message)
-    messages.push(json.message)
-  if (json?.status)
-    messages.push(json.status)
-  if (rawText) {
-    const errorMatches = extractAikenErrorLines(rawText)
-    messages.push(...errorMatches)
-    if (!errorMatches.length)
-      messages.push(rawText)
-  }
-
-  if (json?.message) {
-    const errorMatches = extractAikenErrorLines(json.message)
-    messages.push(...errorMatches)
-  }
-
-  const cleaned = messages
-    .map(message => normalizeAikenMessage(message))
-    .filter(Boolean)
-
-  return cleaned.length ? cleaned : ['Invalid Aiken format text file.']
-}
 
 const handleFileUpload = async event => {
   const file = event.target.files?.[0]
@@ -661,24 +551,23 @@ const handleFileUpload = async event => {
   formData.append('format', 'aiken')
 
   try {
-    const xsrfToken = getXsrfToken()
-    const response = await fetch('/api/questions/upload', {
+    const { data, response, text } = await fetchJson('/api/questions/upload', {
       method: 'POST',
-      credentials: 'same-origin',
-      headers: xsrfToken ? { 'X-XSRF-TOKEN': xsrfToken } : {},
       body: formData,
+      parseText: true,
     })
     if (!response.ok) {
-      const rawText = await response.text()
+      const rawText = text || ''
       let json = null
       try {
-        json = JSON.parse(rawText)
+        json = rawText ? JSON.parse(rawText) : null
       } catch {
         json = null
       }
-      const message = json?.status || json?.message || rawText || ''
+      const message = extractApiErrorMessage(data) || extractApiErrorMessage(json) || rawText || ''
       const hasAikenStatus = String(message).includes('Aiken')
       const hasErrorLines = String(rawText).includes('Error:')
+      // Special-case invalid Aiken uploads to show a detailed modal instead of a generic toast.
       const isInvalidAiken = response.status === 422 && (hasAikenStatus || hasErrorLines)
       if (isInvalidAiken) {
         invalidAikenMessages.value = buildAikenMessages(json, rawText)
@@ -693,7 +582,7 @@ const handleFileUpload = async event => {
     await assessmentsStore.loadAssessment(form.value.id)
   }
   catch (err) {
-    formError.value = err?.message || 'Upload failed'
+    formError.value = getErrorMessage(err, 'Upload failed')
   }
   finally {
     uploadBusy.value = false

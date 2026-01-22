@@ -8,21 +8,26 @@ use App\Http\Resources\AttemptResource;
 use App\Models\Answer;
 use App\Models\Attempt;
 use App\Models\Presentation;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 
+/**
+ * Records attempts; prevents duplicate attempts per presentation/answer.
+ */
 class AttemptController extends Controller
 {
     public function __construct()
     {
+        $this->middleware('auth:web', ['except' => ['store']]);
         $this->authorizeResource(Attempt::class, 'attempt', ['except' => ['store']]);
     }
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function index()
+    public function index(): void
     {
         //
     }
@@ -30,9 +35,9 @@ class AttemptController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function create()
+    public function create(): void
     {
         //
     }
@@ -40,22 +45,25 @@ class AttemptController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return boolean
+     * @param \App\Http\Requests\StoreAttemptRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreAttemptRequest $request)
+    public function store(StoreAttemptRequest $request): JsonResponse
     {
-        $presentation = Presentation::find($request->get('presentation_id'));
-        $answer = Answer::find($request->get('answer_id'));
+        $presentationId = (int) $request->get('presentation_id');
+        $answerId = (int) $request->get('answer_id');
+        $presentation = Presentation::find($presentationId);
+        $answer = Answer::find($answerId);
         if (!$presentation || !$answer) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
-        $attemptQuery = Attempt::where('presentation_id', $request->get('presentation_id'))
-            ->where('answer_id', $request->get('answer_id'));
+        $attemptQuery = Attempt::where('presentation_id', $presentationId)
+            ->where('answer_id', $answerId);
 
         $alreadyAttempted = $attemptQuery->exists();
         if ($alreadyAttempted) {
+            // Preserve idempotent behavior for repeated submissions.
             return response()->json([
                 'correct' => false,
                 'alreadyAttempted' => true,
@@ -81,10 +89,10 @@ class AttemptController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\Attempt $attempt
+     * @return void
      */
-    public function show($id)
+    public function show(Attempt $attempt): void
     {
         //
     }
@@ -92,10 +100,10 @@ class AttemptController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\Attempt $attempt
+     * @return void
      */
-    public function edit($id)
+    public function edit(Attempt $attempt): void
     {
         //
     }
@@ -103,17 +111,12 @@ class AttemptController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param \App\Http\Requests\UpdateAttemptRequest $request
+     * @param \App\Models\Attempt $attempt
+     * @return \App\Http\Resources\AttemptResource
      */
-    public function update(UpdateAttemptRequest $request, Attempt $attempt)
+    public function update(UpdateAttemptRequest $request, Attempt $attempt): AttemptResource
     {
-        $user = $request->user();
-        if (!$user) {
-            return response()->json(['status' => 'Unauthenticated'], 401);
-        }
-
         $this->authorize('update', $attempt);
 
         $attempt->presentation_id = $request->get('presentation_id');
@@ -127,10 +130,10 @@ class AttemptController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
+     * @param \App\Models\Attempt $attempt
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Attempt $attempt)
+    public function destroy(Attempt $attempt): Response
     {
         $this->authorize('delete', $attempt);
 

@@ -5,6 +5,12 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * User payload used by admin user management views.
+ *
+ * @mixin \App\Models\User
+ * @property int|null $assessments_count
+ */
 class UserResource extends JsonResource
 {
     public static $wrap = null;
@@ -23,7 +29,8 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->role,
             'company' => $this->company,
-            'assessments_count' => $this->assessments_count ?? $this->assessments()?->count(),
+            // Fallback to relation count when withCount isn't present.
+            'assessments_count' => $this->assessments_count ?? $this->assessments()->count(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

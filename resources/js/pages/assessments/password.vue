@@ -1,4 +1,5 @@
 <script setup>
+// Projector view: shows the student URL as text + QR, with fullscreen support.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAssessmentsStore } from '@/stores/assessments'
@@ -124,6 +125,7 @@ onMounted(async () => {
     await assessmentsStore.loadAssessment(route.params.id)
     assessment.value = assessmentsStore.currentAssessment
     if (assessment.value) {
+      // Prefer stored short URLs but fall back to the direct client URL.
       const clientUrl = `${window.location.origin}/client/${assessment.value.password || ''}`
       const candidateUrl = assessment.value.short_url || clientUrl
       shortUrl.value = candidateUrl

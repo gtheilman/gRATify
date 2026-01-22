@@ -8,6 +8,7 @@
 </template>
 
 <script>
+// Minimal client shell with an accessible skip link for keyboard users.
 export default {
   name: 'AppRoot'
 }

@@ -4,6 +4,9 @@ namespace App\Services\Scoring;
 
 use Illuminate\Support\Collection;
 
+/**
+ * Halves the question score for each incorrect attempt (geometric decay).
+ */
 class GeometricDecayScoring implements ScoringStrategy
 {
     public function scoreQuestions(Collection $questions): array
@@ -20,6 +23,7 @@ class GeometricDecayScoring implements ScoringStrategy
                 if ($attempt->answer->correct == 1) {
                     $answeredCorrectly = true;
                 } else {
+                    // Incorrect attempt halves remaining score.
                     $score = $score / 2;
                 }
             }

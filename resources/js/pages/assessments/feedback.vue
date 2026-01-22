@@ -1,8 +1,17 @@
 <script setup>
+// Caches feedback payload locally to allow read-only viewing during transient failures.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { renderMarkdown as renderClientMarkdown } from '@/gratclient/utils/markdown'
+import { applyCachedFallback } from '@/utils/cacheFallback'
+import { clearNotice } from '@/utils/staleNotice'
+import { getErrorMessage } from '@/utils/apiError'
+import { formatAssessmentError } from '@/utils/assessmentErrors'
+import { fetchJson } from '@/utils/http'
 import ErrorNotice from '@/components/ErrorNotice.vue'
+import { needsSessionRefresh } from '@/utils/errorFlags'
+import { readFeedbackCache, writeFeedbackCache } from '@/utils/feedbackCache'
+import { buildAnswerMap } from '@/utils/answerMap'
 
 const route = useRoute()
 
@@ -11,87 +20,35 @@ const error = ref('')
 const assessment = ref(null)
 const activeSlide = ref(0)
 const staleNotice = ref('')
-const needsRefresh = computed(() => String(error.value || '').includes('Session expired'))
+const needsRefresh = computed(() => needsSessionRefresh(error.value))
 
-const feedbackCacheKey = () => `feedback-cache-${route.params.id}`
+const loadFeedbackCache = () => readFeedbackCache(route.params.id)
 
-const loadFeedbackCache = () => {
-  try {
-    const raw = localStorage.getItem(feedbackCacheKey())
-    if (!raw)
-      return null
-    return JSON.parse(raw)
-  }
-  catch {
-    return null
-  }
-}
+const storeFeedbackCache = data => writeFeedbackCache(route.params.id, data)
 
-const storeFeedbackCache = data => {
-  try {
-    localStorage.setItem(feedbackCacheKey(), JSON.stringify({
-      data,
-      cachedAt: Date.now(),
-    }))
-  }
-  catch {
-    // Ignore cache write failures.
-  }
-}
-
-const readErrorDetail = async response => {
-  const contentType = response.headers.get('content-type') || ''
-  try {
-    if (contentType.includes('json')) {
-      const json = await response.json()
-      return json?.message || json?.status || JSON.stringify(json)
-    }
-    return (await response.text())?.trim()
-  }
-  catch {
-    return ''
-  }
-}
-
-const formatFeedbackError = async response => {
-  const detail = await readErrorDetail(response)
-  if (response.status === 401)
-    return detail ? `Unauthorized: ${detail}` : 'Unauthorized: please sign in again.'
-  if (response.status === 403)
-    return detail ? `Forbidden: ${detail}` : 'Forbidden: you do not have access to this feedback view.'
-  if (response.status === 404)
-    return detail ? `Not found: ${detail}` : 'Not found: assessment does not exist.'
-  if (response.status >= 500)
-    return detail ? `Server error: ${detail}` : 'Server error: unable to load feedback right now.'
-  return detail || 'Unable to load feedback'
-}
+const formatFeedbackError = (response, data) => formatAssessmentError(response, data, 'feedback')
 
 const fetchFeedback = async () => {
   loading.value = true
   error.value = ''
   staleNotice.value = ''
   try {
-    const response = await fetch(`/api/assessment/attempts/${route.params.id}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-      credentials: 'same-origin',
-    })
+    const { data, response } = await fetchJson(`/api/assessment/attempts/${route.params.id}`)
     if (!response.ok) {
-      const message = await formatFeedbackError(response)
+      const message = formatFeedbackError(response, data)
       throw new Error(message)
     }
-    const data = await response.json()
     assessment.value = data
     storeFeedbackCache(data)
   }
   catch (err) {
-    error.value = err?.message || 'Unable to load feedback'
+    error.value = getErrorMessage(err, 'Unable to load feedback')
     const cached = loadFeedbackCache()
-    if (cached?.data) {
-      assessment.value = cached.data
-      staleNotice.value = `Showing cached data from ${new Date(cached.cachedAt).toLocaleString()}`
-    }
+    applyCachedFallback({
+      cached,
+      applyData: data => { assessment.value = data },
+      applyNotice: notice => { staleNotice.value = notice },
+    })
   }
   finally {
     loading.value = false
@@ -100,17 +57,11 @@ const fetchFeedback = async () => {
 
 onMounted(fetchFeedback)
 
-const answerMap = computed(() => {
-  const map = new Map()
-  if (!assessment.value?.questions)
-    return map
-  assessment.value.questions.forEach(question => {
-    question.answers?.forEach(ans => {
-      map.set(ans.id, { question_id: question.id, correct: !!Number(ans.correct) })
-    })
-  })
-  return map
-})
+const clearStaleNotice = () => {
+  clearNotice(staleNotice)
+}
+
+const answerMap = computed(() => buildAnswerMap(assessment.value?.questions))
 
 const firstAttemptsByQuestion = computed(() => {
   const attemptMap = new Map()
@@ -277,7 +228,7 @@ onMounted(() => {
               variant="tonal"
               class="mb-4"
               closable
-              @click:close="staleNotice = ''"
+              @click:close="clearStaleNotice"
             >
               <div class="d-flex align-center gap-2">
                 <VChip size="x-small" color="warning" variant="tonal">Stale</VChip>

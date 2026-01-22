@@ -8,5 +8,6 @@ return [
     'schemes' => [
         'geometric-decay' => \App\Services\Scoring\GeometricDecayScoring::class,
         'linear-decay' => \App\Services\Scoring\LinearDecayScoring::class,
+        'linear-decay-with-zeros' => \App\Services\Scoring\LinearDecayWithZerosScoring::class,
     ],
 ];

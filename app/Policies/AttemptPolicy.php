@@ -22,7 +22,7 @@ class AttemptPolicy
         return $this->isAdmin($user) || $attempt->presentation?->assessment?->user_id === $user->id;
     }
 
-    public function create(User $user, Attempt $attempt = null): bool
+    public function create(User $user, ?Attempt $attempt = null): bool
     {
         $ownerId = $attempt?->presentation?->assessment?->user_id;
         return $this->isAdmin($user) || ($ownerId && $ownerId === $user->id);

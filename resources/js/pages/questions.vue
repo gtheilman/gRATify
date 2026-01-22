@@ -1,8 +1,10 @@
 <script setup>
+// Lightweight question editor view with per-item busy states.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssessmentsStore } from '@/stores/assessments'
 import { useAuthStore } from '@/stores/auth'
+import { getErrorMessage } from '@/utils/apiError'
 
 const authStore = useAuthStore()
 const assessmentsStore = useAssessmentsStore()
@@ -36,6 +38,7 @@ onMounted(async () => {
 
 watch(selectedAssessmentId, async newId => {
   if (newId) {
+    // Keep the selected assessment in the URL for deep links.
     router.replace({ query: { ...route.query, assessment: newId } })
     await assessmentsStore.loadAssessment(newId)
   }
@@ -49,7 +52,7 @@ const createQuestion = async () => {
     await assessmentsStore.createQuestion(selectedAssessmentId.value)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to create question'
+    errorMessage.value = getErrorMessage(err, 'Unable to create question')
   }
   finally {
     busyQuestion.value = null
@@ -62,7 +65,7 @@ const saveQuestion = async question => {
     await assessmentsStore.updateQuestion(question)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to save question'
+    errorMessage.value = getErrorMessage(err, 'Unable to save question')
   }
   finally {
     busyQuestion.value = null
@@ -75,7 +78,7 @@ const removeQuestion = async question => {
     await assessmentsStore.deleteQuestion(question.id)
   }
   catch (err) {
-    errorMessage.value = err?.message || 'Unable to delete question'
+    errorMessage.value = getErrorMessage(err, 'Unable to delete question')
   }
   finally {
     busyQuestion.value = null

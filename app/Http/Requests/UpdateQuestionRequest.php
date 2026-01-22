@@ -12,17 +12,22 @@ class UpdateQuestionRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         $routeQuestion = $this->route('question');
-        $questionId = $routeQuestion instanceof \App\Models\Question ? $routeQuestion->id : $routeQuestion;
+        $questionId = $routeQuestion instanceof \App\Models\Question
+            ? $routeQuestion->id
+            : (is_numeric($routeQuestion) ? (int) $routeQuestion : 0);
 
         return [
             'id' => [
                 'required',
                 'integer',
                 'exists:questions,id',
-                Rule::in([(int) $questionId]),
+                Rule::in([$questionId]),
             ],
             'title' => 'required|string',
             'stem' => 'required|string',

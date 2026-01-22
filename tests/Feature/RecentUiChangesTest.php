@@ -81,7 +81,7 @@ it('shows an offline banner in the top nav', function () {
     $path = base_path('resources/js/components/TopNav.vue');
     $content = File::get($path);
 
-    expect($content)->toContain('You are offline.');
+    expect($content)->toContain('offlineBannerMessage');
     expect($content)->toContain('Retry');
 });
 
@@ -90,9 +90,9 @@ it('includes stale-cache notices on progress, feedback, and scores', function ()
     $feedback = File::get(base_path('resources/js/pages/assessments/feedback.vue'));
     $scores = File::get(base_path('resources/js/pages/assessments/scores.vue'));
 
-    expect($progress)->toContain('Showing cached data from');
-    expect($feedback)->toContain('Showing cached data from');
-    expect($scores)->toContain('Showing cached data from');
+    expect($progress)->toContain('applyCachedFallback');
+    expect($feedback)->toContain('applyCachedFallback');
+    expect($scores)->toContain('applyCachedFallback');
     expect($progress)->toContain('Stale');
     expect($feedback)->toContain('Stale');
     expect($scores)->toContain('Stale');

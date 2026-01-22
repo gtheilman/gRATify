@@ -11,60 +11,69 @@ use App\Libraries\AikenFormat;
 use App\Models\Presentation;
 use App\Models\Question;
 use App\Http\Resources\QuestionResource;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Handles question CRUD plus Aiken file imports and ordering helpers.
+ */
 class QuestionController extends Controller
 {
 
-    public $assessment_id;
-    public $question_id;
+    public int $assessment_id;
+    public ?int $question_id = null;
 
     public function __construct()
     {
+        $this->middleware('auth:web');
         $this->authorizeResource(Question::class, 'question', ['except' => ['store']]);
     }
 
     /**
      * Find the highest numbered question in an assessment
      *
-     * @param integer $assessment_id
-     * @return integer
+     * @param int $assessment_id
+     * @return int
      */
-    public function maxQuestionNumber($assessment_id)
+    public function maxQuestionNumber(int $assessment_id): int
     {
-        return DB::table('questions')
+        return (int) (DB::table('questions')
             ->where('assessment_id', '=', $assessment_id)
-            ->max('sequence');
+            ->max('sequence') ?? 0);
     }
 
 
     /**
      * Get All questions in the asssement in sequency
      *
-     * @param integer $assessment_id
-     * @return
+     * @param int $assessment_id
+     * @return \Illuminate\Support\Collection<int, \App\Models\Question>
      */
-    public function getAllQuestions($assessment_id)
+    public function getAllQuestions(int $assessment_id): Collection
     {
-        $questions = Question::all()
-            ->where('assessment_id', $assessment_id);
-        return $questions->sortBy('sequence');
+        return Question::query()
+            ->where('assessment_id', $assessment_id)
+            ->orderBy('sequence')
+            ->get();
     }
 
 
     /**
      * Renumber the questions
      *
-     * @param integer $assessment_id
-     * @return boolean
+     * @param int $assessment_id
+     * @return bool
      */
-    public function renumberQuestions($assessment_id)
+    public function renumberQuestions(int $assessment_id): bool
     {
 
         $questions = $this->getAllQuestions($assessment_id);
         $questions = $questions->sortBy('sequence');
 
+        // Keep sequence numbers contiguous after inserts/deletes/reorders.
         $newNumber = 1;
         foreach ($questions as $question) {
             $question->sequence = $newNumber;
@@ -79,9 +88,9 @@ class QuestionController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {      // TODO Figure out if I should delete this for security
         return response()->json(['message' => 'Not implemented.'], 501);
     }
@@ -89,31 +98,27 @@ class QuestionController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\View\View
      */
-    public function create()
+    public function create(): \Illuminate\View\View
     {
-        return view('questions.create');
+        /** @var view-string $view */
+        $view = 'questions.create';
+        return view($view);
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @param \App\Http\Requests\StoreQuestionRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreQuestionRequest $request)
+    public function store(StoreQuestionRequest $request): JsonResponse
     {
-        // Resolve the authenticated user via the session guard.
-        $user = $request->user();
-        if (!$user) {
-            return response()->json(['status' => 'Unauthenticated'], 401);
-        }
-
-        $assessmentId = $request->get('assessment_id');
+        $assessmentId = (int) $request->get('assessment_id');
         $assessment = Assessment::find($assessmentId);
         if (!$assessment) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
         $this->authorize('create', [Question::class, $assessment]);
@@ -137,6 +142,7 @@ class QuestionController extends Controller
 
         $question->save();
         $this->renumberQuestions($question->assessment_id);
+        $question->refresh();
         return (new QuestionResource($question))
             ->response()
             ->setStatusCode(201);
@@ -145,10 +151,10 @@ class QuestionController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param \App\Question $question
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\Question $question
+     * @return void
      */
-    public function show(Question $question)
+    public function show(Question $question): void
     {
         //
     }
@@ -156,11 +162,11 @@ class QuestionController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param \App\Question $question
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\Question $question
+     * @return bool
      *
      */
-    public function edit(Question $question)
+    public function edit(Question $question): bool
     {
         // return view('/assessments/' . $question->assessment_id . '/edit', compact('question'));
         return true;
@@ -170,29 +176,23 @@ class QuestionController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param
-     * @return string
+     * @param \App\Http\Requests\UpdateQuestionRequest $request
+     * @param \App\Models\Question $question
+     * @return \App\Http\Resources\QuestionResource|\Illuminate\Http\JsonResponse
      */
-    public function update(UpdateQuestionRequest $request, Question $question)
+    public function update(UpdateQuestionRequest $request, Question $question): QuestionResource|JsonResponse
     {
         $assessment = Assessment::find($question->assessment_id);
         if (!$assessment) {
-            return response()->json(['status' => 'Not Found'], 404);
-        }
-
-        // Resolve authenticated user
-        $user = $request->user();
-        if (!$user) {
-            return response()->json(['status' => 'Unauthenticated'], 401);
+            return $this->errorResponse('not_found', null, 404);
         }
 
         $this->authorize('update', $question);
 
-        // Lock edits if responses exist
+        // Lock edits once students have responded.
         $hasResponses = Presentation::where('assessment_id', $assessment->id)->exists();
         if ($hasResponses) {
-            return response()->json(['status' => 'Locked'], 403);
+            return $this->errorResponse('locked', null, 403);
         }
 
         $question->title = $request->get('title');
@@ -208,28 +208,22 @@ class QuestionController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param integer $question_id
-     * @return string
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Question $question
+     * @return \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
      */
-    public function destroy(Request $request, Question $question)
+    public function destroy(Request $request, Question $question): Response|JsonResponse
     {
         $assessment = Assessment::find($question->assessment_id);
 
         if (!$assessment) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
-        // Lock deletes if responses exist
+        // Lock deletes once students have responded.
         $hasResponses = Presentation::where('assessment_id', $assessment->id)->exists();
         if ($hasResponses) {
-            return response()->json(['status' => 'Locked'], 403);
-        }
-
-        // Resolve the authenticated user via the session guard.
-        $user = $request->user();
-
-        if (!$user) {
-            return response()->json(['status' => 'Not Deleted', 'message' => 'Unauthenticated'], 401);
+            return $this->errorResponse('locked', null, 403);
         }
 
         $this->authorize('delete', $question);
@@ -243,16 +237,16 @@ class QuestionController extends Controller
     /**
      * Renumber a question to a higher (actually, lower) sequence value
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @param \App\Http\Requests\QuestionReorderRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function promote(QuestionReorderRequest $request)
+    public function promote(QuestionReorderRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $question_id = $data['question_id'];
-        $assessment_id = $data['assessment_id'];
+        $question_id = (int) $data['question_id'];
+        $assessment_id = (int) $data['assessment_id'];
         $promoteQuestion = Question::find($question_id);
-        if (! $promoteQuestion || $promoteQuestion->assessment_id !== (int) $assessment_id) {
+        if (! $promoteQuestion || $promoteQuestion->assessment_id !== $assessment_id) {
             return response()->json([
                 'message' => 'Question does not belong to assessment.',
                 'errors' => ['assessment_id' => ['Question does not belong to assessment.']],
@@ -262,6 +256,7 @@ class QuestionController extends Controller
 
         $questions = $this->getAllQuestions($assessment_id);
 
+        // Swap sequence values to move a question "up" (lower sequence).
         foreach ($questions as $currentQuestion) {
             if ($currentQuestion->sequence == ($oldSequence - 1)) {
                 $currentQuestion->sequence = $currentQuestion->sequence + 1;
@@ -277,16 +272,16 @@ class QuestionController extends Controller
     /**
      * Renumber a question to a lower (actually, higher) sequence value
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @param \App\Http\Requests\QuestionReorderRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function demote(QuestionReorderRequest $request)
+    public function demote(QuestionReorderRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $question_id = $data['question_id'];
-        $assessment_id = $data['assessment_id'];
+        $question_id = (int) $data['question_id'];
+        $assessment_id = (int) $data['assessment_id'];
         $promoteQuestion = Question::find($question_id);
-        if (! $promoteQuestion || $promoteQuestion->assessment_id !== (int) $assessment_id) {
+        if (! $promoteQuestion || $promoteQuestion->assessment_id !== $assessment_id) {
             return response()->json([
                 'message' => 'Question does not belong to assessment.',
                 'errors' => ['assessment_id' => ['Question does not belong to assessment.']],
@@ -295,6 +290,7 @@ class QuestionController extends Controller
         $oldSequence = $promoteQuestion->sequence;
 
         $questions = $this->getAllQuestions($assessment_id);
+        // Swap sequence values to move a question "down" (higher sequence).
         foreach ($questions as $currentQuestion) {
             if ($currentQuestion->sequence == ($oldSequence + 1)) {
                 $currentQuestion->sequence = $currentQuestion->sequence - 1;
@@ -315,7 +311,7 @@ class QuestionController extends Controller
      * Parse the aiken file into an array
      *
      * @param string $content Raw file contents
-     * @return array  The aiken file in an array
+     * @return array{questions: array<int, mixed>, errors: array<int, mixed>, warnings: array<int, mixed>}  The aiken file in an array
      */
     public function parseAikenToArray(string $content): array
     {
@@ -333,17 +329,26 @@ class QuestionController extends Controller
      * Write aiken array to database
      * The moodle functions return a standard object with arrays
      *
-     * @param array $questionArray The array with the questions
-     * @return boolean  success or not
+     * @param array<int, mixed> $questionArray The array with the questions
+     * @return bool  success or not
      *
      */
-    function writeAikenToDb($questionArray)
+    public function writeAikenToDb(array $questionArray): bool
     {
 
         $maxQuestionNumber = $this->maxQuestionNumber($this->assessment_id);
+        $question = null;
 
         try {
             foreach ($questionArray as $item) {
+                if (
+                    !is_object($item)
+                    || !isset($item->questiontext, $item->rightans, $item->answer)
+                    || !is_array($item->answer)
+                ) {
+                    continue;
+                }
+                /** @var object{questiontext: string, rightans: int, answer: array<int, array{text: string}>} $item */
                 $question = new Question;
                 //var_dump($item);
                 $question->title = $item->questiontext;
@@ -360,20 +365,21 @@ class QuestionController extends Controller
                     $answer->answer_text = $item->answer[$index]['text'];
                     $answer->sequence = $index + 1;
                     if ($index == $rightans) {
-                        $answer->correct = 1;
+                        $answer->correct = true;
                     }
                     $answer->question_id = $question->id;
                     $answer->save();
                 }
             }
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
 
             return false;
         }
 
-        $this->renumberQuestions($question->assessment_id);
+        $renumberAssessmentId = $question ? $question->assessment_id : $this->assessment_id;
+        $this->renumberQuestions($renumberAssessmentId);
         return true;
 
     }
@@ -382,10 +388,10 @@ class QuestionController extends Controller
     /**
      * Receive the uploaded assessment file, store the path and the file extension
      *
-     * @param Request $request
-     * @return null
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function storeUpload(Request $request)
+    public function storeUpload(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'assessment' => 'required|file|mimetypes:text/plain,application/octet-stream,text/markdown,text/plain,text/x-log|max:1024',
@@ -399,17 +405,18 @@ class QuestionController extends Controller
         $this->assessment_id = $validated['assessment_id'];
 
 
+        // Aiken parsing returns question arrays plus detailed errors/warnings.
         $parsed = $this->parseAikenToArray($content);
-        $questionArray = $parsed['questions'] ?? [];
-        $errors = $parsed['errors'] ?? [];
-        $warnings = $parsed['warnings'] ?? [];
-        if ($errors && count($errors)) {
+        $questionArray = $parsed['questions'];
+        $errors = $parsed['errors'];
+        $warnings = $parsed['warnings'];
+        if (!empty($errors)) {
             return response()->json([
                 'status' => 'Invalid or unreadable Aiken file',
                 'errors' => $errors,
             ], 422);
         }
-        if (!$questionArray || !count($questionArray)) {
+        if (empty($questionArray)) {
             return response()->json([
                 'status' => 'Invalid or unreadable Aiken file',
                 'errors' => $errors,
@@ -428,7 +435,6 @@ class QuestionController extends Controller
             return response()->json(['status' => $insert_status], 500);
         }
         // return redirect('/assessments/' . $this->assessment_id . '/edit')->with('success', $insert_status);
-        return true;
     }
 
 

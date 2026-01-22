@@ -3,28 +3,31 @@
 use App\Services\Scoring\LinearDecayScoring;
 use Illuminate\Support\Collection;
 
-it('scores with linear decay per wrong attempt and averages total', function () {
-    $questions = collect([
+it('scores based on total answer count with linear decay', function () {
+    $questions = new Collection([
         (object) [
             'id' => 1,
-            'attempts' => collect([
-                (object) ['answer' => (object) ['correct' => 0]],
-                (object) ['answer' => (object) ['correct' => 0]],
-                (object) ['answer' => (object) ['correct' => 1]],
-            ]),
+            'answers_count' => 5,
+            'attempts' => [
+                (object) ['answer' => (object) ['correct' => false]],
+                (object) ['answer' => (object) ['correct' => true]],
+            ],
         ],
         (object) [
             'id' => 2,
-            'attempts' => collect([
-                (object) ['answer' => (object) ['correct' => 0]],
-                (object) ['answer' => (object) ['correct' => 0]],
-            ]),
+            'answers_count' => 10,
+            'attempts' => [
+                (object) ['answer' => (object) ['correct' => false]],
+                (object) ['answer' => (object) ['correct' => false]],
+                (object) ['answer' => (object) ['correct' => true]],
+            ],
         ],
     ]);
 
-    $scoring = (new LinearDecayScoring(step: 25))->scoreQuestions($questions);
+    $scoring = new LinearDecayScoring();
+    $result = $scoring->scoreQuestions($questions);
 
-    expect($scoring['questionScores'][1])->toBe(50)
-        ->and($scoring['questionScores'][2])->toBe(0)
-        ->and($scoring['total'])->toBe(25.0);
+    expect($result['questionScores'][1])->toBe(80);
+    expect($result['questionScores'][2])->toBe(80);
+    expect($result['total'])->toBe(80.0);
 });

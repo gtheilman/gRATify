@@ -1,3 +1,4 @@
+// Markdown renderer with KaTeX + emoji support for student-facing content.
 import MarkdownIt from 'markdown-it'
 import asciimathToLatex from 'asciimath-to-latex'
 import { full as emojiPlugin } from 'markdown-it-emoji'

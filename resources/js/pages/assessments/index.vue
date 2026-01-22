@@ -1,4 +1,5 @@
 <script setup>
+// Handles admin backup downloads with blob responses and user-facing status messaging.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAssessmentsStore } from '@/stores/assessments'
@@ -6,6 +7,18 @@ import { useAuthStore } from '@/stores/auth'
 import { useOffline } from '@/composables/useOffline'
 import { useApi } from '@/composables/useApi'
 import ErrorNotice from '@/components/ErrorNotice.vue'
+import { getErrorMessage } from '@/utils/apiError'
+import { fetchBlobOrThrow } from '@/utils/http'
+import { getAssessmentPageCount, paginateAssessments } from '@/utils/assessmentsPagination'
+import { isAssessmentLocked } from '@/utils/assessmentLocking'
+import { filterAssessments } from '@/utils/assessmentFilters'
+import { sortAssessments } from '@/utils/assessmentSorting'
+import { clearDeleteDialog } from '@/utils/deleteDialog'
+import { parseFilenameFromDisposition } from '@/utils/contentDisposition'
+import { defaultPageSizeOptions } from '@/utils/pageSizeOptions'
+import { shouldResetPageOnPageSizeChange, shouldResetPageOnToggle } from '@/utils/paginationReset'
+import { getActiveFilterLabel } from '@/utils/assessmentFilterLabels'
+import { formatScheduledDate } from '@/utils/dateLabels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -24,30 +37,23 @@ const shortLinkProvider = computed({
   set: value => assessmentsStore.setShortLinkProvider(value),
 })
 const showShortLinkToggle = computed(() => shortLinkConfig.value.bitly && shortLinkConfig.value.tinyurl)
-const pageSizeOptions = [
-  { label: '10', value: 10 },
-  { label: '25', value: 25 },
-  { label: '50', value: 50 },
-  { label: 'All', value: 'all' },
-]
+const pageSizeOptions = defaultPageSizeOptions
 const pageSize = ref(10)
 const currentPage = ref(1)
+watch(pageSize, (next, prev) => {
+  if (shouldResetPageOnPageSizeChange(prev, next))
+    currentPage.value = 1
+})
+
+watch(showEditableOnly, (next, prev) => {
+  if (shouldResetPageOnToggle(prev, next))
+    currentPage.value = 1
+})
 const filteredAssessments = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase()
-  return assessments.value.filter(item => {
-    const haystack = [
-      item.owner_username,
-      item.title,
-      item.course,
-      item.scheduled_at,
-      item.active ? 'active' : 'inactive',
-    ].join(' ').toLowerCase()
-    const matchesSearch = !term || haystack.includes(term)
-    const matchesActive = activeFilter.value === 'all'
-      || (activeFilter.value === 'active' && item.active)
-      || (activeFilter.value === 'inactive' && !item.active)
-    const matchesLocked = !showEditableOnly.value || !isLocked(item)
-    return matchesSearch && matchesActive && matchesLocked
+  return filterAssessments(assessments.value, {
+    term: searchTerm.value,
+    activeFilter: activeFilter.value,
+    showEditableOnly: showEditableOnly.value,
   })
 })
 
@@ -56,51 +62,8 @@ const sortState = ref({
   direction: 'asc', // 'asc' | 'desc'
 })
 
-const sorters = {
-  title: (a, b, dir) => {
-    const res = (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
-    return dir === 'asc' ? res : -res
-  },
-  course: (a, b, dir) => {
-    const res = (a.course || '').localeCompare(b.course || '', undefined, { sensitivity: 'base' })
-    return dir === 'asc' ? res : -res
-  },
-  owner: (a, b, dir) => {
-    const res = (a.owner_username || '').localeCompare(b.owner_username || '', undefined, { sensitivity: 'base' })
-    return dir === 'asc' ? res : -res
-  },
-  scheduled_at: (a, b, dir) => {
-    const da = a.scheduled_at ? new Date(a.scheduled_at).getTime() : 0
-    const db = b.scheduled_at ? new Date(b.scheduled_at).getTime() : 0
-  const res = da - db
-  return dir === 'asc' ? res : -res
-},
-  active: (a, b, dir) => {
-    const av = a.active ? 1 : 0
-    const bv = b.active ? 1 : 0
-    const res = av - bv
-    return dir === 'asc' ? res : -res
-  },
-  actions: (a, b, dir) => {
-    // Sort locked (has responses) vs unlocked
-    const av = isLocked(a) ? 1 : 0
-    const bv = isLocked(b) ? 1 : 0
-    const res = av - bv
-    if (res !== 0)
-      return dir === 'asc' ? res : -res
-    // fallback by title for stability
-    const t = (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
-    return dir === 'asc' ? t : -t
-  },
-}
-
 const sortedAssessments = computed(() => {
-  const key = sortState.value.key
-  const dir = sortState.value.direction
-  const sorter = sorters[key]
-  if (!sorter)
-    return filteredAssessments.value
-  return [...filteredAssessments.value].sort((a, b) => sorter(a, b, dir))
+  return sortAssessments(filteredAssessments.value, sortState.value.key, sortState.value.direction)
 })
 
 const toggleSort = key => {
@@ -111,17 +74,8 @@ const toggleSort = key => {
     sortState.value.direction = 'asc'
   }
 }
-const pageCount = computed(() => {
-  if (pageSize.value === 'all')
-    return 1
-  return Math.max(1, Math.ceil(filteredAssessments.value.length / pageSize.value))
-})
-const paginatedAssessments = computed(() => {
-  if (pageSize.value === 'all')
-    return sortedAssessments.value
-  const start = (currentPage.value - 1) * pageSize.value
-  return sortedAssessments.value.slice(start, start + pageSize.value)
-})
+const pageCount = computed(() => getAssessmentPageCount(filteredAssessments.value.length, pageSize.value))
+const paginatedAssessments = computed(() => paginateAssessments(sortedAssessments.value, pageSize.value, currentPage.value))
 
 const isAdmin = computed(() => {
   const role = authStore.user?.role
@@ -129,7 +83,7 @@ const isAdmin = computed(() => {
   return normalized === 'admin'
 })
 const listNeedsRefresh = computed(() => {
-  const message = assessmentsStore.error?.message || assessmentsStore.error || ''
+  const message = getErrorMessage(assessmentsStore.error, '')
   return String(message).includes('Session expired')
 })
 
@@ -162,28 +116,12 @@ const downloadBackup = async () => {
     await authStore.ensureSession()
     if (!authStore.user)
       throw new Error('You must be logged in as an admin to download a backup.')
-    const headers = { Accept: 'application/json' }
-    const resp = await fetch(`/api/admin/backup/download`, {
-      headers,
+    const { blob, response } = await fetchBlobOrThrow('/api/admin/backup/download', {
       method: 'GET',
-      credentials: 'same-origin',
     })
-    const contentType = resp.headers.get('content-type') || ''
-    if (!resp.ok) {
-      const msg = contentType.includes('json') ? (await resp.json())?.message : await resp.text()
-      if (resp.status === 401 || resp.status === 403) {
-        backupAuthNeeded.value = true
-        throw new Error(msg || 'Unauthorized: please sign in again.')
-      }
-      if (resp.status >= 500) {
-        throw new Error(msg || 'Server error: unable to download backup right now.')
-      }
-      throw new Error(msg || 'Unable to download backup')
-    }
+    const contentType = response.headers.get('content-type') || ''
     if (contentType.includes('html'))
       throw new Error('Received HTML instead of backup; check authentication and API route.')
-
-    const blob = await resp.blob()
     backupSlow.value = false
     backupSuccess.value = 'Downloading SQL backup\n'
       + 'To avoid accidental overwrites, this application does not have a "restore database" function.\n'
@@ -191,9 +129,8 @@ const downloadBackup = async () => {
       + '(e.g., PHPMyAdmin, MySQL CLI, Adminer, DBeaver, pgAdmin).'
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
-    const contentDisposition = resp.headers.get('content-disposition') || ''
-    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/i)
-    const filename = filenameMatch?.[1] || 'db-backup.sql.gz'
+    const contentDisposition = response.headers.get('content-disposition') || ''
+    const filename = parseFilenameFromDisposition(contentDisposition, 'db-backup.sql.gz')
     a.href = url
     a.download = filename
     document.body.appendChild(a)
@@ -201,7 +138,9 @@ const downloadBackup = async () => {
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
   } catch (err) {
-    backupError.value = err?.message || 'Unable to download backup'
+    if (err?.status === 401 || err?.status === 403)
+      backupAuthNeeded.value = true
+    backupError.value = getErrorMessage(err, 'Unable to download backup')
   } finally {
     backupLoading.value = false
     if (backupSlowTimer) {
@@ -216,22 +155,10 @@ watch(filteredAssessments, () => {
 })
 
 const activeFilterLabel = computed(() => {
-  if (activeFilter.value === 'active')
-    return 'Active only'
-  if (activeFilter.value === 'inactive')
-    return 'Inactive only'
-  return 'All statuses'
+  return getActiveFilterLabel(activeFilter.value)
 })
 
-const formatScheduled = value => {
-  if (!value)
-    return ''
-  const dateFromIso = new Date(value)
-  if (!Number.isNaN(dateFromIso))
-    return dateFromIso.toISOString().slice(0, 10)
-  const maybeDate = String(value).split('T')[0]
-  return maybeDate || value
-}
+const formatScheduled = value => formatScheduledDate(value)
 
 const loadShortLinkConfig = async () => {
   try {
@@ -279,7 +206,7 @@ const addNewAssessment = async () => {
       router.push({ name: 'assessments-id', params: { id: created.id } })
   }
   catch (err) {
-    assessmentsActionError.value = err?.message || 'Unable to create assessment'
+    assessmentsActionError.value = getErrorMessage(err, 'Unable to create assessment')
   }
 }
 
@@ -287,13 +214,7 @@ const goToEdit = assessment => {
   router.push({ name: 'assessments-id', params: { id: assessment.id } })
 }
 
-const hasResponses = assessment => {
-  // Many backends return counts on the assessment; fall back to arrays if present
-  const presentationCount = Number(assessment.presentations_count ?? assessment.attempts_count ?? 0)
-  const hasPresentationsArray = Array.isArray(assessment.presentations) && assessment.presentations.length > 0
-  const hasAttemptsArray = Array.isArray(assessment.attempts) && assessment.attempts.length > 0
-  return presentationCount > 0 || hasPresentationsArray || hasAttemptsArray
-}
+const hasResponses = assessment => isAssessmentLocked(assessment)
 
 const goToPassword = assessment => {
   router.push({ name: 'assessment-password', params: { id: assessment.id } })
@@ -311,13 +232,7 @@ const goToScores = assessment => {
   router.push({ name: 'assessment-scores', params: { id: assessment.id } })
 }
 
-const isLocked = assessment => {
-  // Lock if there are any presentations/attempts recorded
-  const presentationCount = Number(assessment.presentations_count ?? assessment.attempts_count ?? 0)
-  const hasPresentationsArray = Array.isArray(assessment.presentations) && assessment.presentations.length > 0
-  const hasAttemptsArray = Array.isArray(assessment.attempts) && assessment.attempts.length > 0
-  return presentationCount > 0 || hasPresentationsArray || hasAttemptsArray
-}
+const isLocked = assessment => isAssessmentLocked(assessment)
 
 const showDeleteConfirm = ref(false)
 const pendingDelete = ref(null)
@@ -328,8 +243,7 @@ const startDelete = assessment => {
 }
 
 const cancelDelete = () => {
-  pendingDelete.value = null
-  showDeleteConfirm.value = false
+  clearDeleteDialog(pendingDelete, showDeleteConfirm)
 }
 
 const performDelete = async () => {
@@ -367,7 +281,7 @@ const toggleActive = async assessment => {
       memo: assessment.memo,
     })
   } catch (err) {
-    assessmentsActionError.value = err?.message || 'Unable to update assessment status'
+    assessmentsActionError.value = getErrorMessage(err, 'Unable to update assessment status')
   } finally {
     togglingActiveId.value = null
   }
@@ -425,7 +339,7 @@ const toggleActive = async assessment => {
 
       <ErrorNotice
         v-if="assessmentsStore.error"
-        :message="assessmentsStore.error?.message || assessmentsStore.error"
+        :message="getErrorMessage(assessmentsStore.error, '')"
         :show-refresh="listNeedsRefresh"
         @close="assessmentsStore.error = null"
         @retry="assessmentsStore.fetchAssessments"
@@ -1073,6 +987,7 @@ const toggleActive = async assessment => {
 
 .elevated-table tbody td[data-label="Title"],
 .elevated-table tbody td[data-label="Course"],
+.elevated-table tbody td[data-label="Owner"],
 .elevated-table tbody td[data-label="Scheduled"] {
   font-size: 0.75rem;
 }

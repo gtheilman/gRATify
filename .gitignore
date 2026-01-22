@@ -38,6 +38,7 @@ storage/framework/sessions/
 storage/framework/views/
 !storage/framework/views/.gitkeep
 storage/*.key
+storage/phpstan/
 .phpunit.result.cache
 
 # ---- Env / secrets ----

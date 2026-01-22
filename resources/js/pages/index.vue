@@ -13,7 +13,7 @@
         </VAlert>
         <div class="home-title mb-6 d-flex align-center gap-4">
           <img
-            src="/gratify-logo-300x90.png"
+            :src="gratifyLogo"
             alt="gRATify"
             height="60"
           />
@@ -42,12 +42,15 @@
 
         <VCard class="home-card" elevation="2">
           <VCardText class="text-center">
-            <VImg
+            <img
               :src="tblProcess"
               alt="TBL Process"
               class="mx-auto tbl-image"
-              contain
-              max-height="360"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              width="800"
+              height="253"
             />
           </VCardText>
         </VCard>
@@ -57,31 +60,34 @@
 </template>
 
 <script setup>
+// Home page: fetches demo warning lazily to avoid delaying initial paint.
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
-import tblProcess from '../../assets/images/TBL_Process.png'
+import { resolveDemoWarningState, readDemoWarningCache, writeDemoWarningCache, applyDemoWarningFallback } from '@/utils/demoWarning'
+import tblProcess from '../../assets/images/TBL_Process.webp'
+import gratifyLogo from '../../assets/images/gratify-logo-300x90.webp'
 
 // Start hidden to avoid flash; visibility is decided after we fetch the flag.
 const showDemoWarning = ref(false)
-const demoWarningCacheKey = 'demo-warning-state'
-
 const fetchDemoWarning = async () => {
   try {
     const { data } = await axios.get('/api/demo-warning')
-    const shouldShow = !!data?.showWarning || !!data?.showDemoUsers
+    const shouldShow = resolveDemoWarningState(data)
     showDemoWarning.value = shouldShow
-    sessionStorage.setItem(demoWarningCacheKey, shouldShow ? '1' : '0')
+    writeDemoWarningCache(shouldShow)
   } catch (e) {
-    showDemoWarning.value = true
+    // Default to showing the warning if the status is unknown.
+    showDemoWarning.value = applyDemoWarningFallback()
   }
 }
 
 onMounted(() => {
-  const cached = sessionStorage.getItem(demoWarningCacheKey)
+  const cached = readDemoWarningCache()
   if (cached !== null) {
-    showDemoWarning.value = cached === '1'
+    showDemoWarning.value = cached
     return
   }
+  // Defer the network call until idle to avoid blocking first contentful paint.
   const schedule = window.requestIdleCallback || function (cb) { return setTimeout(cb, 150) }
   schedule(() => { fetchDemoWarning() })
 })

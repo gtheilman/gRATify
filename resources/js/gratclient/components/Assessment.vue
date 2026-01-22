@@ -42,6 +42,7 @@
 
 
 <script>
+// Renders the assessment carousel and tracks completion state from attempts.
 import Question from './Question.vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Navigation, Pagination, Keyboard } from 'swiper/modules'
@@ -109,6 +110,7 @@ export default {
       const attempts = Array.isArray(this.presentation?.attempts) ? this.presentation.attempts : []
       const answeredQuestionIds = []
       const answerIdToQuestionId = new Map()
+      // Build an answer->question lookup so attempts can mark completion.
       this.presentation.assessment.questions.forEach(q => {
         q.answers.forEach(ans => {
           answerIdToQuestionId.set(ans.id, q.id)

@@ -7,17 +7,24 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Throwable;
 
+/**
+ * Creates a compressed database backup across supported drivers.
+ */
 class GenerateDatabaseBackup implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     private ?string $targetPath = null;
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(private readonly array $config, ?string $targetPath = null)
     {
         $this->targetPath = $targetPath;
@@ -29,6 +36,7 @@ class GenerateDatabaseBackup implements ShouldQueue
         $disk->makeDirectory('backups');
         $backupDir = $disk->path('backups');
         if (! is_dir($backupDir) || ! is_writable($backupDir)) {
+            // Fail fast to avoid spawning dump processes when storage isn't writable.
             throw new \RuntimeException(
                 'Backup failed: storage/app/private/backups is not writable. '
                 . 'Ensure the directory exists and is writable by the app user.'
@@ -45,6 +53,7 @@ class GenerateDatabaseBackup implements ShouldQueue
             return $this->backupSqlsrv($disk, $backupDir);
         }
 
+        // MySQL/Postgres path: run the native client, then compress output.
         [$command, $env] = $this->buildDumpCommand($driver, $this->config);
 
         $process = new Process($command);
@@ -57,6 +66,9 @@ class GenerateDatabaseBackup implements ShouldQueue
 
         $sql = $process->getOutput();
         $compressed = gzencode($sql);
+        if ($compressed === false) {
+            throw new \RuntimeException('Backup failed: unable to compress dump output.');
+        }
 
         $filename = $this->targetPath ?: 'backups/db-backup-' . now()->format('Ymd_His') . '.sql.gz';
         $disk->put($filename, $compressed);
@@ -68,6 +80,7 @@ class GenerateDatabaseBackup implements ShouldQueue
     {
         $disk = Storage::disk('local');
         $disk->makeDirectory('backups');
+        // Persist a simple error log to aid support/debugging.
         $message = sprintf(
             "[%s] Backup job failed: %s\n",
             now()->toDateTimeString(),
@@ -76,6 +89,10 @@ class GenerateDatabaseBackup implements ShouldQueue
         $disk->append('backups/backup-errors.log', $message);
     }
 
+    /**
+     * @param array<string, mixed> $config
+     * @return array{0: list<string>, 1: array<string, string>}
+     */
     private function buildDumpCommand(string $driver, array $config): array
     {
         $finder = new ExecutableFinder();
@@ -110,7 +127,7 @@ class GenerateDatabaseBackup implements ShouldQueue
         };
     }
 
-    private function backupSqlite($disk): string
+    private function backupSqlite(FilesystemAdapter $disk): string
     {
         $dbPath = $this->config['database'] ?? '';
         if (! $dbPath || $dbPath === ':memory:') {
@@ -125,12 +142,16 @@ class GenerateDatabaseBackup implements ShouldQueue
         if ($sql === false) {
             throw new \RuntimeException("Backup failed: unable to read SQLite database at {$dbPath}.");
         }
-        $disk->put($filename, gzencode($sql));
+        $compressed = gzencode($sql);
+        if ($compressed === false) {
+            throw new \RuntimeException('Backup failed: unable to compress SQLite database.');
+        }
+        $disk->put($filename, $compressed);
 
         return $filename;
     }
 
-    private function backupSqlsrv($disk, string $backupDir): string
+    private function backupSqlsrv(FilesystemAdapter $disk, string $backupDir): string
     {
         $finder = new ExecutableFinder();
         $sqlcmd = $this->resolveBinary($finder, 'sqlcmd', 'SQL Server tools are not installed (sqlcmd not found).');
@@ -173,7 +194,12 @@ class GenerateDatabaseBackup implements ShouldQueue
             @unlink($bakPath);
             throw new \RuntimeException('Backup failed: unable to read SQL Server backup file.');
         }
-        $disk->put($filename, gzencode($bakContents));
+        $compressed = gzencode($bakContents);
+        if ($compressed === false) {
+            @unlink($bakPath);
+            throw new \RuntimeException('Backup failed: unable to compress SQL Server backup file.');
+        }
+        $disk->put($filename, $compressed);
         @unlink($bakPath);
 
         return $filename;

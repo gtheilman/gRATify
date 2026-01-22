@@ -1,8 +1,12 @@
 <script setup>
+// Handles self-service password updates with extra parsing for legacy error payloads.
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useApi } from '@/composables/useApi'
+import { getErrorMessage } from '@/utils/apiError'
+import { extractPasswordStatus } from '@/utils/changePassword'
+import { validateChangePasswordForm } from '@/utils/changePasswordValidation'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -22,17 +26,10 @@ const handleSuccessClose = () => {
   router.push({ name: 'assessments' })
 }
 
-const handleChange = async () => {
-  if (!authStore.user) {
-    errorMessage.value = 'You must be logged in.'
-    return
-  }
-  if (!form.value.old_password || !form.value.new_password || !form.value.new_password_confirmation) {
-    errorMessage.value = 'Please fill in all fields.'
-    return
-  }
-  if (form.value.new_password !== form.value.new_password_confirmation) {
-    errorMessage.value = 'New passwords do not match.'
+  const handleChange = async () => {
+  const validationMessage = validateChangePasswordForm(form.value, !!authStore.user)
+  if (validationMessage) {
+    errorMessage.value = validationMessage
     return
   }
   submitting.value = true
@@ -49,18 +46,7 @@ const handleChange = async () => {
       },
     })
     // Gather any status clues from success or error payloads
-    let statusFlag = data.value?.status || error.value?.data?.status || error.value?.status
-
-    // If still unknown and we have a response body, try to parse it
-    if (!statusFlag && error.value?.response?.clone) {
-      try {
-        const json = await error.value.response.clone().json()
-        statusFlag = json?.status
-      }
-      catch (parseErr) {
-        // ignore parse errors
-      }
-    }
+    const statusFlag = await extractPasswordStatus(data.value, error.value)
 
     if (statusFlag === 'invalid_old_password') {
       errorMessage.value = 'Current Password is Not Correct.'
@@ -70,6 +56,7 @@ const handleChange = async () => {
     if (error.value)
       throw error.value
 
+    // Treat any success response as a completed update.
     message.value = data.value?.status === 'ok' ? 'Password updated.' : 'Password updated.'
     form.value.old_password = ''
     form.value.new_password = ''
@@ -81,31 +68,12 @@ const handleChange = async () => {
   }
   catch (err) {
     // Attempt to parse invalid_old_password from error in catch as a final fallback
-    let statusFlag = err?.data?.status || err?.status
-    if (!statusFlag && err?.response?.clone) {
-      try {
-        const json = await err.response.clone().json()
-        statusFlag = json?.status || json?.message
-      }
-      catch (parseErr) {
-        // ignore parse errors
-      }
-    }
+    const statusFlag = await extractPasswordStatus(null, err)
     if (statusFlag === 'invalid_old_password') {
       errorMessage.value = 'Current Password is Not Correct.'
       return
     }
-    try {
-      const json = await err?.response?.clone()?.json()
-      if (json?.status === 'invalid_old_password') {
-        errorMessage.value = 'Current Password is Not Correct.'
-        return
-      }
-    }
-    catch (e) {
-      // ignore parse errors
-    }
-    errorMessage.value = err?.message || 'Unable to change password'
+    errorMessage.value = getErrorMessage(err, 'Unable to change password')
   }
   finally {
     submitting.value = false

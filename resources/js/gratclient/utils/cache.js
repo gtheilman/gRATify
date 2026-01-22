@@ -1,3 +1,4 @@
+// Caches the anonymous student ID per assessment password to preserve progress.
 const ID_KEY_PREFIX = 'client-identifier';
 const ID_TTL_MS = 20 * 60 * 1000; // 20 minutes
 

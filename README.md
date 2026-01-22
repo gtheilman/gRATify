@@ -1,4 +1,4 @@
-![gRATify](public/gratify-logo-200x60.png)
+![gRATify](resources/assets/images/gratify-logo-200x60.webp)
 # Group Readiness Assurance Testing
 
 **gRATify is a web application for administering group Readiness Assurance Tests (gRATs) in Team-Based Learning (TBL).**  
@@ -8,7 +8,7 @@
 * Visually tracks team progress in real time
 * Supports the instructor feedback phase by summarizing how teams answered each question on their first attempt. 
 
-![TBL](resources/assets/images/TBL_Process.png)
+![TBL](resources/assets/images/TBL_Process.webp)
 
 ---
 
@@ -34,14 +34,14 @@ Excellent explanations of the full TBL process are widely available in books and
 
 Need to use this format for images once repo is public.
 
-![TBL](resources/assets/images/assessments-screen.png)
-![TBL](resources/assets/images/assessment-edit.png)
-![TBL](resources/assets/images/url-screen.png)
-![TBL](resources/assets/images/client-view.png)
-![TBL](resources/assets/images/progress.png)
-![TBL](resources/assets/images/feedback.png)
-![TBL](resources/assets/images/scores.png)
-![TBL](resources/assets/images/users.png)
+![TBL](resources/assets/images/assessments-screen.webp)
+![TBL](resources/assets/images/assessment-edit.webp)
+![TBL](resources/assets/images/url-screen.webp)
+![TBL](resources/assets/images/client-view.webp)
+![TBL](resources/assets/images/progress.webp)
+![TBL](resources/assets/images/feedback.webp)
+![TBL](resources/assets/images/scores.webp)
+![TBL](resources/assets/images/users.webp)
 ---
 
 [Online Demo](https://gRATify-app.com):     Let's you login and look around.  Resets every night. 
@@ -219,8 +219,8 @@ Then, use these commands in the same directory as your `.env` file:
 
 ```bash
 docker run --rm \
-  -v /absolute/path/to-your/.env:/var/www/html/.env \
-  --env-file /absolute/path/to/.env \
+  -v "$(pwd)/.env":/var/www/html/.env \
+  --env-file "$(pwd)/.env" \
   ghcr.io/gtheilman/gratify:latest \
   php artisan migrate --force
 ```
@@ -229,8 +229,8 @@ docker run --rm \
 
 ```bash
 docker run --rm \
-  -v /absolute/path/to/.env:/var/www/html/.env \
-  --env-file /absolute/path/to/.env \
+  -v "$(pwd)/.env":/var/www/html/.env \
+  --env-file "$(pwd)/.env" \
   ghcr.io/gtheilman/gratify:latest \
   php artisan db:seed --force
 ```
@@ -293,6 +293,47 @@ services:
 #     docker compose run --rm gratify php artisan db:seed --force
 
 ```
+
+I find it helpful add this above the *gratify* section to automatically clear and rebuild routes, views and caches.  
+
+
+```yaml
+services:
+  gratify_cache:
+    image: ghcr.io/gtheilman/gratify:latest
+    container_name: gratify_cache
+    restart: "no"
+    volumes:
+      - ./:/work
+      - ./.env:/var/www/html/.env
+    env_file:
+      - ./.env
+    working_dir: /var/www/html
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+
+        php artisan config:clear
+        php artisan route:clear
+        php artisan view:clear
+        php artisan event:clear
+
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
+        php artisan event:cache
+
+  gratify:
+    image: ghcr.io/gtheilman/gratify:latest
+  
+  And so on . . . 
+
+ 
+
+```
+
 
 
 ## First Login
@@ -469,15 +510,19 @@ I use "geometric decline" scoring.
 - Needing three guesses gives 25% credit
 - Needing four guesses givess 12.5% credit.
 
-You can also choose "linear decline".  For  question with four possible answers:
-- Picking the correct answer on the first try give full credit
-- Needing two guesses gives 75% credit
-- Needing three guesses gives 50% credit
-- Needing four guesses givess 25% credit.
+You can also choose "linear decline". The drop per wrong attempt is based on the **number of answer choices**:
+- With 10 answers: 100 → 90 → 80 → 70 → ... 10  (minus 10 each miss)
+- With 5 answers: 100 → 80 → 60 → 40 → 20  (minus 20 each miss)
 
-The program does not show students scores.   So, you are free to change the scoring method to whatever you like before you enter them into your LMS (Canvas, Blackboard)
+I've also added "linear decline with zeros". This was in response to some people who were a bit indignant that students would get any credit at all if they had to click on every single choice before finding the correct answer:
+- With 5 answers: 100 → 80 → 60 → 40 → 0 (minus 20 each miss but zero if all possible choices were clicked).
+- With 10 answers: 100 → 90 → 80 → 70 → ... 0 (minus 10 each miss but zero if all possible choices were clicked).
+
+
+The program does not display scores to students.  So, you are free to change the scoring method to whatever you like before you enter them into your LMS (Canvas, Blackboard)
 
 ---
+
 ## Users
 You can create as many accounts for different users as you like.  
   - "Editors" can only see the the gRATs they've created

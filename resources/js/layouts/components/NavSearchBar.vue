@@ -2,6 +2,7 @@
 import Shepherd from 'shepherd.js'
 import { withQuery } from 'ufo'
 import { useConfigStore } from '@core/stores/config'
+import { shouldFetchSearchResults } from '@/utils/searchFetch'
 
 defineOptions({
   inheritAttrs: false,
@@ -142,6 +143,12 @@ const router = useRouter()
 const searchResult = ref([])
 
 const fetchResults = async () => {
+  if (!shouldFetchSearchResults(searchQuery.value)) {
+    searchResult.value = []
+    isLoading.value = false
+    return
+  }
+
   isLoading.value = true
 
   const { data } = await useApi(withQuery('/app-bar/search', { q: searchQuery.value }))

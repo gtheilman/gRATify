@@ -22,7 +22,7 @@ class AnswerPolicy
         return $this->isAdmin($user) || $answer->question?->assessment?->user_id === $user->id;
     }
 
-    public function create(User $user, Answer $answer = null): bool
+    public function create(User $user, ?Answer $answer = null): bool
     {
         $ownerId = $answer?->question?->assessment?->user_id;
         return $this->isAdmin($user) || ($ownerId && $ownerId === $user->id);

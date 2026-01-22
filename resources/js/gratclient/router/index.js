@@ -8,6 +8,7 @@ const NotFound = {
   render: () => h('div', 'not found')
 }
 
+// Client routes keep the URL short and accept the assessment password as a param.
 const routes = [
   {
     path: '/:password',
@@ -26,6 +27,7 @@ const routes = [
   }
 ]
 
+// Allows hosting the client under a configurable base path.
 const base = import.meta.env.VITE_CLIENT_BASE || '/client'
 
 const router = createRouter({

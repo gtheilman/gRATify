@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
@@ -10,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Auth endpoints with extra logic for seeded admin credentials.
+ */
 class AuthController extends Controller
 {
     public function login(LoginRequest $request): JsonResponse
@@ -18,7 +22,7 @@ class AuthController extends Controller
         $remember = (bool) ($request->validated()['remember'] ?? false);
 
         if (! Auth::guard('web')->attempt($credentials, $remember)) {
-            return response()->json(['error' => 'unauthorized'], 401);
+            return $this->errorResponse('unauthenticated', null, 401);
         }
 
         if ($request->hasSession()) {
@@ -26,6 +30,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::guard('web')->user();
+        // Flag demo/seeded admin credentials so UI can force a reset.
         $forcePasswordReset = $this->shouldForcePasswordReset($user);
 
         return response()->json([
@@ -34,15 +39,17 @@ class AuthController extends Controller
         ]);
     }
 
-    public function me(): JsonResponse
+    public function me(Request $request): JsonResponse
     {
         if (! Auth::guard('web')->check()) {
-            return response()->json(['error' => 'unauthorized'], 401);
+            return $this->errorResponse('unauthenticated', null, 401);
         }
 
         $user = Auth::guard('web')->user();
-        $payload = $user ? $user->toArray() : [];
-        $payload['force_password_reset'] = $this->shouldForcePasswordReset($user);
+        $forcePasswordReset = $this->shouldForcePasswordReset($user);
+
+        $payload = UserResource::make($user)->toArray($request);
+        $payload['force_password_reset'] = $forcePasswordReset;
 
         return response()->json($payload);
     }
@@ -50,7 +57,7 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         if (! Auth::guard('web')->check()) {
-            return response()->json(['error' => 'unauthorized'], 401);
+            return $this->errorResponse('unauthenticated', null, 401);
         }
 
         Auth::guard('web')->logout();

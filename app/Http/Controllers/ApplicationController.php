@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
+/**
+ * SPA entry point that blocks legacy paths and adds cache headers for clients/assets.
+ */
 class ApplicationController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): Response
     {
         $path = $request->path();
 

@@ -1,3 +1,4 @@
+// Legacy API wrapper used by some older components (kept for compatibility).
 import { ofetch } from 'ofetch'
 import { getXsrfToken } from '@/utils/csrf'
 

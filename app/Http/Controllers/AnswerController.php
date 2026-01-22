@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AnswerReorderRequest;
 use App\Http\Requests\StoreAnswerRequest;
 use App\Http\Requests\UpdateAnswerRequest;
 use App\Models\Answer;
-use App\Models\Assessment;
 use App\Models\Question;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Handles answer CRUD plus ordering helpers for the editor UI.
+ */
 class AnswerController extends Controller
 {
     public function __construct()
@@ -20,9 +25,9 @@ class AnswerController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function index()
+    public function index(): void
     {
         //
     }
@@ -30,39 +35,41 @@ class AnswerController extends Controller
     /**
      * Figure out what sequence number to assign
      *
-     * @return integer
+     * @return int
      */
-    public function maxAnswerNumber($question_id)
+    public function maxAnswerNumber(int $question_id): int
     {
-        return DB::table('answers')
+        return (int) (DB::table('answers')
             ->where('question_id', '=', $question_id)
-            ->max('sequence');
+            ->max('sequence') ?? 0);
     }
 
     /**
      * Get All answers in the question in sequence
      *
-     * @param integer $question_id
-     * @return
+     * @param int $question_id
+     * @return \Illuminate\Support\Collection<int, \App\Models\Answer>
      */
-    public function getAllAnswers($question_id)
+    public function getAllAnswers(int $question_id): Collection
     {
-        $answers = Answer::all()
-            ->where('question_id', $question_id);
-        return $answers->sortBy('sequence');
+        return Answer::query()
+            ->where('question_id', $question_id)
+            ->orderBy('sequence')
+            ->get();
     }
 
     /**
      * Renumber the answers
      *
-     * @param integer $question_id
-     * @return boolean
+     * @param int $question_id
+     * @return bool
      */
-    public function renumberAnswers($question_id)
+    public function renumberAnswers(int $question_id): bool
     {
 
         $answers = $this->getAllAnswers($question_id);
 
+        // Keep sequence numbers contiguous after inserts/deletes/reorders.
         $newNumber = 1;
         foreach ($answers as $answer) {
             $answer->sequence = $newNumber;
@@ -77,9 +84,9 @@ class AnswerController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function create()
+    public function create(): void
     {
         //
     }
@@ -87,26 +94,27 @@ class AnswerController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return string
+     * @param \App\Http\Requests\StoreAnswerRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreAnswerRequest $request)
+    public function store(StoreAnswerRequest $request): JsonResponse
     {
 
-        $question = Question::find($request->question_id);
+        $questionId = (int) $request->get('question_id');
+        $question = Question::query()->whereKey($questionId)->first();
         if (!$question) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
         $this->authorize('create', new Answer(['question_id' => $question->id, 'question' => $question]));
 
-        $maxAnswerNumber = $this->maxAnswerNumber($request->question_id);
+        $maxAnswerNumber = $this->maxAnswerNumber($questionId);
         $answer = new Answer([
             'answer_text' => $request->answer_text,
             'feedback' => $request->get('feedback'),
             'correct' => $request->boolean('correct'),
             'sequence' => $maxAnswerNumber + 1,
-            'question_id' => $question->id,
+            'question_id' => $questionId,
         ]);
 
         $answer->save();
@@ -121,10 +129,10 @@ class AnswerController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param \App\Answer $answer
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\Answer $answer
+     * @return void
      */
-    public function show(Answer $answer)
+    public function show(Answer $answer): void
     {
         //
     }
@@ -132,10 +140,10 @@ class AnswerController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param \App\Answer $answer
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\Answer $answer
+     * @return void
      */
-    public function edit(Answer $answer)
+    public function edit(Answer $answer): void
     {
         //
     }
@@ -143,15 +151,15 @@ class AnswerController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param
-     * @return string
+     * @param \App\Http\Requests\UpdateAnswerRequest $request
+     * @param \App\Models\Answer $answer
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(UpdateAnswerRequest $request, Answer $answer)
+    public function update(UpdateAnswerRequest $request, Answer $answer): JsonResponse
     {
         $question = Question::find($answer->question_id);
         if (!$question) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
         $this->authorize('update', $answer);
@@ -174,10 +182,10 @@ class AnswerController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param integer $answer_id
-     * @return string
+     * @param \App\Models\Answer $answer
+     * @return \Illuminate\Http\Response
      */
-    public function destroy(Answer $answer)
+    public function destroy(Answer $answer): Response
     {
         $this->authorize('delete', $answer);
 
@@ -189,15 +197,15 @@ class AnswerController extends Controller
     /**
      * Move an answer up in sequence.
      */
-    public function promote(\App\Http\Requests\AnswerReorderRequest $request)
+    public function promote(AnswerReorderRequest $request): JsonResponse
     {
-        $answer_id = $request->get('answer_id');
-        $question_id = $request->get('question_id');
+        $answer_id = (int) $request->get('answer_id');
+        $question_id = (int) $request->get('question_id');
         $answer = Answer::find($answer_id);
         if (!$answer) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
-        if ($answer->question_id !== (int) $question_id) {
+        if ($answer->question_id !== $question_id) {
             return response()->json([
                 'message' => 'Answer does not belong to question.',
                 'errors' => ['question_id' => ['Answer does not belong to question.']],
@@ -209,6 +217,7 @@ class AnswerController extends Controller
         $oldSequence = $answer->sequence;
         $answers = $this->getAllAnswers($question_id);
 
+        // Swap sequence values to move an answer "up" (lower sequence).
         foreach ($answers as $current) {
             if ($current->sequence == ($oldSequence - 1)) {
                 $current->sequence = $current->sequence + 1;
@@ -224,15 +233,15 @@ class AnswerController extends Controller
     /**
      * Move an answer down in sequence.
      */
-    public function demote(\App\Http\Requests\AnswerReorderRequest $request)
+    public function demote(AnswerReorderRequest $request): JsonResponse
     {
-        $answer_id = $request->get('answer_id');
-        $question_id = $request->get('question_id');
+        $answer_id = (int) $request->get('answer_id');
+        $question_id = (int) $request->get('question_id');
         $answer = Answer::find($answer_id);
         if (!$answer) {
-            return response()->json(['status' => 'Not Found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
-        if ($answer->question_id !== (int) $question_id) {
+        if ($answer->question_id !== $question_id) {
             return response()->json([
                 'message' => 'Answer does not belong to question.',
                 'errors' => ['question_id' => ['Answer does not belong to question.']],
@@ -244,6 +253,7 @@ class AnswerController extends Controller
         $oldSequence = $answer->sequence;
         $answers = $this->getAllAnswers($question_id);
 
+        // Swap sequence values to move an answer "down" (higher sequence).
         foreach ($answers as $current) {
             if ($current->sequence == ($oldSequence + 1)) {
                 $current->sequence = $current->sequence - 1;

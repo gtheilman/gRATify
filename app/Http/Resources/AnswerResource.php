@@ -5,6 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Full answer payload for editor/admin views (includes correctness + feedback).
+ *
+ * @mixin \App\Models\Answer
+ */
 class AnswerResource extends JsonResource
 {
     public static $wrap = null;

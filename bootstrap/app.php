@@ -13,6 +13,12 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Auth\Middleware\Authenticate;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use App\Support\Errors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -51,5 +57,41 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return Errors::response(Errors::UNAUTHENTICATED, 401);
+            }
+        });
+
+        $exceptions->render(function (AuthorizationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return Errors::response(Errors::FORBIDDEN, 403);
+            }
+        });
+
+        $exceptions->render(function (ModelNotFoundException|NotFoundHttpException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return Errors::response(Errors::NOT_FOUND, 404);
+            }
+        });
+
+        $exceptions->render(function (HttpExceptionInterface $e, $request) {
+            if (! ($request->expectsJson() || $request->is('api/*'))) {
+                return null;
+            }
+
+            $status = $e->getStatusCode();
+            $codeMap = [
+                401 => Errors::UNAUTHENTICATED,
+                403 => Errors::FORBIDDEN,
+                404 => Errors::NOT_FOUND,
+                423 => Errors::LOCKED,
+            ];
+
+            if (! isset($codeMap[$status])) {
+                return null;
+            }
+
+            return Errors::response($codeMap[$status], $status);
+        });
     })->create();

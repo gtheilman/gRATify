@@ -5,8 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Admin user management plus self-service password updates.
+ */
 class UserController extends Controller
 {
     public function __construct()
@@ -18,9 +24,9 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index()
+    public function index(): AnonymousResourceCollection
     {
         $this->authorize('viewAny', User::class);
         $users = User::withCount('assessments')->get();
@@ -31,9 +37,9 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function create()
+    public function create(): void
     {
         //
     }
@@ -42,9 +48,9 @@ class UserController extends Controller
      * Store a newly created resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function store(Request $request)
+    public function store(Request $request): void
     {
         //
     }
@@ -52,10 +58,10 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\User $user
+     * @return \App\Http\Resources\UserResource
      */
-    public function show(User $user)
+    public function show(User $user): UserResource
     {
         return new UserResource($user);
     }
@@ -64,9 +70,9 @@ class UserController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function edit($id)
+    public function edit(int $id): void
     {
 
 
@@ -75,11 +81,11 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $user_id
-     * @return \Illuminate\Http\Response
+     * @param \App\Http\Requests\UpdateUserRequest $request
+     * @param \App\Models\User $user
+     * @return \App\Http\Resources\UserResource
      */
-    public function update(\App\Http\Requests\UpdateUserRequest $request, User $user)
+    public function update(\App\Http\Requests\UpdateUserRequest $request, User $user): UserResource
     {
         $user->role = $request->input('role', $user->role);
         $user->name = $request->input('name', $user->name);
@@ -94,10 +100,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param \App\Models\User $user
+     * @return \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
      */
-    public function destroy(User $user)
+    public function destroy(User $user): Response|JsonResponse
     {
         if ($user->assessments()->exists()) {
             return response()->json([
@@ -113,19 +119,20 @@ class UserController extends Controller
     /**
      * change password by user
      *
-     * @param Request $request
-     * @return boolean
+     * @param \App\Http\Requests\ChangePasswordRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function changePassword(\App\Http\Requests\ChangePasswordRequest $request)
+    public function changePassword(\App\Http\Requests\ChangePasswordRequest $request): JsonResponse
     {
-        $user = User::find($request['user_id']);
+        $userId = (int) $request['user_id'];
+        $user = User::find($userId);
         if (! $user) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
         $this->authorize('update', $user);
 
-        // allow self-service or admin override
+        // Allow self-service or admin override.
         $isAdmin = auth('web')->user()?->isAdmin();
         if ($isAdmin || Hash::check($request->input('old_password'), $user->password)) {
             $user->password = Hash::make($request->input('new_password'));
@@ -139,19 +146,20 @@ class UserController extends Controller
     /**
      * change password by admin
      *
-     * @param Request $request
-     * @return boolean
+     * @param \App\Http\Requests\AdminChangePasswordRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function adminChangePassword(\App\Http\Requests\AdminChangePasswordRequest $request)
+    public function adminChangePassword(\App\Http\Requests\AdminChangePasswordRequest $request): JsonResponse
     {
         $admin = auth('web')->user();
         if (! $admin || ! $admin->isAdmin()) {
             abort(403, 'Forbidden');
         }
 
-        $user = User::find($request['user_id']);
+        $userId = (int) $request['user_id'];
+        $user = User::find($userId);
         if (! $user) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
         $user->password = Hash::make($request['new_password']);
@@ -163,10 +171,10 @@ class UserController extends Controller
     /**
      * admin registers user
      *
-     * @param Request $request
-     * @return boolean
+     * @param \App\Http\Requests\RegisterUserRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function registerUser(\App\Http\Requests\RegisterUserRequest $request)
+    public function registerUser(\App\Http\Requests\RegisterUserRequest $request): JsonResponse
     {
         $this->authorize('create', User::class);
         $user = new User();

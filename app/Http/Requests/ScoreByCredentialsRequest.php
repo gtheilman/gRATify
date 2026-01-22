@@ -11,6 +11,9 @@ class ScoreByCredentialsRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -21,6 +24,9 @@ class ScoreByCredentialsRequest extends FormRequest
 
     /**
      * Include route parameters in validation data for GET requests.
+     */
+    /**
+     * @return array<string, mixed>
      */
     public function validationData(): array
     {

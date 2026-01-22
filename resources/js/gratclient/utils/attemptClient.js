@@ -1,3 +1,4 @@
+// Lightweight client helper to retry attempt submissions once.
 import axios from 'axios'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))

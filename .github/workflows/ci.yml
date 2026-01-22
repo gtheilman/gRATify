@@ -62,6 +62,12 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
+      - name: Run client tests
+        run: npm run test:client
+
+      - name: Run static analysis
+        run: composer stan
+
       - name: Prepare environment
         run: |
           php -r 'echo "APP_KEY=base64:".base64_encode(random_bytes(32)).PHP_EOL;' > .env

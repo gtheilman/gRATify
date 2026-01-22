@@ -16,13 +16,17 @@ it('allows the owner to create a question', function () {
     $owner = User::factory()->create();
     $assessment = Assessment::factory()->for($owner, 'user')->create();
 
-    $this->actingAs($owner, 'web')
+    $response = $this->actingAs($owner, 'web')
         ->postJson('/api/questions', [
             'title' => 'New question',
             'stem' => 'New stem',
             'assessment_id' => $assessment->id,
         ])
-        ->assertCreated();
+        ->assertCreated()
+        ->assertJsonPath('assessment_id', $assessment->id)
+        ->assertJsonPath('title', 'New question')
+        ->assertJsonPath('stem', 'New stem')
+        ->assertJsonPath('sequence', 1);
 
     $questions = Question::where('assessment_id', $assessment->id)->orderBy('sequence')->get();
     expect($questions)->toHaveCount(1);

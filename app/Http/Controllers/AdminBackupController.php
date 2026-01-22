@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Streams an on-demand DB backup for admins with explicit failure messaging.
+ */
 class AdminBackupController extends Controller
 {
     /**
@@ -18,12 +21,13 @@ class AdminBackupController extends Controller
         $role = $user?->role;
         $normalizedRole = $role === 'poobah' ? 'admin' : $role;
         if (! $user || $normalizedRole !== 'admin') {
-            return response()->json(['message' => 'Forbidden'], 403);
+            return $this->errorResponse('forbidden', null, 403);
         }
 
         $connection = config('database.default');
         $db = config("database.connections.{$connection}");
 
+        // Fail fast if DB config is missing (avoids confusing process errors).
         if (! $db || empty($db['database'])) {
             return response()->json(['message' => 'Database configuration not found.'], 500);
         }
@@ -34,7 +38,8 @@ class AdminBackupController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
 
-        if (! isset($path) || ! is_string($path) || $path === '') {
+        // Guard against unexpected job returns so download() doesn't explode.
+        if ($path === '') {
             return response()->json(['message' => 'Backup failed: invalid backup path returned.'], 500);
         }
 

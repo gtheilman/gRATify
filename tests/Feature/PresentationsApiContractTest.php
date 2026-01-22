@@ -59,5 +59,6 @@ it('returns 403 for inactive assessments', function () {
 
     $this->getJson('/api/presentations/store/inactive1/student1')
         ->assertStatus(403)
-        ->assertJsonPath('status', 'Forbidden');
+        ->assertJsonPath('error.code', 'forbidden')
+        ->assertJsonPath('error.message', 'Forbidden');
 });

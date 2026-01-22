@@ -54,6 +54,7 @@
 </template>
 
 <script>
+// Handles attempt submission, retry UX, and local correctness state.
 import { renderMarkdown } from '../utils/markdown'
 import { postAttemptWithRetry } from '../utils/attemptClient'
 
@@ -145,6 +146,7 @@ export default {
     },
     async checkAnswer () {
       const now = Date.now()
+      // Debounce quick double-taps to avoid duplicate submissions.
       if (this.lastClickAt && (now - this.lastClickAt) < 400) {
         return
       }
@@ -182,6 +184,7 @@ export default {
           this.$refs.resultLive?.focus?.()
         })
       } catch (error) {
+        // Show a user-facing code so instructors can trace client issues.
         const code = `ERR-${Date.now().toString(36)}`
         console.error('Attempt failed', code, error)
         this.errorMessage = `Network issue, retrying failed. Show this code to your instructor: ${code}`

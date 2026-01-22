@@ -4,16 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PublicAssessmentResource;
 use App\Http\Resources\PublicPresentationResource;
+use App\Http\Resources\PresentationListResource;
+use App\Http\Resources\ScoredPresentationResource;
 use App\Models\Assessment;
-use App\Models\Attempt;
 use App\Models\Presentation;
-use App\Models\Question;
-use App\Models\User;
-use App\Services\Scoring\ScoringManager;
+use App\Services\Scoring\PresentationScorer;
+use App\Services\Presentations\PresentationAssembler;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * Handles public presentation flows and staff scoring views.
+ */
 class PresentationController extends Controller
 {
     /**
@@ -21,7 +24,10 @@ class PresentationController extends Controller
      *
      * @return void
      */
-    public function __construct(private ScoringManager $scoringManager)
+    public function __construct(
+        private PresentationScorer $presentationScorer,
+        private PresentationAssembler $presentationAssembler
+    )
     {
         $this->middleware('auth:web', ['except' => ['store', 'show', 'getAssessment', 'scoreByCredentials']]);
     }
@@ -30,9 +36,9 @@ class PresentationController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function index()
+    public function index(): void
     {
 
     }
@@ -40,9 +46,9 @@ class PresentationController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function create()
+    public function create(): void
     {
         //
     }
@@ -50,53 +56,24 @@ class PresentationController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return
+     * @param string $password
+     * @param string $user_id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store($password, $user_id)
+    public function store(string $password, string $user_id): JsonResponse
     {
 
+        // Public endpoint: locate assessment by password and prevent access if inactive.
         $assessment = Assessment::with('questions.answers')->firstWhere('password', $password);
         if (! $assessment) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
         if (!$assessment->active) {
-            return response()->json(['status' => 'Forbidden'], 403);
+            return $this->errorResponse('forbidden', null, 403);
         }
-        $assessment->setRelation(
-            'questions',
-            $assessment->questions
-                ->sortBy(fn ($question) => $question->sequence)
-                ->values()
-                ->map(function ($question) {
-                    $question->setRelation(
-                        'answers',
-                        $question->answers->sortBy(fn ($answer) => $answer->sequence)->values()
-                    );
-
-                    return $question;
-                })
-        );
-
-        $presentationCreated = false;
-        $presentation = Presentation::where('assessment_id', $assessment->id)
-            ->where('user_id', $user_id)
-            ->first();
-
-        if (! $presentation) {
-            $presentation = new Presentation;
-            $presentation->user_id = $user_id;
-            $presentation->assessment_id = $assessment->id;
-            $presentation->save();
-            $presentationCreated = true;
-        }
-        $presentation->assessment = $assessment;
-        $attempts = Attempt::with('answer')
-            ->where('presentation_id', $presentation->id)
-            ->get();
-
-        $presentation->setRelation('assessment', $assessment);
-        $presentation->setRelation('attempts', $attempts);
+        $result = $this->presentationAssembler->assemblePublic($assessment, $user_id);
+        $presentation = $result['presentation'];
+        $presentationCreated = $result['created'];
 
         return (new PublicPresentationResource($presentation))
             ->response()
@@ -107,157 +84,98 @@ class PresentationController extends Controller
     /**
      * Score a presentation.
      *
-     * @param string $password
-     * @param string $user_id
-     * @return
+     * @param \App\Http\Requests\ScoreByCredentialsRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function scoreByCredentials(\App\Http\Requests\ScoreByCredentialsRequest $request)
+    public function scoreByCredentials(\App\Http\Requests\ScoreByCredentialsRequest $request): JsonResponse
     {
         $password = $request->route('password');
         $user_id = $request->route('user_id');
 
-        $assessment = Assessment::with('questions')->firstWhere('password', $password);
+        $assessment = Assessment::with(['questions' => function ($query) {
+            $query->withCount('answers');
+        }])->firstWhere('password', $password);
         if (! $assessment) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
-        $assessment->questions = $assessment->questions->sortBy(function ($question) {
-            return $question->sequence;
-        });
-
         $presentation = Presentation::where('assessment_id', $assessment->id)
             ->where('user_id', $user_id)
             ->first();
 
         if (!$presentation) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
 
-        $presentation->assessment = $assessment;
-        $attempts = Attempt::with('answer')->where('presentation_id', $presentation->id)->get();
+        $presentation->load('attempts.answer');
 
-        $questions = collect([]);
+        $scoredPresentation = $this->buildScoredPresentation($presentation, $assessment);
 
-        foreach ($assessment->questions as $question) {
-            $questionAttempts = collect([]);
-            foreach ($attempts as $attempt) {
-                if ($attempt->answer->question_id === $question->id) {
-                    $questionAttempts->push($attempt);
-                }
-            }
-
-            $question->attempts = $questionAttempts;
-            $question->attempts = $question->attempts->sortBy(function ($attempts) {
-                return $attempts->created_at;
-            });
-            // Ensure consumers see the actual stem instead of generic titles
-            $question->title = $question->stem;
-            $questions->push($question);
-        }
-
-        $presentation->assessment->questions = $questions;
-
-        $scoring = $this->scoringManager
-            ->forScheme(config('scoring.default', 'geometric-decay'))
-            ->scoreQuestions($presentation->assessment->questions);
-
-        foreach ($presentation->assessment->questions as $question) {
-            $question->score = $scoring['questionScores'][$question->id] ?? 0;
-        }
-        $presentation->score = $scoring['total'];
-        return response()->json($presentation->score);
+        return response()->json($scoredPresentation->score);
     }
 
     /**
      * Score   presentations by assessment_id
      *
-     * @param integer $assessment_id
-     * @return
+     * @param \Illuminate\Http\Request $request
+     * @param int $assessment_id
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
      */
-    public function scoreByAssessmentId(Request $request, int $assessment_id)
+    public function scoreByAssessmentId(Request $request, int $assessment_id): JsonResponse|AnonymousResourceCollection
     {
 
-        $assessment = Assessment::findOrFail($assessment_id);
+        $assessment = Assessment::with(['questions' => function ($query) {
+            $query->orderBy('sequence')
+                ->withCount('answers');
+        }])->findOrFail($assessment_id);
         $this->authorize('viewForAssessment', [Presentation::class, $assessment]);
 
-        $presentations = Presentation::where('assessment_id', $assessment_id)->get();
-
-        $scoredPresentations = collect([]);
-
         $scheme = $request->query('scheme', config('scoring.default', 'geometric-decay'));
-
-        foreach ($presentations as $presentation) {
-            $scoredPresentation = $this->scoreByPresentationId($presentation->id, $scheme);
-            $scoredPresentations->push($scoredPresentation);
+        $scheme = is_string($scheme) ? $scheme : (string) $scheme;
+        $allowedSchemes = array_keys(config('scoring.schemes', []));
+        if (! in_array($scheme, $allowedSchemes, true)) {
+            return $this->errorResponse('invalid_scheme', null, 422);
         }
-        return response()->json($scoredPresentations);
+
+        $presentations = Presentation::with(['attempts.answer'])
+            ->where('assessment_id', $assessment_id)
+            ->get();
+
+        $scoredPresentations = $presentations->map(function ($presentation) use ($assessment, $scheme) {
+            // Clone the assessment/questions to avoid cross-contamination between presentations.
+            $assessmentClone = $assessment->replicate();
+            $questionClones = $assessment->questions->map(function ($question) {
+                $clone = $question->replicate();
+                $clone->id = $question->id;
+                return $clone;
+            });
+            $assessmentClone->setRelation('questions', $questionClones);
+            return $this->presentationScorer->score($presentation, $assessmentClone, $scheme);
+        });
+
+        return ScoredPresentationResource::collection($scoredPresentations);
     }
 
 
     /**
-     * Score a presentation by presentation_id
-     *
-     * @param integer $presentation_id
-     * @param string|null $scheme
-     * @return
+     * Build a scored presentation with question attempts attached.
      */
-    private function scoreByPresentationId(int $presentation_id, ?string $scheme = null)
+    private function buildScoredPresentation(Presentation $presentation, Assessment $assessment, ?string $scheme = null): Presentation
     {
-        $presentation = Presentation::find($presentation_id);
-        $assessment = Assessment::find($presentation->assessment_id);
-        $assessment->questions = $assessment->questions->sortBy(function ($question) {
-            return $question->sequence;
-        });
-
-
-        $presentation->assessment = $assessment;
-        $attempts = Attempt::with('answer')->where('presentation_id', $presentation->id)->get();
-
-        $assessmentSum = 0;
-        $questionCount = 0;
-        $questions = collect([]);
-
-        foreach ($assessment->questions as $question) {
-            $questionAttempts = collect([]);
-            foreach ($attempts as $attempt) {
-                if ($attempt->answer->question_id === $question->id) {
-                    $questionAttempts->push($attempt);
-                }
-            }
-
-            $question->attempts = $questionAttempts;
-            $question->attempts = $question->attempts->sortBy(function ($attempts) {
-                return $attempts->created_at;
-            });
-            $questions->push($question);
-        }
-
-        $presentation->assessment->questions = $questions;
-
-        $scoring = $this->scoringManager
-            ->forScheme($scheme ?? config('scoring.default', 'geometric-decay'))
-            ->scoreQuestions($presentation->assessment->questions);
-
-        foreach ($presentation->assessment->questions as $question) {
-            $question->score = $scoring['questionScores'][$question->id] ?? 0;
-        }
-        $presentation->score = $scoring['total'];
-        $presentation->user_id = $presentation->user_id;
-
-        return $presentation;
+        return $this->presentationScorer->score($presentation, $assessment, $scheme);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show(string $id): JsonResponse
     {
-        $assessment = Assessment::with('questions.answers')->where('password', $id);
-        $assessment->questions = $assessment->questions->sortBy(function ($question) {
+        $assessment = Assessment::with('questions.answers')->where('password', $id)->firstOrFail();
+        $assessment->setRelation('questions', $assessment->questions->sortBy(function ($question) {
             return $question->sequence;
-        });
+        }));
 
 
         return response()->json($assessment);
@@ -267,33 +185,18 @@ class PresentationController extends Controller
     /**
      * Get the assessment questions
      *
-     * @param string $presentation_id
-     * @return
+     * @param int $presentation_id
+     * @return \App\Http\Resources\PublicAssessmentResource|\Illuminate\Http\JsonResponse
      */
-    public function getAssessment($presentation_id)
+    public function getAssessment(int $presentation_id): PublicAssessmentResource|JsonResponse
     {
         $presentation = Presentation::find($presentation_id);
         if (! $presentation) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->errorResponse('not_found', null, 404);
         }
         $assessment_id = $presentation->assessment_id;
 
         $assessment = Assessment::with('questions.answers')->find($assessment_id);
-        $assessment->setRelation(
-            'questions',
-            $assessment->questions
-                ->sortBy(fn ($question) => $question->sequence)
-                ->values()
-                ->map(function ($question) {
-                    $question->setRelation(
-                        'answers',
-                        $question->answers->sortBy(fn ($answer) => $answer->sequence)->values()
-                    );
-
-                    return $question;
-                })
-        );
-
         $presentation->setRelation('assessment', $assessment);
 
         return new PublicAssessmentResource($assessment);
@@ -304,9 +207,9 @@ class PresentationController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function edit($id)
+    public function edit(int $id): void
     {
         //
     }
@@ -316,9 +219,9 @@ class PresentationController extends Controller
      *
      * @param \Illuminate\Http\Request $request
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id): void
     {
         //
     }
@@ -326,39 +229,29 @@ class PresentationController extends Controller
     /**
      * List asssements that have been taken
      *
-     *
-     * @return string
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function completed()
+    public function completed(): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Presentation::class);
 
-        $collection = collect([]);
-        $presentations = Presentation::all();
-        foreach ($presentations as $presentation) {
-            try {
-                $assessment = Assessment::find($presentation->assessment_id);
-                $assessment->user = User::find($assessment->user_id);
-                $presentation->title = $assessment->title;
-                $presentation->name = $assessment->user->name;
-                $presentation->assessment = $assessment;
-                if ($presentation->assessment->user_id != config('grat.admin_id')) {
-                    $collection->push($presentation);
-                }
-            } catch (\Exception $e) {
-                continue;
-            }
-        }
-        return response()->json($collection);
+        $presentations = Presentation::query()
+            ->with(['assessment.user'])
+            ->whereHas('assessment', function ($query) {
+                $query->where('user_id', '!=', config('grat.admin_id'));
+            })
+            ->get();
+
+        return PresentationListResource::collection($presentations);
     }
 
     /**
      * Remove the specified resource from storage.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return void
      */
-    public function destroy($id)
+    public function destroy(int $id): void
     {
         //
     }

@@ -1,9 +1,16 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+// Admin-only user management view with role normalization for legacy accounts.
+import { computed, onMounted, ref, watch } from 'vue'
 import { useUsersStore } from '@/stores/users'
+import { getErrorMessage } from '@/utils/apiError'
 import { useAuthStore } from '@/stores/auth'
 import { useApi } from '@/composables/useApi'
 import { useOffline } from '@/composables/useOffline'
+import { sortUsers, normalizeRole } from '@/utils/userSorting'
+import { filterUsers, shouldResetUserPage } from '@/utils/userFilters'
+import { canDeleteUser, hasUserAssessments, isLastAdminUser } from '@/utils/userDeleteRules'
+import { usersEmptyStateMessage } from '@/utils/usersEmptyState'
+import { buildUsersRangeLabel } from '@/utils/usersPagination'
 
 const usersStore = useUsersStore()
 const authStore = useAuthStore()
@@ -59,53 +66,30 @@ onMounted(async () => {
   loaded.value = true
 })
 
-const normalizedRole = user => (user?.role === 'poobah' ? 'admin' : user?.role || '')
+const emptyStateMessage = usersEmptyStateMessage
+
+const normalizedRole = user => normalizeRole(user?.role) || ''
 const adminCount = computed(() => (usersStore.users || []).filter(u => normalizedRole(u) === 'admin').length)
-const isLastAdmin = user => normalizedRole(user) === 'admin' && adminCount.value <= 1
-const hasAssessments = user => Number(user?.assessments_count || 0) > 0
-const cannotDeleteUser = user => isLastAdmin(user) || hasAssessments(user)
+// Prevent deleting the last admin so the app doesn't become orphaned.
+const isLastAdmin = user => isLastAdminUser(user, adminCount.value)
+const hasAssessments = user => hasUserAssessments(user)
+const cannotDeleteUser = user => !canDeleteUser(user, adminCount.value)
 
-const filteredUsers = computed(() => {
-  const term = search.value.toLowerCase()
-  return (usersStore.users || []).filter(user => {
-    const matchesSearch = [user.username, user.email, user.name, user.company]
-      .filter(Boolean)
-      .some(val => String(val).toLowerCase().includes(term))
-
-    const roleValue = user.role === 'poobah' ? 'admin' : user.role
-    const matchesRole = roleFilter.value === 'all' || roleValue === roleFilter.value
-
-    return matchesSearch && matchesRole
-  })
-})
+const filteredUsers = computed(() => filterUsers(usersStore.users || [], search.value, roleFilter.value))
 
 const pagedUsers = computed(() => {
-  const list = [...filteredUsers.value].sort((a, b) => {
-    const dir = sortDir.value === 'asc' ? 1 : -1
-    const normalizedName = user => {
-      if (!user)
-        return ''
-      const parts = String(user.name || user.username || '').trim().split(' ')
-      if (parts.length === 1)
-        return parts[0]
-      const last = parts.pop()
-      return `${last} ${parts.join(' ')}`
-    }
-    if (sortBy.value === 'email')
-      return dir * String(a.email || '').localeCompare(b.email || '', undefined, { sensitivity: 'base' })
-    if (sortBy.value === 'role')
-      return dir * String(a.role || '').localeCompare(b.role || '', undefined, { sensitivity: 'base' })
-    if (sortBy.value === 'company')
-      return dir * String(a.company || '').localeCompare(b.company || '', undefined, { sensitivity: 'base' })
-    if (sortBy.value === 'username')
-      return dir * String(a.username || '').localeCompare(b.username || '', undefined, { sensitivity: 'base' })
-    return dir * normalizedName(a).localeCompare(normalizedName(b), undefined, { sensitivity: 'base' })
-  })
+  const list = sortUsers(filteredUsers.value, sortBy.value, sortDir.value)
   const start = (currentPage.value - 1) * pageSize.value
   return list.slice(start, start + pageSize.value)
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pageSize.value)))
+const usersRangeLabel = computed(() => buildUsersRangeLabel(currentPage.value, pageSize.value, filteredUsers.value.length))
+
+watch([search, roleFilter], ([term, role], [prevTerm, prevRole]) => {
+  if (shouldResetUserPage({ term: prevTerm, role: prevRole }, { term, role }))
+    currentPage.value = 1
+})
 
 const registerUser = () => {
   dialogMode.value = 'create'
@@ -167,7 +151,7 @@ const submitChangePassword = async () => {
     }, 600)
   }
   catch (err) {
-    changePasswordError.value = err?.message || 'Unable to change password.'
+    changePasswordError.value = getErrorMessage(err, 'Unable to change password.')
   }
 }
 
@@ -206,10 +190,10 @@ const deleteUser = async user => {
   }
   catch (err) {
     if (err?.status === 409 || err?.response?.status === 409) {
-      deleteError.value = err?.data?.message || err?.message || 'Cannot delete user with existing assessments.'
+      deleteError.value = getErrorMessage(err, 'Cannot delete user with existing assessments.')
       return
     }
-    deleteError.value = err?.message || 'Unable to delete user.'
+    deleteError.value = getErrorMessage(err, 'Unable to delete user.')
   }
 }
 
@@ -244,7 +228,7 @@ const submitDialog = async () => {
     dialogOpen.value = false
   }
   catch (err) {
-    dialogError.value = err?.message || 'Unable to save user'
+    dialogError.value = getErrorMessage(err, 'Unable to save user')
   }
 }
 
@@ -427,7 +411,7 @@ const resetFilters = () => {
           </tr>
           <tr v-if="loaded && !pagedUsers.length">
             <td colspan="6" class="text-center py-4 text-medium-emphasis">
-              No users found. Seeded accounts: admin@example.com / admin, demo1@example.com / demo, demo2@example.com / demo. Remove or change them before production.
+              {{ emptyStateMessage }}
             </td>
           </tr>
         </tbody>
@@ -435,7 +419,7 @@ const resetFilters = () => {
 
       <div class="d-flex justify-space-between align-center flex-wrap gap-3 px-4 pb-4">
         <div class="text-body-2 text-medium-emphasis">
-          Rows {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, filteredUsers.length) }} of {{ filteredUsers.length }}
+          {{ usersRangeLabel }}
         </div>
         <div class="d-flex align-center gap-2">
           <span class="text-caption text-medium-emphasis">Rows:</span>

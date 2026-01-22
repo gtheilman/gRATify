@@ -1,5 +1,7 @@
+// Store for assessment CRUD + editor-specific helpers.
 import { defineStore } from 'pinia'
 import { useApi } from '@/composables/useApi'
+import { getErrorMessage } from '@/utils/apiError'
 
 const api = useApi
 
@@ -27,7 +29,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         return this.assessments
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to load assessments')
         throw err
       }
       finally {
@@ -59,7 +61,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         return created
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to create assessment')
         throw err
       }
       finally {
@@ -93,7 +95,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         return this.currentAssessment
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to load assessment')
         throw err
       }
       finally {
@@ -124,7 +126,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         return data.value
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to update assessment')
         throw err
       }
       finally {
@@ -147,7 +149,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         return data.value
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to save assessment')
         throw err
       }
       finally {
@@ -168,7 +170,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         await this.fetchAssessments()
       }
       catch (err) {
-        this.error = err
+        this.error = getErrorMessage(err, 'Unable to delete assessment')
         throw err
       }
       finally {
@@ -188,7 +190,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         throw error.value
       const createdQuestion = data.value
 
-      // Automatically add two answers to the new question
+      // Automatically add two starter answers so the editor isn't empty.
       const defaults = [
         { answer_text: 'Answer A', correct: false, sequence: 1 },
         { answer_text: 'Answer B', correct: false, sequence: 2 },

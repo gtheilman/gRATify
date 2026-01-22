@@ -1,3 +1,4 @@
+// Bootstrap the lightweight student client app with axios + router.
 import { createApp } from 'vue'
 import App from './App.vue'
 import axios from 'axios'

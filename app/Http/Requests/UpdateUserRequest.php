@@ -11,10 +11,15 @@ class UpdateUserRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         $routeUser = $this->route('user') ?? $this->route('user_id');
-        $userId = $routeUser instanceof \App\Models\User ? $routeUser->id : $routeUser;
+        $userId = $routeUser instanceof \App\Models\User
+            ? $routeUser->id
+            : (is_numeric($routeUser) ? (int) $routeUser : 0);
 
         return [
             'role' => ['nullable', 'string'],

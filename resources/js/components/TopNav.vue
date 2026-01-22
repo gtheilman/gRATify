@@ -3,6 +3,8 @@ import { useAuthStore } from '@/stores/auth'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
+import { buildOfflineRetry, offlineBannerMessage } from '@/utils/offlineBanner'
+import { handleLogoutAction } from '@/utils/topNavLogout'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,6 +12,12 @@ const authStore = useAuthStore()
 const { mdAndDown } = useDisplay()
 const documentationLink = 'https://github.com/gtheilman/gratify'
 const menuOpen = ref(false)
+const offlineMessage = offlineBannerMessage
+const retryOffline = buildOfflineRetry(router)
+
+const handleLogout = async () => {
+  await handleLogoutAction({ logout: authStore.logout, push: router.push })
+}
 
 const navButtons = computed(() => {
   const base = [
@@ -101,7 +109,7 @@ onBeforeUnmount(() => {
             color="primary"
             size="small"
             class="ms-2 me-3 text-capitalize"
-            @click="async () => { await authStore.logout(); router.push({ name: 'login' }) }"
+            @click="handleLogout"
           >
             Logout
           </VBtn>
@@ -138,7 +146,7 @@ onBeforeUnmount(() => {
                 <VListItemTitle>{{ item.label }}</VListItemTitle>
               </VListItem>
               <VListItem
-                @click="async () => { await authStore.logout(); router.push({ name: 'login' }); menuOpen = false }"
+                @click="() => { handleLogout(); menuOpen = false }"
               >
                 <VListItemTitle>Logout</VListItemTitle>
               </VListItem>
@@ -205,8 +213,8 @@ onBeforeUnmount(() => {
       closable
       @click:close="isOffline = false"
     >
-      You are offline. Changes may not save. We will retry when you reconnect.
-      <VBtn variant="text" size="small" class="ms-2" @click="router.go(0)">
+      {{ offlineMessage }}
+      <VBtn variant="text" size="small" class="ms-2" @click="retryOffline">
         Retry
       </VBtn>
     </VAlert>

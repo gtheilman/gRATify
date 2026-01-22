@@ -1,9 +1,31 @@
 <script setup>
+// Fetches scored presentations with caching to keep the scores view usable offline.
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '@/composables/useApi'
 import { useOffline } from '@/composables/useOffline'
 import ErrorNotice from '@/components/ErrorNotice.vue'
+import { getErrorMessage } from '@/utils/apiError'
+import { formatAssessmentError } from '@/utils/assessmentErrors'
+import { applyCachedFallback } from '@/utils/cacheFallback'
+import { buildCsvBlob } from '@/utils/csvDownload'
+import { formatScore } from '@/utils/scoreFormatting'
+import { canExportScores } from '@/utils/scoreTable'
+import { clearNotice } from '@/utils/staleNotice'
+import { needsSessionRefresh } from '@/utils/errorFlags'
+import { sortPresentations } from '@/utils/scoresSorting'
+import { toNumericScores } from '@/utils/scoreStats'
+import { displayStem } from '@/utils/questionFormat'
+import { parseActiveFlag } from '@/utils/assessmentState'
+import { buildScoreSummary } from '@/utils/scoreSummary'
+import { buildScoresCsv } from '@/utils/scoresCsv'
+import { scoreSortOptions } from '@/utils/scoreSortOptions'
+import { buildTimelineHtml as buildTimelineReport } from '@/utils/presentationExport'
+import { defaultScoringScheme, scoringSchemeOptions } from '@/utils/scoringSchemes'
+import { formatTimestamp } from '@/utils/dateFormat'
+import { fetchJson } from '@/utils/http'
+import { readScoresCache, writeScoresCache } from '@/utils/scoresCache'
+import { resolveScoresCacheKey } from '@/utils/scoresCacheKey'
 
 const route = useRoute()
 const api = useApi
@@ -17,66 +39,21 @@ const assessmentActive = ref(null)
 const assessmentTitle = ref('')
 const activeToggleBusy = ref(false)
 const staleNotice = ref('')
-const needsRefresh = computed(() => String(error.value || '').includes('Session expired'))
+const needsRefresh = computed(() => needsSessionRefresh(error.value))
 const csvFallbackOpen = ref(false)
 const csvFallbackText = ref('')
 const copyCsvStatus = ref('')
 const { isOffline } = useOffline()
 
-const scoringScheme = ref('geometric-decay')
+const scoringScheme = ref(defaultScoringScheme)
 
-const scoresCacheKey = () => `scores-cache-${route.params.id}-${scoringScheme.value}`
+const scoresCacheKey = () => resolveScoresCacheKey(route.params.id, scoringScheme.value)
 
-const loadScoresCache = () => {
-  try {
-    const raw = localStorage.getItem(scoresCacheKey())
-    if (!raw)
-      return null
-    return JSON.parse(raw)
-  }
-  catch {
-    return null
-  }
-}
+const loadScoresCache = () => readScoresCache(scoresCacheKey())
 
-const storeScoresCache = data => {
-  try {
-    localStorage.setItem(scoresCacheKey(), JSON.stringify({
-      data,
-      cachedAt: Date.now(),
-    }))
-  }
-  catch {
-    // Ignore cache write failures.
-  }
-}
+const storeScoresCache = data => writeScoresCache(scoresCacheKey(), data)
 
-const readErrorDetail = async response => {
-  const contentType = response.headers.get('content-type') || ''
-  try {
-    if (contentType.includes('json')) {
-      const json = await response.json()
-      return json?.message || json?.status || JSON.stringify(json)
-    }
-    return (await response.text())?.trim()
-  }
-  catch {
-    return ''
-  }
-}
-
-const formatScoresError = async response => {
-  const detail = await readErrorDetail(response)
-  if (response.status === 401)
-    return detail ? `Unauthorized: ${detail}` : 'Unauthorized: please sign in again.'
-  if (response.status === 403)
-    return detail ? `Forbidden: ${detail}` : 'Forbidden: you do not have access to these scores.'
-  if (response.status === 404)
-    return detail ? `Not found: ${detail}` : 'Not found: assessment does not exist.'
-  if (response.status >= 500)
-    return detail ? `Server error: ${detail}` : 'Server error: unable to load scores right now.'
-  return detail || 'Unable to load scores'
-}
+const formatScoresError = (response, data) => formatAssessmentError(response, data, 'scores')
 
 const fetchScores = async () => {
   loading.value = true
@@ -85,29 +62,28 @@ const fetchScores = async () => {
   try {
     if (isOffline.value)
       throw new Error('You are offline. Connect to the internet and try again.')
-    const response = await fetch(`/api/presentations/score-by-assessment-id/${route.params.id}?scheme=${encodeURIComponent(scoringScheme.value)}`, {
-      credentials: 'same-origin',
-    })
+    const { data, response } = await fetchJson(`/api/presentations/score-by-assessment-id/${route.params.id}?scheme=${encodeURIComponent(scoringScheme.value)}`)
     if (!response.ok) {
-      const message = await formatScoresError(response)
+      const message = formatScoresError(response, data)
       throw new Error(message)
     }
-    const data = await response.json()
     presentations.value = data
     storeScoresCache(data)
     const assessment = data?.[0]?.assessment
     if (assessment && typeof assessment.active !== 'undefined')
-      assessmentActive.value = !!Number(assessment.active)
+      assessmentActive.value = parseActiveFlag(assessment.active)
     if (assessment?.title)
       assessmentTitle.value = assessment.title
   }
   catch (err) {
-    error.value = err?.message || 'Unable to load scores'
+    error.value = getErrorMessage(err, 'Unable to load scores')
     const cached = loadScoresCache()
-    if (cached?.data) {
-      presentations.value = cached.data
-      staleNotice.value = `Showing cached data from ${formatTimestamp(new Date(cached.cachedAt).toISOString())}`
-    }
+    applyCachedFallback({
+      cached,
+      applyData: data => { presentations.value = data },
+      applyNotice: notice => { staleNotice.value = notice },
+      formatter: date => formatTimestamp(date.toISOString()),
+    })
   }
   finally {
     loading.value = false
@@ -128,74 +104,28 @@ const loadAssessmentActive = async () => {
 }
 
 const sortedPresentations = computed(() => {
-  const list = [...presentations.value]
-  if (sortKey.value === 'score_desc')
-    return list.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
-  if (sortKey.value === 'score_asc')
-    return list.sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0))
-  const normalizeId = id => {
-    const num = Number(id)
-    return Number.isFinite(num) ? num : id
-  }
-  return list.sort((a, b) => {
-    const aId = normalizeId(a.user_id)
-    const bId = normalizeId(b.user_id)
-    if (typeof aId === 'number' && typeof bId === 'number')
-      return aId - bId
-    return String(aId || '').localeCompare(String(bId || ''))
-  })
+  return sortPresentations(presentations.value, sortKey.value)
 })
 
-const scoresOnly = computed(() => sortedPresentations.value.map(p => Number(p.score) || 0).filter(Number.isFinite))
-const averageScore = computed(() => {
-  const arr = scoresOnly.value
-  if (!arr.length) return 0
-  return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
-})
-const maxScore = computed(() => scoresOnly.value.reduce((m, s) => Math.max(m, s), 0))
-const minScore = computed(() => scoresOnly.value.reduce((m, s) => Math.min(m, s), scoresOnly.value[0] ?? 0))
-const medianScore = computed(() => {
-  const arr = [...scoresOnly.value].sort((a, b) => a - b)
-  if (!arr.length) return 0
-  const mid = Math.floor(arr.length / 2)
-  return arr.length % 2 ? arr[mid] : Math.round((arr[mid - 1] + arr[mid]) / 2)
-})
+const scoresOnly = computed(() => toNumericScores(sortedPresentations.value))
+const scoreSummary = computed(() => buildScoreSummary(sortedPresentations.value))
+const averageScore = computed(() => scoreSummary.value.average)
+const maxScore = computed(() => scoreSummary.value.max)
+const minScore = computed(() => scoreSummary.value.min)
+const medianScore = computed(() => scoreSummary.value.median)
 
-const formatTimestamp = value => {
-  if (!value)
-    return ''
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime()))
-    return value
-  const pad = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
+const exportEnabled = computed(() => canExportScores(presentations.value))
 
-const truncateText = text => {
-  if (!text)
-    return ''
-  return text.length > 50 ? `${text.slice(0, 50)}...` : text
-}
-
-const displayStem = question => question?.stem || ''
-
-const formatScore = value => {
-  const num = Number(value)
-  if (!Number.isFinite(num))
-    return ''
-  return Number.isInteger(num) ? String(num) : num.toFixed(1)
+const clearStaleNotice = () => {
+  clearNotice(staleNotice)
 }
 
 const downloadCsv = () => {
-  const lines = ['UserID,Score']
-  sortedPresentations.value.forEach(p => {
-    const user = String(p.user_id || '').replace(/,/g, '')
-    lines.push(`${user},${formatScore(p.score)}`)
-  })
-
-  const payload = lines.join('\r\n')
+  const payload = buildScoresCsv(sortedPresentations.value, formatScore)
   try {
-    const blob = new Blob([payload], { type: 'text/csv;charset=utf-8;' })
+    const blob = buildCsvBlob(payload)
+    if (!blob)
+      throw new Error('csv-blob-failed')
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -226,81 +156,13 @@ const copyCsvFallback = async () => {
   }, 1500)
 }
 
-const escapeHtml = value => {
-  if (value === null || value === undefined)
-    return ''
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
 const buildTimelineHtml = () => {
   const assessmentTitle = sortedPresentations.value[0]?.assessment?.title || 'gRAT'
-  const schemeLabel = scoringScheme.value === 'linear-decay' ? 'Linear decay' : 'Geometric decay'
-  const printedAt = formatTimestamp(new Date().toISOString())
-  const rows = sortedPresentations.value.map(presentation => {
-    const questions = (presentation.assessment?.questions || []).map(question => {
-      const attempts = (question.attempts || []).map(attempt => {
-        const timestamp = escapeHtml(formatTimestamp(attempt.created_at))
-        const answer = escapeHtml(truncateText(attempt.answer?.answer_text))
-        return `<div class="attempt-row"><span class="attempt-time">${timestamp}</span><span>${answer}</span></div>`
-      }).join('')
-
-      return `
-        <div class="question-block">
-          <div class="question-stem">${escapeHtml(question.stem)}</div>
-          <div class="question-score">Score ${escapeHtml(question.score)}%</div>
-          <div class="attempts">${attempts || '<div class="attempt-row empty">No attempts</div>'}</div>
-        </div>
-      `
-    }).join('')
-
-    return `
-      <div class="presentation-block">
-        <div class="presentation-header">
-          <span>User ID: ${escapeHtml(presentation.user_id)}</span>
-          <span class="presentation-score">${escapeHtml(presentation.score)}%</span>
-        </div>
-        ${questions || '<div class="question-block empty">No questions</div>'}
-      </div>
-    `
-  }).join('')
-
-  return `
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>${escapeHtml(assessmentTitle)}</title>
-        <style>
-          body { font-family: "Segoe UI", Arial, sans-serif; margin: 0.5in; color: #1f2933; }
-          .print-header { margin-bottom: 5px; }
-          .print-title { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
-          .print-meta { font-size: 12px; color: #607380; }
-          .presentation-block { border: 1px solid #e0e6ed; border-radius: 10px; padding: 5px 7px; margin-bottom: 6px; }
-          .presentation-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 4px; }
-          .presentation-score { color: #0f766e; }
-          .question-block { padding: 4px 0; border-top: 1px solid #eef2f6; }
-          .question-block:first-of-type { border-top: none; }
-          .question-stem { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
-          .question-score { font-size: 13px; color: #607380; margin-bottom: 2px; }
-          .attempt-row { display: flex; gap: 12px; font-size: 13px; margin-bottom: 2px; }
-          .attempt-time { color: #6b7280; min-width: 170px; }
-          .empty { color: #98a2b3; font-style: italic; }
-        </style>
-      </head>
-      <body>
-        <div class="print-header">
-          <div class="print-title">${escapeHtml(assessmentTitle)}</div>
-          <div class="print-meta">${escapeHtml(printedAt)} · ${escapeHtml(schemeLabel)}</div>
-        </div>
-        ${rows || '<div class="empty">No scores available.</div>'}
-      </body>
-    </html>
-  `
+  return buildTimelineReport({
+    presentations: sortedPresentations.value,
+    assessmentTitle,
+    scoringScheme: scoringScheme.value,
+  })
 }
 
 const printTimeline = () => {
@@ -327,7 +189,7 @@ const toggleActive = async () => {
       await loadAssessmentActive()
     }
     catch (err) {
-      error.value = err?.message || 'Unable to load assessment status'
+      error.value = getErrorMessage(err, 'Unable to load assessment status')
       return
     }
   }
@@ -336,7 +198,7 @@ const toggleActive = async () => {
       await loadAssessmentActive()
     }
     catch (err) {
-      error.value = err?.message || 'Unable to load assessment details'
+      error.value = getErrorMessage(err, 'Unable to load assessment details')
       return
     }
   }
@@ -353,7 +215,7 @@ const toggleActive = async () => {
   }
   catch (err) {
     assessmentActive.value = !assessmentActive.value
-    error.value = err?.message || 'Unable to update assessment'
+    error.value = getErrorMessage(err, 'Unable to update assessment')
   }
   finally {
     activeToggleBusy.value = false
@@ -376,10 +238,7 @@ const toggleActive = async () => {
             <div class="d-flex gap-2 flex-wrap">
               <VSelect
                 v-model="scoringScheme"
-                :items="[
-                  { title: 'Geometric decay', value: 'geometric-decay' },
-                  { title: 'Linear decay', value: 'linear-decay' },
-                ]"
+                :items="scoringSchemeOptions"
                 label="Scoring scheme"
                 hide-details
                 density="comfortable"
@@ -403,7 +262,7 @@ const toggleActive = async () => {
                     color="success"
                     variant="tonal"
                     prepend-icon="tabler-download"
-                    :disabled="!presentations.length"
+                    :disabled="!exportEnabled"
                     @click="downloadCsv"
                   >
                     CSV
@@ -432,7 +291,7 @@ const toggleActive = async () => {
                 color="secondary"
                 variant="tonal"
                 prepend-icon="tabler-printer"
-                :disabled="!presentations.length"
+                    :disabled="!exportEnabled"
                 @click="printTimeline"
               >
                 Print Timeline
@@ -501,11 +360,7 @@ const toggleActive = async () => {
             <div class="d-flex flex-wrap gap-3 align-center mb-4">
               <VSelect
                 v-model="sortKey"
-                :items="[
-                  { title: 'User ID (A→Z)', value: 'user' },
-                  { title: 'Score (high → low)', value: 'score_desc' },
-                  { title: 'Score (low → high)', value: 'score_asc' },
-                ]"
+                :items="scoreSortOptions"
                 label="Sort by"
                 hide-details
                 density="comfortable"
@@ -528,7 +383,7 @@ const toggleActive = async () => {
               variant="tonal"
               class="mb-4"
               closable
-              @click:close="staleNotice = ''"
+              @click:close="clearStaleNotice"
             >
               <div class="d-flex align-center gap-2">
                 <VChip size="x-small" color="warning" variant="tonal">Stale</VChip>

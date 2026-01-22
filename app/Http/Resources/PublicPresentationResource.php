@@ -5,6 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Public presentation payload (assessment + attempts) for the student client.
+ *
+ * @mixin \App\Models\Presentation
+ */
 class PublicPresentationResource extends JsonResource
 {
     /**

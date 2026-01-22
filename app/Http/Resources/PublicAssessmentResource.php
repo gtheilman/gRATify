@@ -5,6 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Public assessment payload for the student client (no correctness exposed).
+ *
+ * @mixin \App\Models\Assessment
+ */
 class PublicAssessmentResource extends JsonResource
 {
     /**

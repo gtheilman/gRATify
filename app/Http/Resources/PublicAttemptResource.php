@@ -5,6 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Public attempt payload exposes correctness summary without leaking full answer keys.
+ *
+ * @mixin \App\Models\Attempt
+ */
 class PublicAttemptResource extends JsonResource
 {
     /**

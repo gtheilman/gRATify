@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { resolveAuthNavigation } from '@/utils/routeGuards'
 
 const routes = [
   {
@@ -112,26 +113,15 @@ router.beforeEach(async (to, from, next) => {
 
   await authStore.ensureSession()
 
-  // If a logged-in user manually navigates to /login, log them out first.
-  if (to.name === 'login' && authStore.user) {
+  const decision = resolveAuthNavigation(to, authStore)
+
+  if (decision.shouldLogout) {
     await authStore.logout()
     return next()
   }
 
-  // Force password reset for seeded admin until password changes
-  if (authStore.forcePasswordReset && to.name !== 'change-password')
-    return next({ name: 'change-password' })
-
-  // basic auth guard (all routes except those explicitly marked public)
-  if (!to.meta?.public && !authStore.user && to.name !== 'login')
-    return next({ name: 'login' })
-
-  if (to.meta?.requiresAdmin) {
-    const role = authStore.user?.role
-    const normalizedRole = role === 'poobah' ? 'admin' : role
-    if (normalizedRole !== 'admin')
-      return next({ name: 'root' })
-  }
+  if (decision.redirect)
+    return next(decision.redirect)
 
   return next()
 })
