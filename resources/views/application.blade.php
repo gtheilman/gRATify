@@ -14,7 +14,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('android-chrome-192x192.png') }}">
   <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('android-chrome-512x512.png') }}">
   <link rel="preload" as="image" href="{{ app(\Illuminate\Foundation\Vite::class)->asset('resources/assets/images/TBL_Process.webp') }}">
-  <title>gRAT - TBL Team Assessments</title>
+  <title>gRATify - TBL Group Assessments</title>
   <link rel="stylesheet" type="text/css" href="{{ asset('loader.css') }}" />
   @vite(['resources/js/main.js'])
 </head>

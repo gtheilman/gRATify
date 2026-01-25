@@ -1,4 +1,4 @@
-// Pulls the XSRF token from the cookie set by Sanctum.
+// Pulls the XSRF token from the CSRF cookie set by the web middleware.
 import Cookies from 'universal-cookie'
 
 export const getXsrfToken = () => {

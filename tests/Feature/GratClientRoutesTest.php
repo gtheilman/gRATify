@@ -24,5 +24,5 @@ it('serves SPA shell when manifest exists (skip if missing)', function () {
 
     $this->get('/client/demo')
         ->assertOk()
-        ->assertSee('gRAT - TBL Team Assessments');
+        ->assertSee('gRATify - TBL Group Assessments');
 });

@@ -19,7 +19,7 @@ it('issues a csrf cookie for the spa flow', function () {
     $this->app->bind(VerifyCsrfToken::class, TestCsrfMiddleware::class);
 
     $this->withMiddleware()
-        ->get('/sanctum/csrf-cookie')
+        ->get('/csrf-cookie')
         ->assertNoContent()
         ->assertCookie('XSRF-TOKEN');
 });

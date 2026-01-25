@@ -34,9 +34,9 @@ Route::middleware('api')->group(function () {
     Route::apiResource('questions', QuestionController::class)->middleware('auth:web');
     Route::apiResource('answers', AnswerController::class)->middleware('auth:web');
     // Attempts are created by unauthenticated participants via the client app.
+    Route::post('attempts/bulk', [AttemptController::class, 'bulkStore']);
     Route::apiResource('attempts', AttemptController::class)
-        ->only(['store'])
-        ->middleware('throttle:attempts');
+        ->only(['store']);
     Route::apiResource('attempts', AttemptController::class)
         ->only(['index', 'show', 'update', 'destroy'])
         ->middleware('auth:web');

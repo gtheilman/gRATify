@@ -43,6 +43,10 @@ it('returns presentation payload with sorted questions and hidden correctness', 
     expect($sortedSequences)->toBe([1, 2]);
     expect(collect($questions)->firstWhere('sequence', 1)['stem'] ?? null)->toBe('First');
     expect(data_get($questions, '0.answers.0'))->not->toHaveKey('correct');
+    $scrambled = data_get($questions, '0.answers.0.correct_scrambled');
+    expect($scrambled)->not->toBeNull();
+    $decoded = chr(ord(base64_decode($scrambled)) ^ ord('c'));
+    expect($decoded)->toBe('1');
     expect(data_get($response, 'attempts'))->toBeArray();
 });
 

@@ -7,5 +7,5 @@ it('attempts store route is not throttled to avoid db cache dependency', functio
 
     $middleware = $route?->gatherMiddleware() ?? [];
 
-    expect($middleware)->toContain('throttle:attempts');
+    expect($middleware)->not->toContain('throttle:attempts');
 });

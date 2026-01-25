@@ -11,6 +11,8 @@
           :answered="answered"
           :questionLocked="inFlight || answered || hasCorrect"
           :attempts="attempts"
+          :password="password"
+          :presentationKey="presentationKey"
           :textStyle="textStyle"
           @markAnswered="markAnswered"
           @attempt-start="onAttemptStart"
@@ -41,14 +43,20 @@ export default {
     },
     attempts: {
       type: Array
+    },
+    password: {
+      type: String,
+      default: ''
+    },
+    presentationKey: {
+      type: String,
+      default: ''
     }
   },
-  emits: ['questionComplete'],
+  emits: ['questionComplete', 'attempt-start', 'attempt-end'],
   data () {
     return {
       answered: false,
-      password: [],
-      user_id: [],
       numberAnswered: 0,
       inFlight: false,
       hasCorrect: false,
@@ -72,9 +80,11 @@ export default {
     },
     onAttemptStart () {
       this.inFlight = true
+      this.$emit('attempt-start')
     },
     onAttemptEnd () {
       this.inFlight = false
+      this.$emit('attempt-end')
     },
     initializeAnsweredFromAttempts () {
       if (!Array.isArray(this.attempts)) {

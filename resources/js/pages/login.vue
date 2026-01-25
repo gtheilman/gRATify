@@ -229,9 +229,9 @@ onMounted(async () => {
                   Login
                 </VBtn>
                 <div class="text-caption text-medium-emphasis mt-3">
-                  <a href="/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
+                  <a href="/privacy" target="_blank" rel="noopener">Privacy</a>
                   <span class="mx-2">·</span>
-                  <a href="/TERMS.md" target="_blank" rel="noopener">Terms</a>
+                  <a href="/terms" target="_blank" rel="noopener">Terms</a>
                 </div>
               </VForm>
             </VCol>

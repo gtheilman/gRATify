@@ -1,5 +1,12 @@
 # Changelog
 
+## pending
+- Added asynchronous buffer where students can continue to answer questions when Internet goes down.  If their browser does not support IndexedDB, application will fall back to "wait for the server to confirm it received each click" behavior.
+- Updated the browser tab title to “gRATify - TBL Group Assessments”.
+- Served privacy/terms pages as HTML via /privacy and /terms routes with a shared legal view.
+- Got rid of unused Sanctum settings and made sure everything used auth:web
+
+
 ## v0.1.0-beta.2
 
 - Linked the privacy note from the login page footer.
@@ -7,6 +14,7 @@
 - Clarified that users are responsible for avoiding student-identifiable data in TERMS.md.
 - Added a liability disclaimer for the author in TERMS.md.
 - Set LARAVEL_BYPASS_ENV_CHECK for vitest runs to avoid laravel-vite-plugin CI checks.
+
 - Added PHPStan (Larastan) to CI and release workflows.
 - Fixed linear decay scoring
 - Added client and pest tests.

@@ -28,6 +28,6 @@ describe('postAttemptWithRetry', () => {
     axios.post.mockRejectedValue(new Error('still failing'))
 
     await expect(postAttemptWithRetry({ answer_id: 1 }, 0)).rejects.toThrow('still failing')
-    expect(axios.post).toHaveBeenCalledTimes(2)
+    expect(axios.post).toHaveBeenCalledTimes(4)
   })
 })

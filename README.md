@@ -275,7 +275,7 @@ services:
       - "8080:8080"
 
     # Demo working directory (e.g., SQLite lives under /work/database)
-    # Not necessary if using MySQL, MSSQL or PostgreSQL.
+    # # ./:/work is not needed if using MySQL, MSSQL or PostgreSQL.  Doesn't hurt to leave it.
     volumes:
       - ./:/work
       - ./.env:/var/www/html/.env
@@ -294,16 +294,21 @@ services:
 
 ```
 
-I find it helpful add this above the *gratify* section to automatically clear and rebuild routes, views and caches.  
+I find it helpful add *gratify_cache* section to automatically clear routes, views and caches.  
 
 
 ```yaml
+
+
+x-gratify-image: &gratify-image ghcr.io/gtheilman/gratify:latest
+
 services:
   gratify_cache:
-    image: ghcr.io/gtheilman/gratify:latest
+    image: *gratify-image
     container_name: gratify_cache
     restart: "no"
     volumes:
+      # ./:/work is not needed if using MySQL, MSSQL or PostgreSQL.  Doesn't hurt to leave it.
       - ./:/work
       - ./.env:/var/www/html/.env
     env_file:
@@ -314,22 +319,27 @@ services:
       - -lc
       - |
         set -e
-
         php artisan config:clear
         php artisan route:clear
         php artisan view:clear
         php artisan event:clear
 
-        php artisan config:cache
-        php artisan route:cache
-        php artisan view:cache
-        php artisan event:cache
-
   gratify:
-    image: ghcr.io/gtheilman/gratify:latest
-  
-  And so on . . . 
-
+    image: *gratify-image
+    container_name: gratify
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # ./:/work is not needed if using MySQL, MSSQL or PostgreSQL.  Doesn't hurt to leave it.
+      - ./:/work
+      - ./.env:/var/www/html/.env
+    env_file:
+      - ./.env
+    working_dir: /var/www/html
+    depends_on:
+      gratify_cache:
+        condition: service_started
  
 
 ```
@@ -469,6 +479,7 @@ I'm talking about services like *AWS App Runner* and *Digital Ocean App Platform
 -  The values in the `.env` file are going to need to be copied into the platform interface.  Refer to the documentation for the platform.
 -  Keep in mind that these platforms do not have persistent storage.   Using SQLite is a bad idea because **it's going to be erased when you stop the container**.   You need to have MySQL, MSSQL or PostgreSQL set up somewhere else. 
 -  You'll still need to set up your MySQL, MSSQL or PostgreSQL database according to the instructions here.    You *may* be able to do that from within the app platform.  See the platform's documentation about running console commands.
+-  If your platform requires the container to listen on its provided `$PORT` (Heroku-style), set `DYNAMIC_PORT=1` in `.env`. Otherwise, leave it unset and have the platform use the default 8080.
 
 
 ---
@@ -537,6 +548,20 @@ I've included a button to download a gzipped copy of your database.
 There isn't a "Restore Database" function in the software.  If you have to use your backup, you'll need to interact with your database directly.
 
 ---
+
+## Asynchronous Buffer
+I've had too many situations where there have been transient Wi-Fi outages in the classroom (even just a few seconds) that cause students a lot of anxiety.
+
+I decided to set up an asynchronous buffer where students can continue to answer questions even if the Internet briefly goes down.  The application will transmit what the students have done to the server automatically when the Wi-Fi comes back. 
+
+This background processing of answers should be unnoticable to the students.   But, if the program has not completely finished saving all their answers at the end of the gRAT, a red box will pop up warning the students not to close their browser.   It will count down until all the answers are safely on the server.  Then, another message will pop up saying it's okay to close the browser tab.
+
+The asynchronous buffer requires that the browser support IndexedDB.   If it doesn't (very old browsers or some with "incognito" modes), the application will fall back to requiring each choice the student makes be confirmed as saved on the server before the student is allowed to try to answer again.  That's usually just a few seconds. 
+
+In all cases, it requires no special change in behavior on the part of the student.
+
+---
+
 ## Support and Expectations
 
 - This project is **not guaranteed** to fit every institutional setup. It's not a commercial product. This is "Faculty helping faculty"

@@ -40,7 +40,7 @@ export const buildHttpError = (response, data, fallback = 'Request failed') => {
 }
 
 export const ensureCsrfCookie = () => {
-  return fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' })
+  return fetch('/csrf-cookie', { credentials: 'same-origin' })
 }
 
 export const fetchJson = async (url, options = {}) => {

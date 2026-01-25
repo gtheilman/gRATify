@@ -50,7 +50,7 @@
             msgEl.textContent = '';
             btn.disabled = true;
             try {
-                await fetch('/sanctum/csrf-cookie', {
+                await fetch('/csrf-cookie', {
                     credentials: 'same-origin',
                 });
                 const xsrfToken = readCookie('XSRF-TOKEN');

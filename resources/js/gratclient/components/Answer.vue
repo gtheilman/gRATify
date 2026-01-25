@@ -34,22 +34,6 @@
       tabindex="-1">
       {{ resultAnnouncement }}
     </div>
-    <div
-      v-if="errorMessage"
-      class="error-inline"
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true">
-      {{ errorMessage }}
-      <button
-        v-if="retryAvailable"
-        class="retry-btn"
-        type="button"
-        @click="manualRetry"
-        :disabled="checking">
-        Retry now
-      </button>
-    </div>
   </div>
 </template>
 
@@ -57,6 +41,9 @@
 // Handles attempt submission, retry UX, and local correctness state.
 import { renderMarkdown } from '../utils/markdown'
 import { postAttemptWithRetry } from '../utils/attemptClient'
+import { decodeCorrectScrambled } from '../utils/correctScramble'
+import { queueAttempt, markAttemptSynced, syncQueue, onQueueEvent } from '../utils/attemptQueue'
+import { isStorageAvailable } from '../utils/idb'
 
 export default {
   name: 'AnswerComponent',
@@ -67,9 +54,15 @@ export default {
       isInCorrect: false,
       checking: false,
       lastClickAt: null,
-      errorMessage: '',
-      retryAvailable: false,
-      resultAnnouncement: ''
+      
+      retrying: false,
+      serverRetryActive: false,
+      serverRetryTimer: null,
+      messageTimer: null,
+      messageInterval: null,
+      messageIndex: 0,
+      resultAnnouncement: '',
+      queueUnsubscribe: null
     }
   },
   props: {
@@ -90,7 +83,15 @@ export default {
       type: Boolean,
       default: false
     },
-    textStyle: null
+    textStyle: null,
+    password: {
+      type: String,
+      default: ''
+    },
+    presentationKey: {
+      type: String,
+      default: ''
+    }
   },
   emits: ['markAnswered', 'attempt-start', 'attempt-end', 'answer-correct'],
   computed: {
@@ -117,6 +118,18 @@ export default {
     }
   },
   methods: {
+    resetRetryState () {
+      if (this.messageTimer) {
+        clearTimeout(this.messageTimer)
+        this.messageTimer = null
+      }
+      if (this.messageInterval) {
+        clearInterval(this.messageInterval)
+        this.messageInterval = null
+      }
+      this.retrying = false
+      this.messageIndex = 0
+    },
     applyAttempts () {
       const attemptsForThisAnswer = Array.isArray(this.attempts)
         ? this.attempts.filter(attempt => attempt.answer_id === this.answer.id)
@@ -130,9 +143,9 @@ export default {
       const hasIncorrect = attemptsForThisAnswer.some(attempt => {
         const flag = attempt.answer_correct
         const ans = attempt.answer
-        // Treat null/0/false as incorrect for marking
-        const incorrectFlag = flag === false || flag === 0 || flag === null
-        const incorrectAns = ans && (ans.correct === false || ans.correct === 0 || ans.correct === null)
+        // Only treat explicit false/0 as incorrect for marking.
+        const incorrectFlag = flag === false || flag === 0
+        const incorrectAns = ans && (ans.correct === false || ans.correct === 0)
         return incorrectFlag || incorrectAns
       })
 
@@ -140,14 +153,74 @@ export default {
         this.isCorrect = true
         this.isInCorrect = false
         this.$emit('markAnswered', true)
-      } else if (hasIncorrect) {
+      } else if (hasIncorrect && !this.isCorrect) {
         this.isInCorrect = true
+      }
+    },
+    handleAttemptResponse (payload) {
+      if (payload && payload.alreadyAttempted) {
+        this.resetRetryState()
+        this.errorMessage = ''
+        this.retryAvailable = false
+        return true
+      }
+      const responseIsCorrect = payload && payload.correct === true
+      const responseIsIncorrect = payload && payload.correct === false
+
+      if (responseIsCorrect) {
+        this.isCorrect = true
+        this.$emit('markAnswered', true)
+        this.$emit('answer-correct')
+        this.resultAnnouncement = 'Answer marked correct.'
+        return true
+      } else if (responseIsIncorrect && !this.isCorrect) {
+        this.isInCorrect = true
+        this.resultAnnouncement = 'Answer marked incorrect.'
+        return true
+      }
+
+      if (import.meta.env.DEV)
+        console.warn('Unexpected attempt response', payload)
+      return false
+    },
+    getLocalCorrectFlag () {
+      if (typeof this.answer?.correct === 'boolean')
+        return this.answer.correct
+      return decodeCorrectScrambled(this.answer?.correct_scrambled, this.password)
+    },
+    startSilentRetry () {
+      if (this.retrying) return
+      this.retrying = true
+      this.retryAvailable = false
+      this.errorMessage = ''
+      this.messageIndex = 0
+
+      this.messageTimer = setTimeout(() => {
+      this.retryAvailable = false
+      }, 15000)
+    },
+    async retryServerOnly (payload) {
+      this.serverRetryActive = true
+      const wait = (ms) => new Promise(resolve => {
+        this.serverRetryTimer = setTimeout(resolve, ms)
+      })
+      while (this.serverRetryActive) {
+        try {
+          const response = await this.postAttempt(payload)
+          this.handleAttemptResponse(response.data)
+          this.$nextTick(() => {
+            this.$refs.resultLive?.focus?.()
+          })
+          return
+        } catch (error) {
+          await wait(2000)
+        }
       }
     },
     async checkAnswer () {
       const now = Date.now()
       // Debounce quick double-taps to avoid duplicate submissions.
-      if (this.lastClickAt && (now - this.lastClickAt) < 400) {
+      if (this.lastClickAt && (now - this.lastClickAt) < 2000) {
         return
       }
       this.lastClickAt = now
@@ -158,52 +231,121 @@ export default {
       this.errorMessage = ''
       this.resultAnnouncement = ''
       this.retryAvailable = false
+      this.resetRetryState()
       this.$emit('attempt-start')
       this.checking = true
       try {
-        const response = await this.postAttempt({
+        const payload = {
           presentation_id: this.presentation_id,
           answer_id: this.answer.id
-        })
-        const payload = response.data
-        const responseIsCorrect = payload && payload.correct === true
-        const responseIsIncorrect = payload && payload.correct === false
-
-        if (responseIsCorrect) {
-          this.isCorrect = true
-          this.$emit('markAnswered', true)
-          this.$emit('answer-correct')
-          this.resultAnnouncement = 'Answer marked correct.'
-        } else if (responseIsIncorrect && !this.isCorrect) {
-          this.isInCorrect = true
-          this.resultAnnouncement = 'Answer marked incorrect.'
-        } else if (import.meta.env.DEV) {
-          console.warn('Unexpected attempt response', payload)
         }
+        const storageOk = await isStorageAvailable()
+        if (!storageOk) {
+          await this.retryServerOnly(payload)
+          return
+        }
+        const localCorrect = this.getLocalCorrectFlag()
+        if (localCorrect !== null) {
+          this.handleAttemptResponse({ correct: localCorrect })
+          this.checking = false
+          this.$emit('attempt-end')
+          this.$nextTick(() => {
+            this.$refs.resultLive?.focus?.()
+          })
+
+          const syncLater = async () => {
+            if (this.presentationKey) {
+              await queueAttempt({
+                presentationId: this.presentation_id,
+                answerId: this.answer.id,
+                questionId: this.answer?.question_id || null,
+                presentationKey: this.presentationKey,
+              })
+              // Kick an immediate sync so online clicks are sent right away.
+              syncQueue(this.presentationKey, { timeoutMs: 8000, maxConcurrent: 25 })
+            } else {
+              // Fallback: no queue key, so post directly.
+              await this.postAttempt(payload)
+            }
+          }
+
+          syncLater().catch(error => {
+            const code = `ERR-${Date.now().toString(36)}`
+            console.error('Attempt failed', code, error)
+            this.startSilentRetry()
+          })
+          return
+        }
+
+        let queued = null
+        if (this.presentationKey) {
+          queued = await queueAttempt({
+            presentationId: this.presentation_id,
+            answerId: this.answer.id,
+            questionId: this.answer?.question_id || null,
+            presentationKey: this.presentationKey,
+          })
+        }
+
+        const response = await this.postAttempt(payload)
+        this.handleAttemptResponse(response.data)
+        if (queued?.id)
+          await markAttemptSynced(queued.id)
         this.$nextTick(() => {
           this.$refs.resultLive?.focus?.()
         })
       } catch (error) {
-        // Show a user-facing code so instructors can trace client issues.
         const code = `ERR-${Date.now().toString(36)}`
         console.error('Attempt failed', code, error)
-        this.errorMessage = `Network issue, retrying failed. Show this code to your instructor: ${code}`
-        this.retryAvailable = true
+        const storageOk = await isStorageAvailable()
+        if (storageOk) {
+          const localCorrect = this.getLocalCorrectFlag()
+          if (localCorrect !== null) {
+            this.handleAttemptResponse({ correct: localCorrect })
+          }
+        }
+        this.startSilentRetry()
       } finally {
         this.checking = false
         this.$emit('attempt-end')
       }
     },
-    postAttempt (payload) {
-      return this.$options.attemptClient(payload)
+    postAttempt (payload, options = {}) {
+      const { retryDelay, maxAttempts } = options
+      return this.$options.attemptClient(payload, retryDelay, maxAttempts)
     },
     manualRetry () {
-      this.lastClickAt = 0
-      this.checkAnswer()
+      // Deprecated: retry UI removed for student calmness.
     }
   },
   mounted () {
     this.applyAttempts()
+    this.queueUnsubscribe = onQueueEvent(event => {
+      if (!this.presentationKey || event.presentationKey !== this.presentationKey)
+        return
+      if (event.answerId !== this.answer?.id)
+        return
+      if (event.type === 'synced') {
+        this.resetRetryState()
+        this.errorMessage = ''
+        this.retryAvailable = false
+      }
+      if (event.type === 'response' && event.payload) {
+        this.handleAttemptResponse(event.payload)
+      }
+    })
+  },
+  beforeUnmount () {
+    this.resetRetryState()
+    this.serverRetryActive = false
+    if (this.serverRetryTimer) {
+      clearTimeout(this.serverRetryTimer)
+      this.serverRetryTimer = null
+    }
+    if (this.queueUnsubscribe) {
+      this.queueUnsubscribe()
+      this.queueUnsubscribe = null
+    }
   },
   updated () {
     this.applyAttempts()
@@ -325,23 +467,10 @@ export default {
     text-decoration: none;
   }
 
-  .error-inline {
+      .error-inline {
     color: #b00;
     font-size: 12px;
     margin-top: 6px;
-  }
-  .retry-btn {
-    margin-left: 8px;
-    padding: 4px 10px;
-    font-size: 12px;
-    border-radius: 12px;
-    border: 1px solid #b00;
-    background: #fff;
-    cursor: pointer;
-  }
-  .retry-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
   }
 
   .sr-live {

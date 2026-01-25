@@ -44,13 +44,13 @@ it('positions the change password card lower on the page', function () {
     expect($content)->toContain('margin-top: 100px');
 });
 
-it('uses localStorage or sessionStorage for client presentation caching', function () {
+it('uses indexedDB-based presentation caching for the student client', function () {
     $path = base_path('resources/js/gratclient/views/Home.vue');
     $content = File::get($path);
 
-    expect($content)->toContain('const getCacheStorage');
-    expect($content)->toContain('localStorage');
-    expect($content)->toContain('sessionStorage');
+    expect($content)->toContain('readPresentationCache');
+    expect($content)->toContain('writePresentationCache');
+    expect($content)->not->toContain('const getCacheStorage');
 });
 
 it('gates the login reset hint on mail configuration', function () {

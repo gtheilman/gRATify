@@ -63,74 +63,24 @@
 import { defineAsyncComponent } from 'vue'
 import axios from 'axios'
 import { saveIdentifier, loadIdentifier } from '../utils/cache'
+import { readPresentationCache, writePresentationCache } from '../utils/presentationCache'
+import { decodeCorrectScrambled } from '../utils/correctScramble'
 
-const PRESENTATION_CACHE = new Map()
-const CACHE_TTL_MS = 5 * 60 * 1000
-
-const cacheKey = (password, userId) => `${password || ''}|${userId || ''}`
-
-const getCacheStorage = () => {
-  if (typeof localStorage !== 'undefined') return localStorage
-  if (typeof sessionStorage !== 'undefined') return sessionStorage
-  return null
-}
-
-const readSession = key => {
-  try {
-    const storage = getCacheStorage()
-    if (!storage) return null
-    const raw = storage.getItem(key)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
-
-const writeSession = (key, value) => {
-  try {
-    const storage = getCacheStorage()
-    if (!storage) return
-    storage.setItem(key, JSON.stringify(value))
-  } catch {
-    /* ignore quota errors */
-  }
-}
-
-const getCachedPresentation = (password, userId) => {
-  const key = cacheKey(password, userId)
-  const now = Date.now()
-
-  // In-memory first
-  const cached = PRESENTATION_CACHE.get(key)
-  if (cached) {
-    if ((now - cached.cachedAt) > CACHE_TTL_MS) {
-      PRESENTATION_CACHE.delete(key)
-    } else {
-      return cached
-    }
-  }
-
-  // Fallback to sessionStorage
-  const persisted = readSession(key)
-  if (!persisted) return null
-  if ((now - persisted.cachedAt) > CACHE_TTL_MS) {
-    const storage = getCacheStorage()
-    storage?.removeItem(key)
-    return null
-  }
-  // hydrate in-memory for faster next lookup
-  PRESENTATION_CACHE.set(key, persisted)
-  return persisted
-}
-
-const setCachedPresentation = (password, userId, data) => {
-  const key = cacheKey(password, userId)
-  const payload = {
-    data,
-    cachedAt: Date.now()
-  }
-  PRESENTATION_CACHE.set(key, payload)
-  writeSession(key, payload)
+const RETRY_MIN_DURATION_MS = 14 * 1000
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const decorateCorrectFlags = (presentation, password) => {
+  const questions = presentation?.assessment?.questions
+  if (!Array.isArray(questions) || !password)
+    return
+  questions.forEach(question => {
+    if (!Array.isArray(question.answers))
+      return
+    question.answers.forEach(answer => {
+      const decoded = decodeCorrectScrambled(answer?.correct_scrambled, password)
+      if (decoded !== null)
+        answer.correct = decoded
+    })
+  })
 }
 export default {
   name: 'HomeView',
@@ -187,17 +137,33 @@ export default {
       this.password = this.$route.params.password
 
       // Render from cache immediately, then refresh from the server.
-      const cached = getCachedPresentation(this.password, userId)
-      if (cached?.data) {
-        this.hydratePresentation(cached.data)
+      const cached = await readPresentationCache(this.password, userId)
+      if (cached) {
+        decorateCorrectFlags(cached, this.password)
+        this.hydratePresentation(cached)
         saveIdentifier(this.password, userId)
       }
 
       try {
-        const response = await axios.get(`/api/presentations/store/${this.password}/${userId}`)
+        const start = Date.now()
+        let response = null
+        let lastError = null
+        while ((Date.now() - start) < RETRY_MIN_DURATION_MS) {
+          try {
+            response = await axios.get(`/api/presentations/store/${this.password}/${userId}`)
+            break
+          } catch (error) {
+            lastError = error
+            await sleep(800)
+          }
+        }
+        if (!response) {
+          throw lastError || new Error('fetch-failed')
+        }
         const sorted = response.data.assessment.questions.sort((x, y) => x.sequence - y.sequence)
         response.data.assessment.questions = sorted
-        setCachedPresentation(this.password, userId, response.data)
+        await writePresentationCache(this.password, userId, response.data)
+        decorateCorrectFlags(response.data, this.password)
         this.hydratePresentation(response.data)
         saveIdentifier(this.password, userId)
       } catch (error) {

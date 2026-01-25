@@ -36,7 +36,7 @@ it('serves the student SPA and completes the attempt flow', function () {
 
     $this->get('/client/demo123')
         ->assertOk()
-        ->assertSee('gRAT - TBL Team Assessments');
+        ->assertSee('gRATify - TBL Group Assessments');
 
     $presentationPayload = $this->getJson('/api/presentations/store/demo123/alice')
         ->assertCreated()

@@ -94,6 +94,7 @@ RUN set -eux; \
 
 COPY --from=php-builder /var/www/html /var/www/html
 COPY scripts/generate-env /usr/local/bin/generate-env
+COPY --chmod=755 docker/entrypoint.d/10-dynamic-port.sh /etc/entrypoint.d/10-dynamic-port.sh
 RUN chmod +x /usr/local/bin/generate-env
 RUN mkdir -p storage/app/private/backups \
   && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views \
@@ -157,6 +158,7 @@ RUN apt-get update \
 
 # Copy full source (no build artifacts required for HMR/tests)
 COPY . .
+COPY --chmod=755 docker/entrypoint.d/10-dynamic-port.sh /etc/entrypoint.d/10-dynamic-port.sh
 
 # Install PHP dev dependencies and JS deps
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-interaction --prefer-dist \
