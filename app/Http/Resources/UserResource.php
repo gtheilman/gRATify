@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * User payload used by admin user management views.
+ *
+ * @mixin \App\Models\User
+ * @property int|null $assessments_count
+ */
+class UserResource extends JsonResource
+{
+    public static $wrap = null;
+
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'username' => $this->username,
+            'email' => $this->email,
+            'role' => $this->role,
+            'company' => $this->company,
+            // Fallback to relation count when withCount isn't present.
+            'assessments_count' => $this->assessments_count ?? $this->assessments()->count(),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+        ];
+    }
+}

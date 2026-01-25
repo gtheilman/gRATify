@@ -1,0 +1,70 @@
+:root {
+  --app-radius-sm: 10px;
+  --app-radius-md: 14px;
+  --app-radius-lg: 18px;
+
+  --app-shadow-soft: 0 14px 45px rgba(15, 23, 42, 0.25), 0 10px 18px rgba(15, 23, 42, 0.18);
+  --app-shadow-subtle: 0 10px 30px rgba(15, 23, 42, 0.12);
+
+  --app-glass-border: rgba(255, 255, 255, 0.12);
+  --app-glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+
+  --app-gradient-primary: linear-gradient(135deg, #111827, #1f2937);
+  --app-gradient-accent: linear-gradient(135deg, #1d4ed8, #06b6d4);
+
+  --app-text-strong: #e5e7eb;
+}
+
+.surface-glass {
+  background: var(--app-gradient-primary);
+  border: 1px solid var(--app-glass-border);
+  box-shadow: var(--app-shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.surface-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--app-glass-sheen);
+  pointer-events: none;
+}
+
+.surface-glass-blur {
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.surface-gradient-accent {
+  background: var(--app-gradient-accent);
+  color: var(--app-text-strong);
+  box-shadow: var(--app-shadow-subtle);
+}
+
+.card-radius-lg {
+  border-radius: var(--app-radius-lg) !important;
+}
+
+.card-radius-md {
+  border-radius: var(--app-radius-md) !important;
+}
+
+.elevate-soft {
+  box-shadow: var(--app-shadow-soft) !important;
+}
+
+.fade-slide-up {
+  animation: fade-slide-up 320ms ease-out;
+}
+
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

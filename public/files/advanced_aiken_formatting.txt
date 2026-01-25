@@ -1,0 +1,46 @@
+Inline markdown works: **bold**, _italic_, and `code` all render.
+A) Yes, that renders as expected.
+B) No, markdown is stripped.
+C) Only bold works.
+D) Only code works.
+ANSWER: A
+
+Hyperlinks: visit [CDC Influenza](https://www.cdc.gov/flu/) to verify.
+A) The link renders and is clickable.
+B) Links are removed automatically.
+C) Links show as plain text only.
+D) Links break the question layout.
+ANSWER: A
+
+Inline LaTeX: $E = mc^2$. Block math:
+
+$$a^2 + b^2 = c^2$$
+
+Both inline and block math should render with KaTeX.
+A) Both inline and block math render with KaTeX.
+B) Inline renders, block does not.
+C) Block renders, inline does not.
+D) Neither renders.
+ANSWER: A
+
+AsciiMath example: `@int_0^1 x^2 dx@` should show an integral.
+A) AsciiMath renders to LaTeX delimiters.
+B) AsciiMath is displayed as raw text.
+C) AsciiMath causes an error.
+D) AsciiMath removes the question.
+ANSWER: A
+
+Embedded image: <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Shaki_waterfall.jpg" alt="Waterfall" width="100" height="100" />
+A) The image displays inline above.
+B) Images are blocked entirely.
+C) Images require upload to work.
+D) Images replace all text.
+ANSWER: A
+
+Emoji example: :sunglasses: should show a sunglasses emoji.
+A) The emoji displays as expected.
+B) Only a placeholder box appears.
+C) Emojis remove surrounding text.
+D) Emojis render as raw text.
+ANSWER: A
+

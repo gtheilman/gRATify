@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - '*staging*'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Composer audit (high/critical)
+        run: |
+          composer audit --locked --format=json > composer-audit.json || true
+          php -r '$data=json_decode(file_get_contents("composer-audit.json"), true) ?: []; $advisories=$data["advisories"] ?? []; $hits=[]; foreach ($advisories as $package => $items) { foreach ($items as $adv) { $severity=strtolower((string)($adv["severity"] ?? "")); if (in_array($severity, ["high", "critical"], true)) { $title=$adv["title"] ?? "advisory"; $hits[]=$package . ": " . $title . " (" . $severity . ")"; } } } if ($hits) { fwrite(STDERR, "High/Critical Composer advisories:\n" . implode("\n", $hits) . "\n"); exit(1); }'
+
+      - name: NPM audit (high/critical)
+        run: npm audit --audit-level=high
+
+  ci:
+    needs: audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, bcmath, pdo_mysql, redis, sqlite3
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps --ignore-scripts
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Run client tests
+        run: npm run test:client
+
+      - name: Run static analysis
+        run: composer stan
+
+      - name: Prepare environment
+        run: |
+          php -r 'echo "APP_KEY=base64:".base64_encode(random_bytes(32)).PHP_EOL;' > .env
+          cat >> .env <<'EOF'
+          APP_ENV=testing
+          APP_DEBUG=true
+          DB_CONNECTION=sqlite
+          DB_DATABASE=:memory:
+          CACHE_STORE=array
+          QUEUE_CONNECTION=sync
+          SESSION_DRIVER=array
+          MAIL_MAILER=array
+          EOF
+
+      - name: Clear caches
+        run: php artisan optimize:clear
+
+      - name: Ensure storage directories exist
+        run: |
+          mkdir -p storage/framework/{views,cache,sessions} storage/logs
+          chmod -R ug+rw storage
+
+      - name: Run tests (Pest)
+        run: |
+          unset DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD
+          APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=:memory: ./vendor/bin/pest
+
+  build-staging:
+    needs: ci
+    if: contains(github.ref_name, 'staging')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Vite env
+        id: vite_env
+        run: |
+          echo "app_env=$(grep '^APP_ENV=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "app_debug=$(grep '^APP_DEBUG=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "api_base=$(grep '^VITE_API_BASE_URL=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "server_url=$(grep '^VITE_SERVER_URL=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          echo "base=$(grep '^VITE_BASE=' .env.example | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Build and push staging image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: prod
+          push: true
+          build-args: |
+            APP_ENV=${{ steps.vite_env.outputs.app_env }}
+            APP_DEBUG=${{ steps.vite_env.outputs.app_debug }}
+            VITE_API_BASE_URL=${{ steps.vite_env.outputs.api_base }}
+            VITE_SERVER_URL=${{ steps.vite_env.outputs.server_url }}
+            VITE_BASE=${{ steps.vite_env.outputs.base }}
+          tags: |
+            ghcr.io/gtheilman/gratify:${{ github.ref_name }}
