@@ -1,7 +1,0 @@
-@import './theme-tokens.scss';
-
-// Ensure colored icon buttons keep arrow glyphs visible on filled backgrounds
-.v-btn.bg-primary .v-icon[class*='tabler-arrow'] {
-  color: #fff !important;
-  stroke: #fff !important;
-}
