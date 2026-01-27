@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Answer> $answers
  * @property \Illuminate\Support\Collection<int, \App\Models\Attempt> $attempts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Appeal> $appeals
  * @property-read \App\Models\Assessment|null $assessment
  */
 class Question extends Model
@@ -35,6 +36,16 @@ class Question extends Model
     {
         /** @var HasMany<Answer, static> $relation */
         $relation = $this->hasMany(Answer::class)->orderBy('sequence');
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<Appeal, static>
+     */
+    public function appeals(): HasMany
+    {
+        /** @var HasMany<Appeal, static> $relation */
+        $relation = $this->hasMany(Appeal::class);
         return $relation;
     }
 

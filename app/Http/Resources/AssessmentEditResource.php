@@ -26,6 +26,7 @@ class AssessmentEditResource extends JsonResource
             'course' => $this->course,
             'memo' => $this->memo,
             'active' => (bool) $this->active,
+            'appeals_open' => (bool) $this->appeals_open,
             'short_url' => $this->short_url,
             'bitly_error' => $this->bitly_error,
             'password' => $this->password,

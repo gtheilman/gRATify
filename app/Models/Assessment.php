@@ -30,6 +30,10 @@ class Assessment extends Model
     use HasFactory;
 
     protected $guarded = [];
+    protected $casts = [
+        'active' => 'bool',
+        'appeals_open' => 'bool',
+    ];
 
     /**
      * @return HasMany<Question, static>

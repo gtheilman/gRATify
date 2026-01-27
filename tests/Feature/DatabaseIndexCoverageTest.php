@@ -49,6 +49,11 @@ it('adds foreign key and ordering indexes for core tables', function () {
             'presentations_assessment_user_index',
             'presentations_assessment_created_index',
         ],
+        'appeals' => [
+            'appeals_presentation_question_unique',
+            'appeals_presentation_idx',
+            'appeals_question_idx',
+        ],
     ];
 
     foreach ($expected as $table => $indexes) {

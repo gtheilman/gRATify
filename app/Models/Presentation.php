@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Attempt> $attempts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Appeal> $appeals
  * @property-read \App\Models\Assessment|null $assessment
  */
 class Presentation extends Model
@@ -33,6 +34,16 @@ class Presentation extends Model
     {
         /** @var HasMany<Attempt, static> $relation */
         $relation = $this->hasMany(Attempt::class);
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<Appeal, static>
+     */
+    public function appeals(): HasMany
+    {
+        /** @var HasMany<Appeal, static> $relation */
+        $relation = $this->hasMany(Appeal::class);
         return $relation;
     }
 

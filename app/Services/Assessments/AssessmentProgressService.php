@@ -13,7 +13,7 @@ class AssessmentProgressService
 {
     public function build(int $assessmentId): Assessment
     {
-        $assessment = Assessment::select(['id', 'title', 'course', 'active', 'short_url'])
+        $assessment = Assessment::select(['id', 'title', 'course', 'active', 'appeals_open', 'short_url'])
             ->with(['questions' => function ($query) {
                 $query->select(['id', 'assessment_id', 'stem', 'sequence'])
                     ->orderBy('sequence')

@@ -17,6 +17,10 @@ trait CreatesApplication
         if (file_exists($routesCache)) {
             @unlink($routesCache);
         }
+        $testingRoutesCache = __DIR__ . '/../bootstrap/cache/routes.testing.php';
+        if (file_exists($testingRoutesCache)) {
+            @unlink($testingRoutesCache);
+        }
 
         $app = require __DIR__ . '/../bootstrap/app.php';
 

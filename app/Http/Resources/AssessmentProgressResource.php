@@ -24,6 +24,7 @@ class AssessmentProgressResource extends JsonResource
             'title' => $this->title,
             'course' => $this->course,
             'active' => (bool) $this->active,
+            'appeals_open' => (bool) $this->appeals_open,
             'short_url' => $this->short_url,
             'questions' => QuestionProgressResource::collection($this->questions ?? collect()),
             'presentations' => PresentationProgressResource::collection($this->presentations ?? collect()),

@@ -51,6 +51,10 @@ export default {
     presentationKey: {
       type: String,
       default: ''
+    },
+    appeals: {
+      type: Array,
+      default: () => []
     }
   },
   emits: ['questionComplete', 'attempt-start', 'attempt-end'],
@@ -119,6 +123,12 @@ export default {
       immediate: true,
       handler () {
         this.initializeAnsweredFromAttempts()
+      }
+    },
+    appeals: {
+      immediate: true,
+      handler () {
+        // Placeholder to react to appeal updates from parent.
       }
     }
   },
@@ -236,4 +246,5 @@ export default {
   align-items: stretch;
   text-align: left;
 }
+
 </style>

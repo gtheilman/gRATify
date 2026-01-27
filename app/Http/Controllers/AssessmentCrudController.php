@@ -224,6 +224,25 @@ class AssessmentCrudController extends Controller
         return new AssessmentResource($assessment);
     }
 
+    public function updateAppeals(Request $request, Assessment $assessment): JsonResponse
+    {
+        $this->authorize('update', $assessment);
+
+        $data = $request->validate([
+            'appeals_open' => ['required', 'boolean'],
+        ]);
+
+        $assessment->appeals_open = (bool) $data['appeals_open'];
+        $assessment->save();
+
+        cache()->forget("assessment.progress.{$assessment->id}");
+        cache()->forget("assessments.edit.{$assessment->id}");
+
+        return response()->json([
+            'appeals_open' => (bool) $assessment->appeals_open,
+        ]);
+    }
+
     public function destroy(Request $request, Assessment $assessment): Response
     {
         $this->authorize('delete', $assessment);

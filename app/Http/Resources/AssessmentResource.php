@@ -28,6 +28,7 @@ class AssessmentResource extends JsonResource
             'course' => $this->course,
             'memo' => $this->memo,
             'active' => (bool) $this->active,
+            'appeals_open' => (bool) $this->appeals_open,
             'short_url' => $this->short_url,
             // Exposed so the editor UI can show/copy client links without extra fetches.
             'password' => $this->password,

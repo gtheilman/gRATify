@@ -14,6 +14,7 @@ class Errors
     public const NOT_FOUND = 'not_found';
     public const LOCKED = 'locked';
     public const INVALID_SCHEME = 'invalid_scheme';
+    public const APPEALS_NOT_READY = 'appeals_not_ready';
 
     /**
      * @return array<string, string>
@@ -26,6 +27,7 @@ class Errors
             self::NOT_FOUND => 'Not Found',
             self::LOCKED => 'Locked',
             self::INVALID_SCHEME => 'Invalid scoring scheme',
+            self::APPEALS_NOT_READY => 'Appeals are not yet available',
         ];
     }
 

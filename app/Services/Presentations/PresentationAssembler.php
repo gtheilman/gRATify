@@ -4,6 +4,7 @@ namespace App\Services\Presentations;
 
 use App\Models\Assessment;
 use App\Models\Attempt;
+use App\Models\Appeal;
 use App\Models\Presentation;
 
 /**
@@ -37,8 +38,14 @@ class PresentationAssembler
             ->orderBy('created_at')
             ->get();
 
+        $appeals = Appeal::select(['id', 'presentation_id', 'question_id', 'body', 'created_at'])
+            ->where('presentation_id', $presentation->id)
+            ->orderBy('created_at')
+            ->get();
+
         $presentation->setRelation('assessment', $assessment);
         $presentation->setRelation('attempts', $attempts);
+        $presentation->setRelation('appeals', $appeals);
 
         return [
             'presentation' => $presentation,

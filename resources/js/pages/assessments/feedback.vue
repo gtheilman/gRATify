@@ -1,6 +1,6 @@
 <script setup>
 // Caches feedback payload locally to allow read-only viewing during transient failures.
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { renderMarkdown as renderClientMarkdown } from '@/gratclient/utils/markdown'
 import { applyCachedFallback } from '@/utils/cacheFallback'
@@ -12,14 +12,19 @@ import ErrorNotice from '@/components/ErrorNotice.vue'
 import { needsSessionRefresh } from '@/utils/errorFlags'
 import { readFeedbackCache, writeFeedbackCache } from '@/utils/feedbackCache'
 import { buildAnswerMap } from '@/utils/answerMap'
+import { useApi } from '@/composables/useApi'
 
 const route = useRoute()
+const api = useApi
 
 const loading = ref(false)
 const error = ref('')
 const assessment = ref(null)
 const activeSlide = ref(0)
 const staleNotice = ref('')
+const appealsOpen = ref(null)
+const appealsToastDismissed = ref(false)
+const appealsToggleBusy = ref(false)
 const needsRefresh = computed(() => needsSessionRefresh(error.value))
 
 const loadFeedbackCache = () => readFeedbackCache(route.params.id)
@@ -39,6 +44,8 @@ const fetchFeedback = async () => {
       throw new Error(message)
     }
     assessment.value = data
+    if (typeof data?.appeals_open !== 'undefined')
+      appealsOpen.value = !!data.appeals_open
     storeFeedbackCache(data)
   }
   catch (err) {
@@ -60,6 +67,42 @@ onMounted(fetchFeedback)
 const clearStaleNotice = () => {
   clearNotice(staleNotice)
 }
+
+const dismissAppealsToast = () => {
+  appealsToastDismissed.value = true
+}
+
+const updateAppealsOpen = async (nextValue) => {
+  if (!assessment.value || appealsToggleBusy.value)
+    return
+  appealsToggleBusy.value = true
+  const previous = appealsOpen.value
+  appealsOpen.value = nextValue
+  try {
+    const { error: apiError } = await api(`/assessments/${assessment.value.id}/appeals`, {
+      method: 'PATCH',
+      body: { appeals_open: nextValue },
+    })
+    if (apiError.value)
+      throw apiError.value
+    assessment.value = {
+      ...assessment.value,
+      appeals_open: !!nextValue,
+    }
+    storeFeedbackCache(assessment.value)
+    appealsToastDismissed.value = true
+  } catch (err) {
+    appealsOpen.value = previous
+    error.value = getErrorMessage(err, 'Unable to update appeals')
+  } finally {
+    appealsToggleBusy.value = false
+  }
+}
+
+watch(assessment, (value) => {
+  if (typeof value?.appeals_open !== 'undefined')
+    appealsOpen.value = !!value.appeals_open
+})
 
 const answerMap = computed(() => buildAnswerMap(assessment.value?.questions))
 
@@ -199,6 +242,33 @@ onMounted(() => {
     <VRow>
       <div class="menu-spacer" />
       <VCol cols="12">
+        <VAlert
+          v-if="assessment && !appealsToastDismissed"
+          class="appeals-toast mb-4"
+          variant="flat"
+          color="white"
+          closable
+          @click:close="dismissAppealsToast"
+        >
+          <div class="d-flex flex-wrap align-center justify-space-between gap-4">
+            <div>
+              <div class="appeals-toast-title">
+                Appeals Submissions Are {{ appealsOpen ? 'Open' : 'Closed' }}
+              </div>
+              <div class="appeals-toast-subtitle">
+                Use the checkbox to open or close student appeals for this assessment.
+              </div>
+            </div>
+            <VCheckbox
+              :model-value="!!appealsOpen"
+              :disabled="appealsToggleBusy"
+              hide-details
+              label="Appeals open"
+              color="primary"
+              @update:model-value="updateAppealsOpen"
+            />
+          </div>
+        </VAlert>
         <VCard
           class="mb-4 surface-glass surface-glass-blur card-radius-lg elevate-soft fade-slide-up"
           elevation="0"
@@ -537,6 +607,25 @@ onMounted(() => {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
   margin-left: auto;
   margin-right: auto;
+}
+
+.appeals-toast {
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.appeals-toast-title {
+  font-size: clamp(1rem, 2.4vh, 1.4rem);
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.appeals-toast-subtitle {
+  font-size: clamp(0.85rem, 2vh, 1.1rem);
+  color: rgba(15, 23, 42, 0.7);
+  margin-top: 4px;
 }
 
 .slide-hint {

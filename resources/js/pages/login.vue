@@ -8,7 +8,7 @@ import { getErrorMessage } from '@/utils/apiError'
 import { formatLoginError } from '@/utils/loginError'
 import { ensureCsrfCookie, fetchJson } from '@/utils/http'
 import { validateResetEmail } from '@/utils/loginReset'
-import loginIllustration from '../../assets/images/pages/login.webp'
+import loginIllustration from '../../assets/images/TBL_Group.webp'
 
 const form = ref({
   email: '',

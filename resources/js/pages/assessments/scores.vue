@@ -33,7 +33,7 @@ const api = useApi
 const loading = ref(false)
 const error = ref('')
 const presentations = ref([])
-const showCollapsible = ref(true)
+const showResponses = ref(false)
 const sortKey = ref('user') // user | score_desc | score_asc
 const assessmentActive = ref(null)
 const assessmentTitle = ref('')
@@ -44,6 +44,7 @@ const csvFallbackOpen = ref(false)
 const csvFallbackText = ref('')
 const copyCsvStatus = ref('')
 const { isOffline } = useOffline()
+const openPanelIds = ref([])
 
 const scoringScheme = ref(defaultScoringScheme)
 
@@ -74,6 +75,11 @@ const fetchScores = async () => {
       assessmentActive.value = parseActiveFlag(assessment.active)
     if (assessment?.title)
       assessmentTitle.value = assessment.title
+    if (!showResponses.value) {
+      openPanelIds.value = presentationsWithAppeals.value.map(p => p.id)
+    } else {
+      applyShowResponses()
+    }
   }
   catch (err) {
     error.value = getErrorMessage(err, 'Unable to load scores')
@@ -105,6 +111,12 @@ const loadAssessmentActive = async () => {
 
 const sortedPresentations = computed(() => {
   return sortPresentations(presentations.value, sortKey.value)
+})
+
+const presentationsWithAppeals = computed(() => {
+  return sortedPresentations.value.filter(presentation =>
+    (presentation?.assessment?.questions || []).some(question => (question.appeals || []).length)
+  )
 })
 
 const scoresOnly = computed(() => toNumericScores(sortedPresentations.value))
@@ -222,6 +234,29 @@ const toggleActive = async () => {
   }
 }
 
+const showAppeals = () => {
+  openPanelIds.value = presentationsWithAppeals.value.map(p => p.id)
+}
+
+const applyShowResponses = () => {
+  if (!sortedPresentations.value.length) {
+    openPanelIds.value = []
+    return
+  }
+  openPanelIds.value = showResponses.value
+    ? sortedPresentations.value.map(p => p.id)
+    : []
+}
+
+watch(showResponses, () => {
+  applyShowResponses()
+})
+
+watch(sortedPresentations, () => {
+  if (showResponses.value)
+    applyShowResponses()
+})
+
 </script>
 
 <template>
@@ -295,6 +330,15 @@ const toggleActive = async () => {
                 @click="printTimeline"
               >
                 Print Timeline
+              </VBtn>
+              <VBtn
+                color="error"
+                variant="tonal"
+                prepend-icon="tabler-message"
+                :disabled="!presentationsWithAppeals.length"
+                @click="showAppeals"
+              >
+                Show Appeals
               </VBtn>
             </div>
           </VCardTitle>
@@ -397,22 +441,24 @@ const toggleActive = async () => {
 
             <div v-else>
               <div class="d-flex justify-end mb-2">
-                <VSwitch
-                  v-model="showCollapsible"
-                  color="primary"
-                  inset
-                  label="Collapse responses"
-                />
+              <VSwitch
+                v-model="showResponses"
+                color="primary"
+                inset
+                label="Show Responses"
+              />
               </div>
 
               <VExpansionPanels
-                v-if="sortedPresentations.length && showCollapsible"
+                v-if="sortedPresentations.length"
+                v-model="openPanelIds"
                 multiple
                 class="mb-4 striped"
               >
                 <VExpansionPanel
                   v-for="(presentation, idx) in sortedPresentations"
                   :key="presentation.id"
+                  :value="presentation.id"
                   :class="idx % 2 === 0 ? 'row-alt' : ''"
                 >
                   <VExpansionPanelTitle>
@@ -444,6 +490,16 @@ const toggleActive = async () => {
                         <span>
                           {{ truncateText(attempt.answer?.answer_text) }}
                         </span>
+                      </div>
+                      <div v-if="question.appeals?.length" class="appeals-block">
+                        <div class="appeals-label">Appeals</div>
+                        <div
+                          v-for="appeal in question.appeals"
+                          :key="appeal.id"
+                          class="appeal-entry"
+                        >
+                          {{ appeal.body }}
+                        </div>
                       </div>
                     </div>
                   </VExpansionPanelText>
@@ -485,6 +541,16 @@ const toggleActive = async () => {
                             {{ truncateText(attempt.answer?.answer_text) }}
                           </span>
                         </div>
+                        <div v-if="question.appeals?.length" class="appeals-block">
+                          <div class="appeals-label">Appeals</div>
+                          <div
+                            v-for="appeal in question.appeals"
+                            :key="appeal.id"
+                            class="appeal-entry"
+                          >
+                            {{ appeal.body }}
+                          </div>
+                        </div>
                       </div>
                     </VCardText>
                   </VCard>
@@ -521,5 +587,26 @@ const toggleActive = async () => {
 
 .row-alt :deep(.v-expansion-panel-text) {
   background: #fff;
+}
+
+.appeals-block {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(220, 38, 38, 0.4);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.appeals-label {
+  font-weight: 700;
+  color: #991b1b;
+  margin-bottom: 6px;
+}
+
+.appeal-entry {
+  color: #7f1d1d;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  white-space: pre-wrap;
 }
 </style>

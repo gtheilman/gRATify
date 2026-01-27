@@ -70,7 +70,7 @@ class PresentationController extends Controller
         }
 
         // Public endpoint: locate assessment by password and prevent access if inactive.
-        $assessment = Assessment::select(['id', 'title', 'course', 'active', 'short_url', 'bitly_error', 'password'])
+        $assessment = Assessment::select(['id', 'title', 'course', 'active', 'appeals_open', 'short_url', 'bitly_error', 'password'])
             ->with(['questions' => function ($query) {
                 $query->select(['id', 'assessment_id', 'stem', 'points_possible', 'sequence'])
                     ->orderBy('sequence')
@@ -159,7 +159,7 @@ class PresentationController extends Controller
     public function scoreByAssessmentId(Request $request, int $assessment_id): JsonResponse|AnonymousResourceCollection
     {
 
-        $assessment = Assessment::select(['id', 'user_id', 'title', 'active'])
+        $assessment = Assessment::select(['id', 'user_id', 'title', 'active', 'appeals_open'])
             ->with(['questions' => function ($query) {
                 $query->select(['id', 'assessment_id', 'stem', 'sequence'])
                     ->orderBy('sequence')
@@ -189,6 +189,9 @@ class PresentationController extends Controller
             },
             'attempts.answer' => function ($query) {
                 $query->select(['id', 'question_id', 'correct', 'answer_text']);
+            },
+            'appeals' => function ($query) {
+                $query->select(['id', 'presentation_id', 'question_id', 'body', 'created_at']);
             },
         ])
             ->where('assessment_id', $assessment_id)

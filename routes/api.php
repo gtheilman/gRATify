@@ -5,6 +5,7 @@ use App\Http\Controllers\AssessmentCrudController;
 use App\Http\Controllers\AssessmentBulkController;
 use App\Http\Controllers\AssessmentProgressController;
 use App\Http\Controllers\AttemptController;
+use App\Http\Controllers\AppealController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\AuthController;
@@ -45,6 +46,7 @@ Route::middleware('api')->group(function () {
     Route::apiResource('answers', AnswerController::class)->middleware('auth:web');
     // Attempts are created by unauthenticated participants via the client app.
     Route::post('attempts/bulk', [AttemptController::class, 'bulkStore']);
+    Route::post('appeals', [AppealController::class, 'store']);
     Route::apiResource('attempts', AttemptController::class)
         ->only(['store']);
     Route::apiResource('attempts', AttemptController::class)
@@ -68,6 +70,7 @@ Route::middleware(['api', 'auth:web'])->group(function () {
     Route::post('/answers/promote', [AnswerController::class, 'promote'])->name('answers.promote');
     Route::post('/answers/demote', [AnswerController::class, 'demote'])->name('answers.demote');
     Route::get('/list-assessments-by-user/{user_id}', [AssessmentCrudController::class, 'listAssessmentsByUser']);
+    Route::patch('/assessments/{assessment}/appeals', [AssessmentCrudController::class, 'updateAppeals']);
 });
 
 Route::middleware('api')->group(function () {

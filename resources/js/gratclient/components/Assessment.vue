@@ -2,24 +2,35 @@
   <div>
     <div
       v-if="complete"
-      class="complete"
+      class="status-toast toast-complete"
       role="status"
       aria-live="polite"
       aria-atomic="true"
     >
-      <div>Complete!</div>
-      <div class="complete-note">You may close this tab.</div>
+      <div class="toast-title">Complete!</div>
+      <div class="toast-note">You may close this tab.</div>
     </div>
     <div
       v-if="showCloseWarning"
-      class="save-warning"
+      class="status-toast toast-warning"
       role="status"
       aria-live="assertive"
       aria-atomic="true"
     >
-      <div class="save-warning-title">Completed!</div>
-      <div class="save-warning-note">Do Not Close!</div>
-      <div class="save-warning-note">Saving Answers: {{ queuePendingCount }}</div>
+      <div class="toast-title">Completed!</div>
+      <div class="toast-note">Do Not Close!</div>
+      <div class="toast-note">Saving Answers: {{ queuePendingCount }}</div>
+    </div>
+    <div
+      v-if="showSoftSaving"
+      class="status-toast toast-saving"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div class="toast-title">Completed!</div>
+      <div class="toast-note">Saving answers…</div>
+      <div class="toast-spinner" aria-hidden="true"></div>
     </div>
     <div
       v-if="showTabWarning"
@@ -42,10 +53,13 @@
       aria-label="gRAT questions"
       class="assessment-swiper"
       :aria-live="complete ? 'off' : liveMode"
+      @slideChange="onSlideChange"
     >
       <SwiperSlide
         v-for="(question, idx) in presentation.assessment.questions"
         :key="question.id"
+        :data-question-id="question.id"
+        :data-question-index="idx"
         aria-roledescription="slide"
         :aria-label="`Question ${idx + 1} of ${presentation.assessment.questions.length}`"
       >
@@ -56,11 +70,58 @@
           :presentation_id=presentation.id
           :question=question
           :attempts=presentation.attempts
+          :appeals="presentation.appeals"
           :password="password"
           :presentationKey="presentationKey">
         </question>
       </SwiperSlide>
     </Swiper>
+    <div v-if="complete" class="appeal-toolbar">
+      <button
+        v-if="appealsOpen"
+        type="button"
+        class="appeal-open"
+        :disabled="appealSubmitting"
+        @click.stop.prevent="openAppealModal"
+      >
+        Appeal
+      </button>
+      <span v-if="appealSubmitted" class="appeal-badge saved">Saved</span>
+      <span v-else-if="!appealsOpen" class="appeal-badge closed">APPEALS CLOSED</span>
+    </div>
+    <div v-if="showAppealModal" class="appeal-modal" role="dialog" aria-modal="true">
+      <div class="appeal-modal-backdrop" @click.self="closeAppealModal"></div>
+      <div class="appeal-modal-card">
+        <div class="appeal-modal-header">
+          <div class="appeal-modal-title">
+            Appeal · Question {{ activeQuestionNumber }}
+          </div>
+          <button type="button" class="appeal-modal-close" @click="closeAppealModal">×</button>
+        </div>
+        <p v-if="!appealsOpen" class="appeal-note">
+          Appeals are closed for this assessment.
+        </p>
+        <textarea
+          v-model="appealDraft"
+          class="appeal-textarea"
+          rows="4"
+          placeholder="Explain briefy why your group's choice is BETTER than the key. It is not enough to just find fault with the key's choice. The faculty will review and respond after class."
+          :disabled="appealLocked"
+        ></textarea>
+        <div class="appeal-actions">
+          <button
+            type="button"
+            class="appeal-submit"
+            :disabled="appealLocked || !appealDraftTrimmed"
+            @click.stop.prevent="submitAppeal"
+          >
+            {{ appealSubmitting ? 'Submitting…' : 'Submit appeal' }}
+          </button>
+          <span v-if="appealStatus" class="appeal-status-text">{{ appealStatus }}</span>
+          <span v-if="appealError" class="appeal-error">{{ appealError }}</span>
+        </div>
+      </div>
+    </div>
 
     <div v-if="debugMode" class="debug-panel" aria-live="polite">
       <div><strong>Debug</strong></div>
@@ -94,6 +155,9 @@ import Question from './Question.vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Navigation, Pagination, Keyboard } from 'swiper/modules'
 import { startQueueSync, stopQueueSync, onQueueEvent, getQueueState, syncQueue, countPending } from '../utils/attemptQueue'
+import { ensureCsrfCookie } from '../../utils/http'
+import { writePresentationCache } from '../utils/presentationCache'
+import axios from 'axios'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
@@ -118,12 +182,33 @@ export default {
       return `${this.password}|${this.user_id}`
     },
     showCloseWarning () {
-      if (!this.totalQuestions)
+      if (!this.isSaving)
         return false
-      return this.completedIds.length === this.totalQuestions && !this.complete
+      if (this.queuePendingCount > this.saveWarningPendingThreshold)
+        return true
+      if (!this.saveWarningSince)
+        return false
+      const now = this.saveWarningNow || Date.now()
+      return (now - this.saveWarningSince) >= this.saveWarningHoldMs
+    },
+    showSoftSaving () {
+      if (!this.isSaving)
+        return false
+      if (this.queuePendingCount > this.saveWarningPendingThreshold)
+        return false
+      if (!this.saveWarningSince)
+        return true
+      const now = this.saveWarningNow || Date.now()
+      return (now - this.saveWarningSince) < this.saveWarningHoldMs
     },
     showTabWarning () {
       return this.duplicateTab
+    },
+    isSaving () {
+      if (!this.totalQuestions)
+        return false
+      const allAnswered = this.completedIds.length === this.totalQuestions
+      return this.completionReady && allAnswered && !this.complete && (this.pendingAttempts > 0 || this.queuePendingCount > 0)
     },
     debugLastTick () {
       if (!this.debugLastTickAt) return 'never'
@@ -165,6 +250,28 @@ export default {
     },
     debugQueryCount () {
       return this.queueLastResponseDebug?.queries ?? 'n/a'
+    },
+    appealsOpen () {
+      return !!this.presentation?.assessment?.appeals_open
+    },
+    activeQuestion () {
+      return this.presentation?.assessment?.questions?.[this.activeQuestionIndex] || null
+    },
+    activeQuestionId () {
+      return this.activeQuestion?.id || null
+    },
+    activeQuestionNumber () {
+      return this.activeQuestionIndex + 1
+    },
+    appealSubmitted () {
+      if (!this.activeQuestionId) return false
+      return (this.presentation?.appeals || []).some(appeal => appeal.question_id === this.activeQuestionId)
+    },
+    appealLocked () {
+      return this.appealSubmitting || this.appealSubmitted || !this.appealsOpen
+    },
+    appealDraftTrimmed () {
+      return (this.appealDraft || '').trim()
     }
   },
   methods: {
@@ -200,6 +307,144 @@ export default {
         if (active && typeof active.blur === 'function') {
           active.blur()
         }
+      }
+    },
+    onSlideChange () {
+      this.syncActiveQuestionFromSwiper()
+      this.syncAppealDraft()
+      requestAnimationFrame(() => {
+        this.syncActiveQuestionFromSwiper()
+        this.syncAppealDraft()
+      })
+      setTimeout(() => {
+        this.syncActiveQuestionFromSwiper()
+        this.syncAppealDraft()
+      }, 150)
+    },
+    syncActiveQuestionFromSwiper () {
+      const activeSlide = this.$el?.querySelector?.('.swiper-slide-active')
+      const domIndex = activeSlide?.dataset?.questionIndex
+      if (typeof domIndex !== 'undefined') {
+        const parsed = Number(domIndex)
+        if (!Number.isNaN(parsed)) {
+          this.activeQuestionIndex = parsed
+          return
+        }
+      }
+      const swiper = this.swiper
+      if (swiper) {
+        const index = swiper.realIndex ?? swiper.activeIndex ?? 0
+        this.activeQuestionIndex = index
+        return
+      }
+      this.activeQuestionIndex = 0
+    },
+    openAppealModal () {
+      this.syncActiveQuestionFromSwiper()
+      this.showAppealModal = true
+      this.appealError = ''
+      this.syncAppealDraft()
+      this.refreshAppealsState()
+    },
+    closeAppealModal () {
+      this.showAppealModal = false
+    },
+    async refreshAppealsState () {
+      if (this.appealRefreshInFlight || !this.password || !this.user_id) {
+        return
+      }
+      this.appealRefreshInFlight = true
+      try {
+        const response = await axios.get(`/api/presentations/store/${this.password}/${this.user_id}`)
+        const payload = response?.data || null
+        if (payload?.assessment && this.presentation?.assessment) {
+          this.presentation.assessment = {
+            ...this.presentation.assessment,
+            appeals_open: payload.assessment.appeals_open
+          }
+        }
+        if (payload?.appeals && this.presentation) {
+          this.presentation.appeals = payload.appeals
+        }
+        if (this.presentation && this.password && this.user_id) {
+          await writePresentationCache(this.password, this.user_id, this.presentation)
+        }
+      } catch (error) {
+        // Silent refresh; UI will retry on next poll.
+      } finally {
+        this.appealRefreshInFlight = false
+      }
+    },
+    startAppealsPolling () {
+      if (this.appealsPollInterval || !this.password || !this.user_id) {
+        return
+      }
+      this.appealsPollInterval = setInterval(() => {
+        this.refreshAppealsState()
+      }, 10000)
+      this.refreshAppealsState()
+    },
+    stopAppealsPolling () {
+      if (this.appealsPollInterval) {
+        clearInterval(this.appealsPollInterval)
+        this.appealsPollInterval = null
+      }
+    },
+    syncAppealDraft () {
+      const existing = (this.presentation?.appeals || []).find(appeal => appeal.question_id === this.activeQuestionId)
+      if (this.showAppealModal && this.appealDraftTrimmed && !existing) {
+        return
+      }
+      if (existing) {
+        this.appealDraft = existing.body || ''
+        this.appealStatus = 'Saved on server.'
+      } else {
+        this.appealDraft = ''
+        this.appealStatus = ''
+      }
+      this.appealError = ''
+    },
+    async submitAppeal () {
+      if (this.appealSubmitting || this.appealLocked) {
+        return
+      }
+      this.syncActiveQuestionFromSwiper()
+      const trimmed = this.appealDraftTrimmed
+      if (!trimmed) {
+        this.appealError = 'Enter your appeal before submitting.'
+        return
+      }
+      if (!this.activeQuestionId) {
+        this.appealError = 'No question selected.'
+        return
+      }
+      this.appealSubmitting = true
+      this.appealError = ''
+      this.appealStatus = ''
+      try {
+        await ensureCsrfCookie()
+        const response = await axios.post('/api/appeals', {
+          presentation_id: this.presentation.id,
+          question_id: this.activeQuestionId,
+          body: trimmed
+        })
+        const appeal = response?.data || null
+        if (appeal?.body) {
+          this.appealDraft = appeal.body
+        }
+        if (appeal && this.presentation?.appeals) {
+          this.presentation.appeals = [...this.presentation.appeals.filter(a => a.question_id !== this.activeQuestionId), appeal]
+        }
+        if (this.presentation && this.password && this.user_id) {
+          await writePresentationCache(this.password, this.user_id, this.presentation)
+        }
+        this.appealStatus = 'Saved on server.'
+        this.showAppealModal = false
+      } catch (error) {
+        const message = error?.response?.data?.error?.message
+        this.appealError = message || 'Unable to submit appeal.'
+      } finally {
+        this.appealSubmitting = false
       }
     },
     sendTabPresence () {
@@ -245,6 +490,9 @@ export default {
       if (!this.completedIds.includes(questionId)) {
         this.completedIds.push(questionId)
       }
+      if (this.completedIds.length === this.totalQuestions) {
+        this.startCompletionHold()
+      }
       this.evaluateCompletion()
     },
     onAttemptStart () {
@@ -254,30 +502,49 @@ export default {
         this.completionTimer = null
       }
       this.complete = false
+      this.completionReady = false
+      this.completionHoldUntil = null
     },
     onAttemptEnd () {
       this.pendingAttempts = Math.max(0, this.pendingAttempts - 1)
       this.evaluateCompletion()
+    },
+    startCompletionHold () {
+      if (this.completionTimer) {
+        clearTimeout(this.completionTimer)
+        this.completionTimer = null
+      }
+      this.completionReady = false
+      this.completionHoldUntil = Date.now() + this.completionDelayMs
+      this.completionTimer = setTimeout(() => {
+        this.completionReady = true
+        this.completionTimer = null
+        this.evaluateCompletion()
+      }, this.completionDelayMs)
     },
     evaluateCompletion () {
       const totalQuestions = this.totalQuestions
       if (!totalQuestions)
         return
       const allAnswered = this.completedIds.length === totalQuestions
-      if (!allAnswered || this.pendingAttempts > 0 || this.queuePendingCount > 0) {
+      if (!allAnswered) {
         if (this.completionTimer) {
           clearTimeout(this.completionTimer)
           this.completionTimer = null
         }
         this.complete = false
+        this.completionHoldUntil = null
+        return
+      }
+      if (!this.completionReady) {
+        return
+      }
+      if (this.pendingAttempts > 0 || this.queuePendingCount > 0) {
+        this.complete = false
         return
       }
       if (this.complete)
         return
-      if (this.completionTimer) {
-        clearTimeout(this.completionTimer)
-        this.completionTimer = null
-      }
       // Once everything is saved, show completion immediately.
       this.complete = true
     },
@@ -303,6 +570,9 @@ export default {
         }
       })
       this.completedIds = answeredQuestionIds
+      if (this.completedIds.length === this.totalQuestions) {
+        this.startCompletionHold()
+      }
       this.evaluateCompletion()
     }
   },
@@ -315,10 +585,17 @@ export default {
   data () {
     return {
       complete: false,
+      completionReady: false,
+      completionDelayMs: 3000,
+      completionHoldUntil: null,
       completedIds: [],
       pendingAttempts: 0,
       completionTimer: null,
       queuePendingCount: 0,
+      saveWarningSince: null,
+      saveWarningNow: null,
+      saveWarningHoldMs: 5000,
+      saveWarningPendingThreshold: 2,
       queueFailureStreak: 0,
       queueFirstErrorAt: null,
       queueLastSuccessAt: null,
@@ -330,6 +607,14 @@ export default {
       debugMode: false,
       debugTicks: 0,
       debugLastTickAt: null,
+      activeQuestionIndex: 0,
+      showAppealModal: false,
+      appealDraft: '',
+      appealSubmitting: false,
+      appealStatus: '',
+      appealError: '',
+      appealsPollInterval: null,
+      appealRefreshInFlight: false,
       queueKey: '',
       queueUnsubscribe: null,
       duplicateTab: false,
@@ -354,16 +639,38 @@ export default {
     }
   },
   watch: {
-    showCloseWarning (next) {
+    activeQuestionIndex () {
+      this.syncAppealDraft()
+    },
+    'presentation.appeals': {
+      deep: true,
+      handler () {
+        this.syncAppealDraft()
+      }
+    },
+    complete (next) {
+      if (next) {
+        this.startAppealsPolling()
+      } else {
+        this.stopAppealsPolling()
+      }
+    },
+    isSaving (next) {
       if (!this.queueKey)
         return
       if (next) {
+        if (!this.saveWarningSince && this.queuePendingCount <= this.saveWarningPendingThreshold) {
+          this.saveWarningSince = Date.now()
+        } else if (this.queuePendingCount > this.saveWarningPendingThreshold) {
+          this.saveWarningSince = null
+        }
         if (this.fastSyncInterval)
           return
         this.fastSyncInterval = setInterval(() => {
           syncQueue(this.queueKey, { timeoutMs: 8000, maxConcurrent: 25 })
           countPending(this.queueKey).then(count => {
             this.queuePendingCount = count
+            this.saveWarningNow = Date.now()
             this.evaluateCompletion()
             if (this.debugMode) {
               this.debugTicks += 1
@@ -378,6 +685,21 @@ export default {
       } else if (this.fastSyncInterval) {
         clearInterval(this.fastSyncInterval)
         this.fastSyncInterval = null
+        this.saveWarningSince = null
+        this.saveWarningNow = null
+      }
+    },
+    queuePendingCount (next) {
+      if (!this.isSaving)
+        return
+      if (next > this.saveWarningPendingThreshold) {
+        this.saveWarningSince = null
+        this.saveWarningNow = Date.now()
+        return
+      }
+      if (!this.saveWarningSince) {
+        this.saveWarningSince = Date.now()
+        this.saveWarningNow = this.saveWarningSince
       }
     }
   },
@@ -439,11 +761,25 @@ export default {
         }
       })
     }
+    if (this.complete) {
+      this.startAppealsPolling()
+    }
     window.addEventListener('keydown', this.handleArrowKeys, { capture: true })
-    this.$nextTick(() => {
-      this.setNavLabels()
-    })
-  },
+      this.$nextTick(() => {
+        this.setNavLabels()
+        const swiper = this.swiper
+        this.activeQuestionIndex = swiper?.realIndex ?? swiper?.activeIndex ?? 0
+        this.syncAppealDraft()
+        if (swiper && !swiper.__appealListenerBound) {
+          const handler = () => this.onSlideChange()
+          swiper.on('slideChange', handler)
+          swiper.on('realIndexChange', handler)
+          swiper.on('activeIndexChange', handler)
+          swiper.on('slideChangeTransitionEnd', handler)
+          swiper.__appealListenerBound = true
+        }
+      })
+    },
   beforeUnmount () {
     window.removeEventListener('keydown', this.handleArrowKeys, { capture: true })
     if (this.completionTimer) {
@@ -462,6 +798,7 @@ export default {
       clearInterval(this.fastSyncInterval)
       this.fastSyncInterval = null
     }
+    this.stopAppealsPolling()
     if (this.tabPresenceInterval) {
       clearInterval(this.tabPresenceInterval)
       this.tabPresenceInterval = null
@@ -600,53 +937,56 @@ export default {
     display: none !important;
   }
 
-  .complete {
-    transform: translate(-50%, -50%);
-    margin-right: 50%;
-    position: absolute;
-    top: 30%;
-    left: 50%;
-    z-index: 10000;
-    font-size: 9vw;
-    font-weight: 700;
-    opacity: 0.45 !important;
-    color: #1357c6;
-    text-align: center;
-    pointer-events: none;
-    text-shadow: 0 6px 18px rgba(19, 87, 198, 0.35);
-    background: rgba(255, 255, 255, 0.35);
-    border: 2px solid rgba(19, 87, 198, 0.2);
-    padding: clamp(12px, 2vw, 22px) clamp(16px, 3vw, 30px);
-    border-radius: 20px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
-  }
-
-  .save-warning {
-    position: absolute;
-    top: 22%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .status-toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
     z-index: 10002;
-    background: #ff2b2b;
     color: #fff;
-    padding: clamp(12px, 2vw, 20px) clamp(16px, 3vw, 28px);
-    border-radius: 18px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
-    text-align: center;
-    font-weight: 700;
-    opacity: 1;
-    pointer-events: none;
-  }
-
-  .save-warning-title {
-    font-size: clamp(18px, 4vw, 34px);
-    letter-spacing: 0.5px;
-  }
-
-  .save-warning-note {
-    font-size: clamp(14px, 2.2vw, 22px);
-    margin-top: 6px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    text-align: left;
     font-weight: 600;
+    pointer-events: none;
+    max-width: min(320px, 84vw);
+  }
+
+  .toast-complete {
+    background: rgba(19, 87, 198, 0.92);
+  }
+
+  .toast-warning {
+    background: #ff2b2b;
+  }
+
+  .toast-saving {
+    background: rgba(18, 63, 132, 0.92);
+  }
+
+  .toast-title {
+    font-size: clamp(14px, 2vw, 18px);
+    letter-spacing: 0.4px;
+  }
+
+  .toast-note {
+    font-size: clamp(12px, 1.8vw, 16px);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .toast-spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    margin-top: 8px;
+    animation: toast-spin 0.9s linear infinite;
+  }
+
+  @keyframes toast-spin {
+    to { transform: rotate(360deg); }
   }
   .complete-note {
     font-size: 3.2vw;
@@ -673,5 +1013,163 @@ export default {
     color: #4b3621;
     z-index: 10001;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .appeal-toolbar {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 10px 14px;
+    border-radius: 999px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .appeal-open {
+    border: none;
+    border-radius: 999px;
+    background: #111827;
+    color: #facc15;
+    padding: 8px 18px;
+    font-weight: 700;
+    font-size: clamp(12px, 2vw, 14px);
+    cursor: pointer;
+  }
+
+  .appeal-open:disabled {
+    background: rgba(17, 24, 39, 0.4);
+    cursor: not-allowed;
+  }
+
+  .appeal-badge {
+    font-size: clamp(10px, 1.8vw, 13px);
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .appeal-badge.saved {
+    background: rgba(34, 197, 94, 0.18);
+    color: #137a3a;
+  }
+
+  .appeal-badge.closed {
+    background: rgba(239, 68, 68, 0.18);
+    color: #b91c1c;
+  }
+
+  .appeal-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .appeal-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+  }
+
+  .appeal-modal-card {
+    position: relative;
+    z-index: 1;
+    width: min(520px, 90vw);
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .appeal-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .appeal-modal-title {
+    font-weight: 800;
+    font-size: clamp(14px, 2.4vw, 18px);
+    color: #0f172a;
+  }
+
+  .appeal-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #0f172a;
+  }
+
+  .appeal-note {
+    font-size: clamp(11px, 2vw, 14px);
+    color: rgba(15, 23, 42, 0.7);
+    margin: 0;
+  }
+
+  .appeal-textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 72px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    font-size: clamp(12px, 2vw, 15px);
+    font-family: inherit;
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .appeal-textarea:disabled {
+    background: rgba(241, 245, 249, 0.8);
+    color: rgba(15, 23, 42, 0.6);
+  }
+
+  .appeal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .appeal-submit {
+    border: none;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    padding: 8px 18px;
+    font-weight: 700;
+    font-size: clamp(12px, 2vw, 14px);
+    cursor: pointer;
+  }
+
+  .appeal-submit:disabled {
+    background: rgba(37, 99, 235, 0.4);
+    cursor: not-allowed;
+  }
+
+  .appeal-status-text {
+    font-size: clamp(11px, 2vw, 14px);
+    color: #0f5132;
+    font-weight: 600;
+  }
+
+  .appeal-error {
+    font-size: clamp(11px, 2vw, 14px);
+    color: #b91c1c;
+    font-weight: 600;
   }
 </style>

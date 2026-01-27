@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0-beta
+- Added "Appeals" process
+
+## v0.2.1-beta
+- Changed picture on login page to avoid potential copyright questions
+- Adjusted timing on when warning to not close tab comes up.
+- Fixed some remaining migration problems.
+
+
 ## v0.2.0-beta
 - Configured optimizations to database.  Involved changing the database so I'm upping the version number
 - Put in a check to warn people that they may need to run php artisan migrate again.

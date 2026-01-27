@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\AppealResource;
 
 /**
  * Public presentation payload (assessment + attempts) for the student client.
@@ -25,6 +26,7 @@ class PublicPresentationResource extends JsonResource
             'user_id' => $this->user_id,
             'assessment' => PublicAssessmentResource::make($this->assessment),
             'attempts' => PublicAttemptResource::collection($this->attempts ?? collect()),
+            'appeals' => AppealResource::collection($this->appeals ?? collect()),
         ];
     }
 }

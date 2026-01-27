@@ -23,6 +23,7 @@ class AssessmentFactory extends Factory
             'memo' => $this->faker->sentence(),
             'password' => $this->faker->unique()->bothify('####??'),
             'active' => true,
+            'appeals_open' => true,
         ];
     }
 }

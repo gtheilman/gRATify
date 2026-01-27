@@ -23,14 +23,16 @@ class PresentationScorer
         $attemptsByQuestionId = $presentation->attempts
             ->filter(fn (Attempt $attempt): bool => $attempt->answer !== null)
             ->groupBy(fn (Attempt $attempt) => $attempt->answer->question_id);
+        $appealsByQuestionId = $presentation->appeals->groupBy('question_id');
 
         // Attach ordered attempts per question so scoring schemes can honor attempt order.
-        $questions = $assessment->questions->map(function (Question $question) use ($attemptsByQuestionId) {
+        $questions = $assessment->questions->map(function (Question $question) use ($attemptsByQuestionId, $appealsByQuestionId) {
             $questionAttempts = $attemptsByQuestionId->get($question->id, collect())
                 ->sortBy('created_at')
                 ->values();
 
             $question->attempts = $questionAttempts;
+            $question->setRelation('appeals', $appealsByQuestionId->get($question->id, collect()));
 
             return $question;
         });

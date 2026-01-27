@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\AppealResource;
 
 /**
  * Question score payload with ordered attempts for score breakdowns.
@@ -26,6 +27,7 @@ class QuestionScoreResource extends JsonResource
             'sequence' => $this->sequence,
             'score' => $this->score ?? 0,
             'attempts' => AttemptResource::collection($this->attempts ?? collect()),
+            'appeals' => AppealResource::collection($this->appeals ?? collect()),
         ];
     }
 }

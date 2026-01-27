@@ -23,6 +23,7 @@ class AssessmentScoreResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'active' => (bool) $this->active,
+            'appeals_open' => (bool) $this->appeals_open,
             'questions' => QuestionScoreResource::collection($this->questions ?? collect()),
         ];
     }
