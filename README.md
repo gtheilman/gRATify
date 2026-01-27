@@ -491,9 +491,10 @@ I'm talking about services like *AWS App Runner* and *Digital Ocean App Platform
 - The page will ask for an identifier.   I tell students just to enter their team number (e.g, 6).  **Do not use student names**.  You should not consider this software in any way "FERPA Compliant".   It just has whatever security Laravel 12 has by default.
 
 - When everyone has opened the questions, display the "Progress" screen.
+- After groups have identified all correct answers, they have an opportunity to submit "Appeals" if they think their answer is better than the key.
 - After all groups have finished, display "Feedback".  Review the answers with the students and, if necessary, discuss the learning objective.
 - Set the gRAT as "inactive". This prevents students from accessing it after class.
-- When you are back in your office, look at "Scores"
+- When you are back in your office, look at "Scores".  Review submitted appeals and select scoring algorithm.
 
 - I've been asked if the same gRAT can be used for multiple classes.    You can't erase student responses from the first class that answers the gRAT questions.  If you want each class to start with a "blank" gRAT, you'll need to create multiple gRATs.   The easiest way to do this is to export an Aiken file with the questions, then create new gRATs and import the file to populate the questions and answers.
 ---
@@ -546,6 +547,17 @@ You can create as many accounts for different users as you like.
 I've included a button to download a gzipped copy of your database.   
 
 There isn't a "Restore Database" function in the software.  If you have to use your backup, you'll need to interact with your database directly.
+
+---
+ 
+
+## Student Appeals
+In the Team-based Learning process, students are given an opportunity to "appeal" that the answer they chose is better than the one indicated by the key.   
+The faculty will review their appeal outside of class.
+When students have completed answering all questions, buttons will appear on the page which allow them to submit appeals.  They can only submit once and can't edit their rationale.
+This can be turned on and off by the faculty by a setting found at the top of the "Feedback" page.   For convenience, the toggle disappears if it is changed, but it can be brought back by reloading the page.
+The idea is that appeals are allowed by default.  The faculty can turn off submissions just before going over the feedback with the class.
+Once the faculty gets to their office and reviews "Scores", they can see the appeals that were left by the students.
 
 ---
 
