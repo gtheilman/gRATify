@@ -2,6 +2,7 @@ import { calcAverageScore, calcMaxScore, calcMedianScore, calcMinScore, toNumeri
 
 export const buildScoreSummary = presentations => {
   const scores = toNumericScores(presentations)
+  
   return {
     average: calcAverageScore(scores),
     max: calcMaxScore(scores),

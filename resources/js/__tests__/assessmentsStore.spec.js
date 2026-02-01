@@ -11,6 +11,7 @@ vi.mock('@/composables/useApi', () => {
 
 const mockStorage = () => {
   let store = {}
+  
   return {
     getItem: key => (key in store ? store[key] : null),
     setItem: (key, value) => { store[key] = String(value) },
@@ -50,6 +51,7 @@ describe('assessments store', () => {
     await store.loadAssessment(1)
 
     const answers = store.currentAssessment.questions[0].answers
+
     expect(answers[0].correct).toBe(true)
     expect(answers[1].correct).toBe(false)
   })

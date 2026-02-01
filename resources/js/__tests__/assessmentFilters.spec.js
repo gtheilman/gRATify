@@ -9,26 +9,31 @@ describe('assessment filters', () => {
 
   it('filters by active status', () => {
     const activeOnly = filterAssessments(assessments, { activeFilter: 'active' })
+
     expect(activeOnly.map(a => a.id)).toEqual([1])
   })
 
   it('filters by search term', () => {
     const results = filterAssessments(assessments, { term: 'beta' })
+
     expect(results.map(a => a.id)).toEqual([2])
   })
 
   it('trims whitespace in search terms', () => {
     const results = filterAssessments(assessments, { term: '  alpha  ' })
+
     expect(results.map(a => a.id)).toEqual([1])
   })
 
   it('returns all when no filters applied', () => {
     const results = filterAssessments(assessments, {})
+
     expect(results.map(a => a.id)).toEqual([1, 2])
   })
 
   it('filters out locked assessments when editable-only is enabled', () => {
     const results = filterAssessments(assessments, { showEditableOnly: true })
+
     expect(results.map(a => a.id)).toEqual([2])
   })
 })

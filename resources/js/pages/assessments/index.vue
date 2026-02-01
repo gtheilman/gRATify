@@ -32,14 +32,17 @@ const showEditableOnly = ref(false)
 const activeFilter = ref('all') // all | active | inactive
 const loaded = ref(false)
 const shortLinkConfig = ref({ bitly: false, tinyurl: false })
+
 const shortLinkProvider = computed({
   get: () => assessmentsStore.shortLinkProvider,
   set: value => assessmentsStore.setShortLinkProvider(value),
 })
+
 const showShortLinkToggle = computed(() => shortLinkConfig.value.bitly && shortLinkConfig.value.tinyurl)
 const pageSizeOptions = defaultPageSizeOptions
 const pageSize = ref(10)
 const currentPage = ref(1)
+
 watch(pageSize, (next, prev) => {
   if (shouldResetPageOnPageSizeChange(prev, next))
     currentPage.value = 1
@@ -49,6 +52,7 @@ watch(showEditableOnly, (next, prev) => {
   if (shouldResetPageOnToggle(prev, next))
     currentPage.value = 1
 })
+
 const filteredAssessments = computed(() => {
   return filterAssessments(assessments.value, {
     term: searchTerm.value,
@@ -74,16 +78,20 @@ const toggleSort = key => {
     sortState.value.direction = 'asc'
   }
 }
+
 const pageCount = computed(() => getAssessmentPageCount(filteredAssessments.value.length, pageSize.value))
 const paginatedAssessments = computed(() => paginateAssessments(sortedAssessments.value, pageSize.value, currentPage.value))
 
 const isAdmin = computed(() => {
   const role = authStore.user?.role
   const normalized = role === 'poobah' ? 'admin' : role
+  
   return normalized === 'admin'
 })
+
 const listNeedsRefresh = computed(() => {
   const message = getErrorMessage(assessmentsStore.error, '')
+  
   return String(message).includes('Session expired')
 })
 
@@ -99,6 +107,7 @@ const { isOffline } = useOffline()
 const downloadBackup = async () => {
   if (isOffline.value) {
     backupError.value = 'You are offline. Connect to the internet and try again.'
+    
     return
   }
   backupError.value = ''
@@ -116,9 +125,11 @@ const downloadBackup = async () => {
     await authStore.ensureSession()
     if (!authStore.user)
       throw new Error('You must be logged in as an admin to download a backup.')
+
     const { blob, response } = await fetchBlobOrThrow('/api/admin/backup/download', {
       method: 'GET',
     })
+
     const contentType = response.headers.get('content-type') || ''
     if (contentType.includes('html'))
       throw new Error('Received HTML instead of backup; check authentication and API route.')
@@ -127,10 +138,12 @@ const downloadBackup = async () => {
       + 'To avoid accidental overwrites, this application does not have a "restore database" function.\n'
       + 'If you ever have to use the backup, you\'ll need to interact with the database directly '
       + '(e.g., PHPMyAdmin, MySQL CLI, Adminer, DBeaver, pgAdmin).'
+
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     const contentDisposition = response.headers.get('content-disposition') || ''
     const filename = parseFilenameFromDisposition(contentDisposition, 'db-backup.sql.gz')
+
     a.href = url
     a.download = filename
     document.body.appendChild(a)
@@ -167,6 +180,7 @@ const loadShortLinkConfig = async () => {
       throw error.value
     const bitly = !!data.value?.bitly
     const tinyurl = !!data.value?.tinyurl
+
     shortLinkConfig.value = { bitly, tinyurl }
     if (bitly && !tinyurl)
       assessmentsStore.setShortLinkProvider('bitly')
@@ -195,6 +209,7 @@ const addNewAssessment = async () => {
   assessmentsActionError.value = ''
   if (isOffline.value) {
     assessmentsActionError.value = 'You are offline. Connect to the internet and try again.'
+    
     return
   }
   try {
@@ -202,6 +217,7 @@ const addNewAssessment = async () => {
       title: 'New gRAT',
       active: true,
     })
+
     if (created?.id)
       router.push({ name: 'assessments-id', params: { id: created.id } })
   }
@@ -251,6 +267,7 @@ const performDelete = async () => {
     return
   if (isOffline.value) {
     assessmentsActionError.value = 'You are offline. Connect to the internet before deleting.'
+    
     return
   }
   await assessmentsStore.deleteAssessment(pendingDelete.value.id)
@@ -258,6 +275,7 @@ const performDelete = async () => {
 }
 
 const togglingActiveId = ref(null)
+
 const toggleActive = async assessment => {
   if (!assessment?.id)
     return
@@ -265,6 +283,7 @@ const toggleActive = async assessment => {
     return
   if (isOffline.value) {
     assessmentsActionError.value = 'You are offline. Connect to the internet before updating the assessment.'
+    
     return
   }
   togglingActiveId.value = assessment.id
@@ -290,7 +309,9 @@ const toggleActive = async assessment => {
 
 <template>
   <div class="assessments-page">
-    <VCard class="data-card" elevation="3">
+    <VCard class="data-card"
+           elevation="3"
+    >
       <div class="data-card__header">
         <div class="d-flex flex-column gap-1">
           <p class="overline mb-1 text-secondary">
@@ -308,7 +329,9 @@ const toggleActive = async assessment => {
           </div>
         </div>
         <div class="d-flex flex-wrap align-center gap-3 justify-end">
-          <VTooltip v-if="isAdmin" location="top">
+          <VTooltip v-if="isAdmin"
+                    location="top"
+          >
             <template #activator="{ props }">
               <VBtn
                 v-bind="props"
@@ -366,7 +389,11 @@ const toggleActive = async assessment => {
         <div class="d-flex flex-column gap-2">
           <div>{{ backupError }}</div>
           <div class="d-flex flex-wrap gap-2">
-            <VBtn variant="text" color="primary" size="small" @click="downloadBackup">
+            <VBtn variant="text"
+                  color="primary"
+                  size="small"
+                  @click="downloadBackup"
+            >
               Retry
             </VBtn>
             <VBtn
@@ -457,7 +484,9 @@ const toggleActive = async assessment => {
             class="shortlink-spacer"
             aria-hidden="true"
           />
-          <div v-if="showShortLinkToggle" class="shortlink-toggle d-flex align-center">
+          <div v-if="showShortLinkToggle"
+               class="shortlink-toggle d-flex align-center"
+          >
             <div class="shortlink-label">
               <span class="text-caption text-medium-emphasis">Short Links</span>
             </div>
@@ -491,7 +520,9 @@ const toggleActive = async assessment => {
           <thead>
             <tr>
               <th>
-                <button class="sort-btn" @click="toggleSort('title')">
+                <button class="sort-btn"
+                        @click="toggleSort('title')"
+                >
                   Title
                   <VIcon
                     v-if="sortState.key === 'title'"
@@ -502,7 +533,9 @@ const toggleActive = async assessment => {
                 </button>
               </th>
               <th class="text-no-wrap">
-                <button class="sort-btn" @click="toggleSort('course')">
+                <button class="sort-btn"
+                        @click="toggleSort('course')"
+                >
                   Course
                   <VIcon
                     v-if="sortState.key === 'course'"
@@ -512,8 +545,12 @@ const toggleActive = async assessment => {
                   />
                 </button>
               </th>
-              <th v-if="isAdmin" class="text-no-wrap">
-                <button class="sort-btn" @click="toggleSort('owner')">
+              <th v-if="isAdmin"
+                  class="text-no-wrap"
+              >
+                <button class="sort-btn"
+                        @click="toggleSort('owner')"
+                >
                   Owner
                   <VIcon
                     v-if="sortState.key === 'owner'"
@@ -524,7 +561,9 @@ const toggleActive = async assessment => {
                 </button>
               </th>
               <th class="text-no-wrap text-center actions-col">
-                <button class="sort-btn" @click="toggleSort('actions')">
+                <button class="sort-btn"
+                        @click="toggleSort('actions')"
+                >
                   Actions
                   <VIcon
                     v-if="sortState.key === 'actions'"
@@ -535,7 +574,9 @@ const toggleActive = async assessment => {
                 </button>
               </th>
               <th class="text-no-wrap">
-                <button class="sort-btn" @click="toggleSort('scheduled_at')">
+                <button class="sort-btn"
+                        @click="toggleSort('scheduled_at')"
+                >
                   Scheduled
                   <VIcon
                     v-if="sortState.key === 'scheduled_at'"
@@ -546,7 +587,9 @@ const toggleActive = async assessment => {
                 </button>
               </th>
               <th class="text-no-wrap">
-                <button class="sort-btn" @click="toggleSort('active')">
+                <button class="sort-btn"
+                        @click="toggleSort('active')"
+                >
                   Active
                   <VIcon
                     v-if="sortState.key === 'active'"
@@ -579,8 +622,12 @@ const toggleActive = async assessment => {
               :key="assessment.id"
               :class="[{ 'locked-row': isLocked(assessment) }]"
             >
-              <td class="font-weight-medium" data-label="Title">
-                <VTooltip v-if="assessment.memo || assessment.details" location="top">
+              <td class="font-weight-medium"
+                  data-label="Title"
+              >
+                <VTooltip v-if="assessment.memo || assessment.details"
+                          location="top"
+                >
                   <template #activator="{ props }">
                     <span v-bind="props">{{ assessment.title }}</span>
                   </template>
@@ -588,13 +635,19 @@ const toggleActive = async assessment => {
                 </VTooltip>
                 <span v-else>{{ assessment.title }}</span>
               </td>
-              <td class="text-medium-emphasis" data-label="Course">
+              <td class="text-medium-emphasis"
+                  data-label="Course"
+              >
                 <span>{{ assessment.course }}</span>
               </td>
-              <td v-if="isAdmin" data-label="Owner">
+              <td v-if="isAdmin"
+                  data-label="Owner"
+              >
                 {{ assessment.owner_username || '—' }}
               </td>
-              <td class="text-center actions-col" data-label="Actions">
+              <td class="text-center actions-col"
+                  data-label="Actions"
+              >
                 <div class="d-inline-flex gap-2 justify-center">
                   <VTooltip location="top">
                     <template #activator="{ props }">
@@ -603,8 +656,8 @@ const toggleActive = async assessment => {
                         size="small"
                         :variant="isLocked(assessment) ? 'text' : 'tonal'"
                         :color="isLocked(assessment) ? 'secondary' : 'primary'"
-                        @click="goToEdit(assessment)"
                         :title="`Questions: ${assessment.questions?.length ?? 0} | Presentations: ${assessment.presentations_count ?? 0}`"
+                        @click="goToEdit(assessment)"
                       >
                         <VIcon
                           v-if="isLocked(assessment)"
@@ -623,7 +676,9 @@ const toggleActive = async assessment => {
                   </VTooltip>
                 </div>
               </td>
-              <td class="text-medium-emphasis" data-label="Scheduled">
+              <td class="text-medium-emphasis"
+                  data-label="Scheduled"
+              >
                 {{ formatScheduled(assessment.scheduled_at) }}
               </td>
               <td data-label="Active">
@@ -646,7 +701,9 @@ const toggleActive = async assessment => {
                   </span>
                 </VTooltip>
               </td>
-              <td class="url-col" data-label="URL">
+              <td class="url-col"
+                  data-label="URL"
+              >
                 <VTooltip location="top">
                   <template #activator="{ props }">
                     <VBtn
@@ -708,7 +765,9 @@ const toggleActive = async assessment => {
                   Scores
                 </VBtn>
               </td>
-              <td class="text-right" data-label="Delete">
+              <td class="text-right"
+                  data-label="Delete"
+              >
                 <VBtn
                   v-if="!isLocked(assessment)"
                   size="small"
@@ -720,7 +779,9 @@ const toggleActive = async assessment => {
                 >
                   Delete
                 </VBtn>
-                <VTooltip v-else location="top">
+                <VTooltip v-else
+                          location="top"
+                >
                   <template #activator="{ props }">
                     <span
                       v-bind="props"
@@ -734,20 +795,36 @@ const toggleActive = async assessment => {
               </td>
             </tr>
             <tr v-if="!loaded && !assessments.length">
-              <td :colspan="isAdmin ? 11 : 10" class="text-center py-8">
-                <VProgressCircular indeterminate color="primary" size="36" class="mb-2" />
-                <div class="text-medium-emphasis">Loading assessments…</div>
+              <td :colspan="isAdmin ? 11 : 10"
+                  class="text-center py-8"
+              >
+                <VProgressCircular indeterminate
+                                   color="primary"
+                                   size="36"
+                                   class="mb-2"
+                />
+                <div class="text-medium-emphasis">
+                  Loading assessments…
+                </div>
               </td>
             </tr>
             <tr v-else-if="!assessments.length">
-              <td :colspan="isAdmin ? 11 : 10" class="text-center py-6">
+              <td :colspan="isAdmin ? 11 : 10"
+                  class="text-center py-6"
+              >
                 No assessments yet. Demo assessments are seeded: passwords <strong>demo-assessment</strong> and <strong>demo-formatting</strong>.
               </td>
             </tr>
             <tr v-else-if="!paginatedAssessments.length">
-              <td :colspan="isAdmin ? 11 : 10" class="text-center py-6">
+              <td :colspan="isAdmin ? 11 : 10"
+                  class="text-center py-6"
+              >
                 No results match your filters.
-                <VBtn variant="text" color="primary" class="ms-2" @click="() => { searchTerm = ''; activeFilter = 'all'; showEditableOnly = false }">
+                <VBtn variant="text"
+                      color="primary"
+                      class="ms-2"
+                      @click="() => { searchTerm = ''; activeFilter = 'all'; showEditableOnly = false }"
+                >
                   Clear filters
                 </VBtn>
               </td>

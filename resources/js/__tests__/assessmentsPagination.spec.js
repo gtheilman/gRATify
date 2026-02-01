@@ -8,11 +8,13 @@ describe('assessment pagination helpers', () => {
 
   it('preserves sort order when page size is all', () => {
     const list = [{ id: 2 }, { id: 1 }]
+
     expect(paginateAssessments(list, 'all', 1)).toEqual(list)
   })
 
   it('paginates by page size and current page', () => {
     const list = [1, 2, 3, 4, 5]
+
     expect(paginateAssessments(list, 2, 2)).toEqual([3, 4])
   })
 })

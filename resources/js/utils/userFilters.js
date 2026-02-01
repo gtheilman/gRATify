@@ -1,5 +1,6 @@
 export const filterUsers = (users, term, role) => {
   const query = String(term || '').toLowerCase()
+  
   return (users || []).filter(user => {
     const matchesSearch = [user.username, user.email, user.name, user.company]
       .filter(Boolean)

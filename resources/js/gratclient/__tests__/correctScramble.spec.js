@@ -3,10 +3,10 @@ import { decodeCorrectScrambled } from '../utils/correctScramble'
 
 beforeAll(() => {
   if (typeof global.atob === 'undefined') {
-    global.atob = (value) => Buffer.from(value, 'base64').toString('binary')
+    global.atob = value => Buffer.from(value, 'base64').toString('binary')
   }
   if (typeof global.btoa === 'undefined') {
-    global.btoa = (value) => Buffer.from(value, 'binary').toString('base64')
+    global.btoa = value => Buffer.from(value, 'binary').toString('base64')
   }
 })
 
@@ -14,6 +14,7 @@ const encode = (value, password) => {
   const raw = value ? '1' : '0'
   const mask = password.charCodeAt(0) || 0
   const byte = raw.charCodeAt(0) ^ mask
+  
   return btoa(String.fromCharCode(byte))
 }
 

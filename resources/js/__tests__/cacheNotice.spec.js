@@ -13,6 +13,7 @@ describe('cache notice helper', () => {
 
   it('formats cached timestamps with the provided formatter', () => {
     const notice = buildStaleNotice('2024-01-02T03:04:05Z', date => date.toISOString().slice(0, 10))
+
     expect(notice).toBe('Showing cached data from 2024-01-02')
   })
 })

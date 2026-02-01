@@ -7,6 +7,7 @@ describe('applyApiError', () => {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     })
+
     const ctx = { response, error: new Error('Failed to fetch') }
 
     await applyApiError(ctx)
@@ -21,6 +22,7 @@ describe('applyApiError', () => {
       status: 404,
       headers: { 'Content-Type': 'text/plain' },
     })
+
     const ctx = { response, error: new Error('Failed to fetch') }
 
     await applyApiError(ctx)
@@ -34,6 +36,7 @@ describe('applyApiError', () => {
       status: 422,
       headers: { 'Content-Type': 'application/json' },
     })
+
     const ctx = { response, error: new Error('Failed to fetch') }
 
     await applyApiError(ctx)
@@ -47,6 +50,7 @@ describe('applyApiError', () => {
       status: 401,
       headers: { 'Content-Type': 'text/plain' },
     })
+
     const ctx = { response, error: new Error('Failed to fetch') }
 
     await applyApiError(ctx)
@@ -60,6 +64,7 @@ describe('applyApiError', () => {
       status: 423,
       headers: { 'Content-Type': 'application/json' },
     })
+
     const ctx = { response, error: new Error('Failed to fetch') }
 
     await applyApiError(ctx)

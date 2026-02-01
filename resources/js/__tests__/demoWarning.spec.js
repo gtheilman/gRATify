@@ -3,6 +3,7 @@ import { resolveDemoWarningState, readDemoWarningCache, writeDemoWarningCache, a
 
 const mockSessionStorage = () => {
   let store = {}
+  
   return {
     getItem: key => (key in store ? store[key] : null),
     setItem: (key, value) => { store[key] = String(value) },

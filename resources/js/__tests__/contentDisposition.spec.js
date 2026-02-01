@@ -4,6 +4,7 @@ import { parseFilenameFromDisposition } from '../utils/contentDisposition'
 describe('parseFilenameFromDisposition', () => {
   it('extracts filename from content disposition header', () => {
     const header = 'attachment; filename="backup.sql.gz"'
+
     expect(parseFilenameFromDisposition(header, 'fallback.sql')).toBe('backup.sql.gz')
   })
 
@@ -13,6 +14,7 @@ describe('parseFilenameFromDisposition', () => {
 
   it('handles unquoted filenames', () => {
     const header = 'attachment; filename=backup.sql.gz'
+
     expect(parseFilenameFromDisposition(header, 'fallback.sql')).toBe('backup.sql.gz')
   })
 
@@ -26,11 +28,13 @@ describe('parseFilenameFromDisposition', () => {
 
   it('ignores encoded filename params', () => {
     const header = "attachment; filename*=UTF-8''backup.sql.gz"
+
     expect(parseFilenameFromDisposition(header, 'fallback.sql')).toBe('fallback.sql')
   })
 
   it('handles extra whitespace around filename', () => {
     const header = 'attachment;  filename = "report.csv"'
+
     expect(parseFilenameFromDisposition(header, 'fallback.csv')).toBe('report.csv')
   })
 })

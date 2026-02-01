@@ -25,6 +25,7 @@ onMounted(async () => {
   await authStore.ensureSession()
 
   await assessmentsStore.fetchAssessments()
+
   const preferred = route.query.assessment ? Number(route.query.assessment) : null
   const existsPreferred = assessmentsStore.assessments.find(a => a.id === preferred)
   if (existsPreferred)
@@ -119,7 +120,9 @@ const deleteAnswer = async answer => {
 <template>
   <div class="d-flex flex-column gap-6">
     <VRow>
-      <VCol cols="12" md="4">
+      <VCol cols="12"
+            md="4"
+      >
         <VSelect
           v-model="selectedAssessmentId"
           :items="assessmentsStore.assessments"
@@ -129,7 +132,10 @@ const deleteAnswer = async answer => {
           :loading="assessmentsStore.loading"
         />
       </VCol>
-      <VCol cols="12" md="8" class="d-flex align-end justify-end gap-4">
+      <VCol cols="12"
+            md="8"
+            class="d-flex align-end justify-end gap-4"
+      >
         <VBtn
           color="primary"
           :loading="busyQuestion === 'new'"
@@ -150,7 +156,9 @@ const deleteAnswer = async answer => {
       {{ errorMessage }}
     </VAlert>
 
-    <VRow v-if="selectedAssessmentId" class="gy-6">
+    <VRow v-if="selectedAssessmentId"
+          class="gy-6"
+    >
       <VCol
         v-for="question in questions"
         :key="question.id"

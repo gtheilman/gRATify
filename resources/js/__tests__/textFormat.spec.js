@@ -33,6 +33,7 @@ describe('text format helpers', () => {
 
   it('returns input for non-numeric objects', () => {
     const obj = {}
+
     expect(normalizeUserId(obj)).toBe(obj)
   })
 })

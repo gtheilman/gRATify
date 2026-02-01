@@ -21,6 +21,7 @@ export const extractApiErrorMessage = payload => {
     const firstValue = Object.values(errors)[0]
     if (Array.isArray(firstValue))
       return firstValue[0] || ''
+    
     return firstValue || ''
   }
 
@@ -58,8 +59,10 @@ export const readApiErrorDetail = async response => {
   try {
     if (contentType.includes('json')) {
       const json = await response.json()
+      
       return extractApiErrorMessage(json) || JSON.stringify(json)
     }
+    
     return (await response.text())?.trim()
   }
   catch {

@@ -76,3 +76,6 @@ docker-compose.local.yml
 *.local
 grat-server_to_gratify
 color-codes
+
+# Legacy migration scratch (local-only)
+scripts/legacy_migrate.py

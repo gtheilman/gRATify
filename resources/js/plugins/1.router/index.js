@@ -117,6 +117,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (decision.shouldLogout) {
     await authStore.logout()
+    
     return next()
   }
 

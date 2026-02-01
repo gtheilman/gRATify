@@ -4,6 +4,7 @@ import { buildScoreCacheKey } from '../utils/scoreCacheKey'
 
 const mockStorage = () => {
   let store = {}
+  
   return {
     getItem: key => (key in store ? store[key] : null),
     setItem: (key, value) => { store[key] = String(value) },
@@ -29,8 +30,11 @@ describe('scores cache helpers', () => {
 
   it('writes and reads cached payloads', () => {
     const key = buildScoresCacheKey(1, 'geometric-decay')
+
     writeScoresCache(key, [{ score: 90 }])
+
     const cached = readScoresCache(key)
+
     expect(cached?.data?.[0]?.score).toBe(90)
   })
 })

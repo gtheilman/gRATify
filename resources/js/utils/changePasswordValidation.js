@@ -5,5 +5,6 @@ export const validateChangePasswordForm = (form, isAuthenticated) => {
     return 'Please fill in all fields.'
   if (form.new_password !== form.new_password_confirmation)
     return 'New passwords do not match.'
+  
   return ''
 }

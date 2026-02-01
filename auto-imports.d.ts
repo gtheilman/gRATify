@@ -6,16 +6,45 @@
 // biome-ignore lint: disable
 export {}
 declare global {
-  const $api: typeof import('./src/utils/api.js')['$api']
-  const COOKIE_MAX_AGE_1_YEAR: typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']
+  const $api: typeof import('./resources/js/utils/api.js')['$api']
+  const COOKIE_MAX_AGE_1_YEAR: typeof import('./resources/js/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']
   const EffectScope: typeof import('vue')['EffectScope']
+  const STORES: typeof import('./resources/js/gratclient/utils/idb.js')['STORES']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const alphaDashValidator: typeof import('./src/@core/utils/validators.js')['alphaDashValidator']
   const alphaValidator: typeof import('./src/@core/utils/validators.js')['alphaValidator']
+  const applyCachedFallback: typeof import('./resources/js/utils/cacheFallback.js')['applyCachedFallback']
+  const applyDemoWarningFallback: typeof import('./resources/js/utils/demoWarning.js')['applyDemoWarningFallback']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
   const avatarText: typeof import('./src/@core/utils/formatters.js')['avatarText']
   const betweenValidator: typeof import('./src/@core/utils/validators.js')['betweenValidator']
+  const buildAikenMessages: typeof import('./resources/js/utils/aikenErrors.js')['buildAikenMessages']
+  const buildAnswerMap: typeof import('./resources/js/utils/answerMap.js')['buildAnswerMap']
+  const buildAssessmentBulkPayload: typeof import('./resources/js/utils/assessmentBulkPayload.js')['buildAssessmentBulkPayload']
+  const buildCsvBlob: typeof import('./resources/js/utils/csvDownload.js')['buildCsvBlob']
+  const buildHttpError: typeof import('./resources/js/utils/http.js')['buildHttpError']
+  const buildOfflineRetry: typeof import('./resources/js/utils/offlineBanner.js')['buildOfflineRetry']
+  const buildScoreCacheKey: typeof import('./resources/js/utils/scoreCacheKey.js')['buildScoreCacheKey']
+  const buildScoreSummary: typeof import('./resources/js/utils/scoreSummary.js')['buildScoreSummary']
+  const buildScoresCacheKey: typeof import('./resources/js/utils/scoresCache.js')['buildScoresCacheKey']
+  const buildScoresCsv: typeof import('./resources/js/utils/scoresCsv.js')['buildScoresCsv']
+  const buildSequenceSwap: typeof import('./resources/js/utils/sequenceSwap.js')['buildSequenceSwap']
+  const buildStaleNotice: typeof import('./resources/js/utils/cacheNotice.js')['buildStaleNotice']
+  const buildTimelineHtml: typeof import('./resources/js/utils/presentationExport.js')['buildTimelineHtml']
+  const buildUsersRangeLabel: typeof import('./resources/js/utils/usersPagination.js')['buildUsersRangeLabel']
+  const calcAverageScore: typeof import('./resources/js/utils/scoreStats.js')['calcAverageScore']
+  const calcGroupLabelWidth: typeof import('./resources/js/utils/progressLayout.js')['calcGroupLabelWidth']
+  const calcMaxGroupLength: typeof import('./resources/js/utils/progressLayout.js')['calcMaxGroupLength']
+  const calcMaxScore: typeof import('./resources/js/utils/scoreStats.js')['calcMaxScore']
+  const calcMedianScore: typeof import('./resources/js/utils/scoreStats.js')['calcMedianScore']
+  const calcMinScore: typeof import('./resources/js/utils/scoreStats.js')['calcMinScore']
+  const calcPercent: typeof import('./resources/js/utils/progressStats.js')['calcPercent']
+  const canDeleteUser: typeof import('./resources/js/utils/userDeleteRules.js')['canDeleteUser']
+  const canExportScores: typeof import('./resources/js/utils/scoreTable.js')['canExportScores']
+  const clearDeleteDialog: typeof import('./resources/js/utils/deleteDialog.js')['clearDeleteDialog']
+  const clearNotice: typeof import('./resources/js/utils/staleNotice.js')['clearNotice']
+  const collectCorrectAnswerIds: typeof import('./resources/js/utils/correctAnswers.js')['collectCorrectAnswerIds']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
   const computedEager: typeof import('@vueuse/core')['computedEager']
@@ -24,6 +53,8 @@ declare global {
   const confirmedValidator: typeof import('./src/@core/utils/validators.js')['confirmedValidator']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
+  const countCorrectAttempts: typeof import('./resources/js/utils/attemptStats.js')['countCorrectAttempts']
+  const countPending: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['countPending']
   const createApp: typeof import('vue')['createApp']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
   const createGenericProjection: typeof import('@vueuse/math')['createGenericProjection']
@@ -40,37 +71,77 @@ declare global {
   const customRef: typeof import('vue')['customRef']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
+  const decodeCorrectScrambled: typeof import('./resources/js/gratclient/utils/correctScramble.js')['decodeCorrectScrambled']
+  const defaultPageSizeOptions: typeof import('./resources/js/utils/pageSizeOptions.js')['defaultPageSizeOptions']
+  const defaultScoringScheme: typeof import('./resources/js/utils/scoringSchemes.js')['defaultScoringScheme']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
   const defineComponent: typeof import('vue')['defineComponent']
   const definePage: typeof import('unplugin-vue-router/runtime')['definePage']
   const defineStore: typeof import('pinia')['defineStore']
+  const descramble: typeof import('./resources/js/gratclient/utils/scramble.js')['descramble']
+  const displayStem: typeof import('./resources/js/utils/questionFormat.js')['displayStem']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
   const emailValidator: typeof import('./src/@core/utils/validators.js')['emailValidator']
+  const ensureCsrfCookie: typeof import('./resources/js/utils/http.js')['ensureCsrfCookie']
+  const escapeHtml: typeof import('./resources/js/utils/textFormat.js')['escapeHtml']
   const extendRef: typeof import('@vueuse/core')['extendRef']
+  const extractAikenErrorLines: typeof import('./resources/js/utils/aikenErrors.js')['extractAikenErrorLines']
+  const extractApiErrorMessage: typeof import('./resources/js/utils/apiError.js')['extractApiErrorMessage']
+  const extractPasswordStatus: typeof import('./resources/js/utils/changePassword.js')['extractPasswordStatus']
+  const fetchBlobOrThrow: typeof import('./resources/js/utils/http.js')['fetchBlobOrThrow']
+  const fetchJson: typeof import('./resources/js/utils/http.js')['fetchJson']
+  const fetchJsonOrThrow: typeof import('./resources/js/utils/http.js')['fetchJsonOrThrow']
+  const filterAssessments: typeof import('./resources/js/utils/assessmentFilters.js')['filterAssessments']
+  const filterEditableAssessments: typeof import('./resources/js/utils/assessmentLocking.js')['filterEditableAssessments']
+  const filterUsers: typeof import('./resources/js/utils/userFilters.js')['filterUsers']
+  const formatAssessmentError: typeof import('./resources/js/utils/assessmentErrors.js')['formatAssessmentError']
   const formatDate: typeof import('./src/@core/utils/formatters.js')['formatDate']
   const formatDateToMonthShort: typeof import('./src/@core/utils/formatters.js')['formatDateToMonthShort']
+  const formatLoginError: typeof import('./resources/js/utils/loginError.js')['formatLoginError']
+  const formatScheduledDate: typeof import('./resources/js/utils/dateLabels.js')['formatScheduledDate']
+  const formatScore: typeof import('./resources/js/utils/scoreFormatting.js')['formatScore']
+  const formatTimestamp: typeof import('./resources/js/utils/dateFormat.js')['formatTimestamp']
+  const getActiveFilterLabel: typeof import('./resources/js/utils/assessmentFilterLabels.js')['getActiveFilterLabel']
   const getActivePinia: typeof import('pinia')['getActivePinia']
+  const getAssessmentPageCount: typeof import('./resources/js/utils/assessmentsPagination.js')['getAssessmentPageCount']
+  const getCorrectForAnswer: typeof import('./resources/js/gratclient/utils/correctMap.js')['getCorrectForAnswer']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
+  const getErrorMessage: typeof import('./resources/js/utils/apiError.js')['getErrorMessage']
+  const getFullscreenElement: typeof import('./resources/js/utils/progressFullscreen.js')['getFullscreenElement']
+  const getQueueState: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['getQueueState']
+  const getXsrfToken: typeof import('./resources/js/utils/csrf.js')['getXsrfToken']
   const h: typeof import('vue')['h']
+  const handleFullscreenShortcut: typeof import('./resources/js/utils/fullscreenHandler.js')['handleFullscreenShortcut']
+  const handleLogoutAction: typeof import('./resources/js/utils/topNavLogout.js')['handleLogoutAction']
+  const hasUserAssessments: typeof import('./resources/js/utils/userDeleteRules.js')['hasUserAssessments']
   const hexToRgb: typeof import('./src/@core/utils/colorConverter.js')['hexToRgb']
+  const idbDelete: typeof import('./resources/js/gratclient/utils/idb.js')['idbDelete']
+  const idbGet: typeof import('./resources/js/gratclient/utils/idb.js')['idbGet']
+  const idbGetAll: typeof import('./resources/js/gratclient/utils/idb.js')['idbGetAll']
+  const idbGetAllByIndex: typeof import('./resources/js/gratclient/utils/idb.js')['idbGetAllByIndex']
+  const idbSet: typeof import('./resources/js/gratclient/utils/idb.js')['idbSet']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const integerValidator: typeof import('./src/@core/utils/validators.js')['integerValidator']
+  const isAssessmentLocked: typeof import('./resources/js/utils/assessmentLocking.js')['isAssessmentLocked']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isEmpty: typeof import('./src/@core/utils/helpers.js')['isEmpty']
   const isEmptyArray: typeof import('./src/@core/utils/helpers.js')['isEmptyArray']
+  const isLastAdminUser: typeof import('./resources/js/utils/userDeleteRules.js')['isLastAdminUser']
   const isNullOrUndefined: typeof import('./src/@core/utils/helpers.js')['isNullOrUndefined']
   const isObject: typeof import('./src/@core/utils/helpers.js')['isObject']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const isStorageAvailable: typeof import('./resources/js/gratclient/utils/idb.js')['isStorageAvailable']
   const isToday: typeof import('./src/@core/utils/helpers.js')['isToday']
   const kFormatter: typeof import('./src/@core/utils/formatters.js')['kFormatter']
   const lengthValidator: typeof import('./src/@core/utils/validators.js')['lengthValidator']
+  const loadIdentifier: typeof import('./resources/js/gratclient/utils/cache.js')['loadIdentifier']
   const logicAnd: typeof import('@vueuse/math')['logicAnd']
   const logicNot: typeof import('@vueuse/math')['logicNot']
   const logicOr: typeof import('@vueuse/math')['logicOr']
@@ -80,8 +151,15 @@ declare global {
   const mapState: typeof import('pinia')['mapState']
   const mapStores: typeof import('pinia')['mapStores']
   const mapWritableState: typeof import('pinia')['mapWritableState']
+  const markAttemptSynced: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['markAttemptSynced']
   const markRaw: typeof import('vue')['markRaw']
+  const needsSessionRefresh: typeof import('./resources/js/utils/errorFlags.js')['needsSessionRefresh']
   const nextTick: typeof import('vue')['nextTick']
+  const normalizeAikenMessage: typeof import('./resources/js/utils/aikenErrors.js')['normalizeAikenMessage']
+  const normalizeRole: typeof import('./resources/js/utils/userSorting.js')['normalizeRole']
+  const normalizeUserId: typeof import('./resources/js/utils/textFormat.js')['normalizeUserId']
+  const normalizeUserRole: typeof import('./resources/js/utils/userDeleteRules.js')['normalizeUserRole']
+  const offlineBannerMessage: typeof import('./resources/js/utils/offlineBanner.js')['offlineBannerMessage']
   const onActivated: typeof import('vue')['onActivated']
   const onBeforeMount: typeof import('vue')['onBeforeMount']
   const onBeforeRouteLeave: typeof import('vue-router/auto')['onBeforeRouteLeave']
@@ -94,6 +172,7 @@ declare global {
   const onKeyStroke: typeof import('@vueuse/core')['onKeyStroke']
   const onLongPress: typeof import('@vueuse/core')['onLongPress']
   const onMounted: typeof import('vue')['onMounted']
+  const onQueueEvent: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['onQueueEvent']
   const onRenderTracked: typeof import('vue')['onRenderTracked']
   const onRenderTriggered: typeof import('vue')['onRenderTriggered']
   const onScopeDispose: typeof import('vue')['onScopeDispose']
@@ -102,18 +181,30 @@ declare global {
   const onUnmounted: typeof import('vue')['onUnmounted']
   const onUpdated: typeof import('vue')['onUpdated']
   const onWatcherCleanup: typeof import('vue')['onWatcherCleanup']
-  const paginationMeta: typeof import('./src/utils/paginationMeta.js')['paginationMeta']
+  const paginateAssessments: typeof import('./resources/js/utils/assessmentsPagination.js')['paginateAssessments']
+  const paginationMeta: typeof import('./resources/js/utils/paginationMeta.js')['paginationMeta']
+  const parseActiveFlag: typeof import('./resources/js/utils/assessmentState.js')['parseActiveFlag']
+  const parseFilenameFromDisposition: typeof import('./resources/js/utils/contentDisposition.js')['parseFilenameFromDisposition']
   const passwordValidator: typeof import('./src/@core/utils/validators.js')['passwordValidator']
   const pausableWatch: typeof import('@vueuse/core')['pausableWatch']
+  const postAttemptWithRetry: typeof import('./resources/js/gratclient/utils/attemptClient.js')['postAttemptWithRetry']
   const prefixWithPlus: typeof import('./src/@core/utils/formatters.js')['prefixWithPlus']
+  const progressBarColor: typeof import('./resources/js/utils/progressBar.js')['progressBarColor']
   const provide: typeof import('vue')['provide']
   const provideLocal: typeof import('@vueuse/core')['provideLocal']
+  const queueAttempt: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['queueAttempt']
   const reactify: typeof import('@vueuse/core')['reactify']
   const reactifyObject: typeof import('@vueuse/core')['reactifyObject']
   const reactive: typeof import('vue')['reactive']
   const reactiveComputed: typeof import('@vueuse/core')['reactiveComputed']
   const reactiveOmit: typeof import('@vueuse/core')['reactiveOmit']
   const reactivePick: typeof import('@vueuse/core')['reactivePick']
+  const readApiErrorDetail: typeof import('./resources/js/utils/apiError.js')['readApiErrorDetail']
+  const readDemoWarningCache: typeof import('./resources/js/utils/demoWarning.js')['readDemoWarningCache']
+  const readFeedbackCache: typeof import('./resources/js/utils/feedbackCache.js')['readFeedbackCache']
+  const readPresentationCache: typeof import('./resources/js/gratclient/utils/presentationCache.js')['readPresentationCache']
+  const readProgressCache: typeof import('./resources/js/utils/progressCache.js')['readProgressCache']
+  const readScoresCache: typeof import('./resources/js/utils/scoresCache.js')['readScoresCache']
   const readonly: typeof import('vue')['readonly']
   const ref: typeof import('vue')['ref']
   const refAutoReset: typeof import('@vueuse/core')['refAutoReset']
@@ -123,29 +214,57 @@ declare global {
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
   const regexValidator: typeof import('./src/@core/utils/validators.js')['regexValidator']
   const registerPlugins: typeof import('./src/@core/utils/plugins.js')['registerPlugins']
+  const renderMarkdown: typeof import('./resources/js/gratclient/utils/markdown.js')['renderMarkdown']
+  const renderMarkdownAsync: typeof import('./resources/js/gratclient/utils/markdown.js')['renderMarkdownAsync']
+  const renderMathInDom: typeof import('./resources/js/gratclient/utils/markdown.js')['renderMathInDom']
+  const requestFullscreen: typeof import('./resources/js/utils/progressFullscreen.js')['requestFullscreen']
   const requiredValidator: typeof import('./src/@core/utils/validators.js')['requiredValidator']
+  const resolveAuthNavigation: typeof import('./resources/js/utils/routeGuards.js')['resolveAuthNavigation']
   const resolveComponent: typeof import('vue')['resolveComponent']
+  const resolveDemoWarningState: typeof import('./resources/js/utils/demoWarning.js')['resolveDemoWarningState']
+  const resolveGroupLabel: typeof import('./resources/js/utils/progressGroups.js')['resolveGroupLabel']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
+  const resolveScoresCacheKey: typeof import('./resources/js/utils/scoresCacheKey.js')['resolveScoresCacheKey']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
   const resolveVuetifyTheme: typeof import('./src/@core/utils/vuetify.js')['resolveVuetifyTheme']
   const rgbaToHex: typeof import('./src/@core/utils/colorConverter.js')['rgbaToHex']
+  const saveIdentifier: typeof import('./resources/js/gratclient/utils/cache.js')['saveIdentifier']
+  const schemeLabelFor: typeof import('./resources/js/utils/scoringLabels.js')['schemeLabelFor']
+  const scoreSortOptions: typeof import('./resources/js/utils/scoreSortOptions.js')['scoreSortOptions']
+  const scoringSchemeOptions: typeof import('./resources/js/utils/scoringSchemes.js')['scoringSchemeOptions']
+  const scramble: typeof import('./resources/js/gratclient/utils/scramble.js')['scramble']
   const setActivePinia: typeof import('pinia')['setActivePinia']
+  const setCorrectMap: typeof import('./resources/js/gratclient/utils/correctMap.js')['setCorrectMap']
   const setMapStoreSuffix: typeof import('pinia')['setMapStoreSuffix']
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
+  const shouldFetchSearchResults: typeof import('./resources/js/utils/searchFetch.js')['shouldFetchSearchResults']
+  const shouldResetPageOnPageSizeChange: typeof import('./resources/js/utils/paginationReset.js')['shouldResetPageOnPageSizeChange']
+  const shouldResetPageOnToggle: typeof import('./resources/js/utils/paginationReset.js')['shouldResetPageOnToggle']
+  const shouldResetUserPage: typeof import('./resources/js/utils/userFilters.js')['shouldResetUserPage']
+  const shouldTriggerFullscreen: typeof import('./resources/js/utils/fullscreenShortcut.js')['shouldTriggerFullscreen']
+  const sortAssessments: typeof import('./resources/js/utils/assessmentSorting.js')['sortAssessments']
+  const sortPresentations: typeof import('./resources/js/utils/scoresSorting.js')['sortPresentations']
+  const sortProgressRows: typeof import('./resources/js/utils/progressSorting.js')['sortProgressRows']
+  const sortUsers: typeof import('./resources/js/utils/userSorting.js')['sortUsers']
+  const startQueueSync: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['startQueueSync']
+  const stopQueueSync: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['stopQueueSync']
   const storeToRefs: typeof import('pinia')['storeToRefs']
+  const syncQueue: typeof import('./resources/js/gratclient/utils/attemptQueue.js')['syncQueue']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
   const templateRef: typeof import('@vueuse/core')['templateRef']
   const throttledRef: typeof import('@vueuse/core')['throttledRef']
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
+  const toNumericScores: typeof import('./resources/js/utils/scoreStats.js')['toNumericScores']
   const toRaw: typeof import('vue')['toRaw']
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toValue: typeof import('vue')['toValue']
   const triggerRef: typeof import('vue')['triggerRef']
+  const truncateText: typeof import('./resources/js/utils/textFormat.js')['truncateText']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
   const tryOnMounted: typeof import('@vueuse/core')['tryOnMounted']
@@ -336,6 +455,9 @@ declare global {
   const useWindowFocus: typeof import('@vueuse/core')['useWindowFocus']
   const useWindowScroll: typeof import('@vueuse/core')['useWindowScroll']
   const useWindowSize: typeof import('@vueuse/core')['useWindowSize']
+  const usersEmptyStateMessage: typeof import('./resources/js/utils/usersEmptyState.js')['usersEmptyStateMessage']
+  const validateChangePasswordForm: typeof import('./resources/js/utils/changePasswordValidation.js')['validateChangePasswordForm']
+  const validateResetEmail: typeof import('./resources/js/utils/loginReset.js')['validateResetEmail']
   const watch: typeof import('vue')['watch']
   const watchArray: typeof import('@vueuse/core')['watchArray']
   const watchAtMost: typeof import('@vueuse/core')['watchAtMost']
@@ -352,6 +474,11 @@ declare global {
   const watchTriggerable: typeof import('@vueuse/core')['watchTriggerable']
   const watchWithFilter: typeof import('@vueuse/core')['watchWithFilter']
   const whenever: typeof import('@vueuse/core')['whenever']
+  const writeDemoWarningCache: typeof import('./resources/js/utils/demoWarning.js')['writeDemoWarningCache']
+  const writeFeedbackCache: typeof import('./resources/js/utils/feedbackCache.js')['writeFeedbackCache']
+  const writePresentationCache: typeof import('./resources/js/gratclient/utils/presentationCache.js')['writePresentationCache']
+  const writeProgressCache: typeof import('./resources/js/utils/progressCache.js')['writeProgressCache']
+  const writeScoresCache: typeof import('./resources/js/utils/scoresCache.js')['writeScoresCache']
 }
 // for type re-export
 declare global {
@@ -365,24 +492,50 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
-    readonly $api: UnwrapRef<typeof import('./src/utils/api.js')['$api']>
-    readonly COOKIE_MAX_AGE_1_YEAR: UnwrapRef<typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']>
+    readonly $api: UnwrapRef<typeof import('./resources/js/utils/api.js')['$api']>
+    readonly COOKIE_MAX_AGE_1_YEAR: UnwrapRef<typeof import('./resources/js/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly STORES: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['STORES']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
-    readonly alphaDashValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaDashValidator']>
-    readonly alphaValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaValidator']>
+    readonly applyCachedFallback: UnwrapRef<typeof import('./resources/js/utils/cacheFallback.js')['applyCachedFallback']>
+    readonly applyDemoWarningFallback: UnwrapRef<typeof import('./resources/js/utils/demoWarning.js')['applyDemoWarningFallback']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
-    readonly avatarText: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['avatarText']>
-    readonly betweenValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['betweenValidator']>
+    readonly buildAikenMessages: UnwrapRef<typeof import('./resources/js/utils/aikenErrors.js')['buildAikenMessages']>
+    readonly buildAnswerMap: UnwrapRef<typeof import('./resources/js/utils/answerMap.js')['buildAnswerMap']>
+    readonly buildAssessmentBulkPayload: UnwrapRef<typeof import('./resources/js/utils/assessmentBulkPayload.js')['buildAssessmentBulkPayload']>
+    readonly buildCsvBlob: UnwrapRef<typeof import('./resources/js/utils/csvDownload.js')['buildCsvBlob']>
+    readonly buildHttpError: UnwrapRef<typeof import('./resources/js/utils/http.js')['buildHttpError']>
+    readonly buildOfflineRetry: UnwrapRef<typeof import('./resources/js/utils/offlineBanner.js')['buildOfflineRetry']>
+    readonly buildScoreCacheKey: UnwrapRef<typeof import('./resources/js/utils/scoreCacheKey.js')['buildScoreCacheKey']>
+    readonly buildScoreSummary: UnwrapRef<typeof import('./resources/js/utils/scoreSummary.js')['buildScoreSummary']>
+    readonly buildScoresCacheKey: UnwrapRef<typeof import('./resources/js/utils/scoresCache.js')['buildScoresCacheKey']>
+    readonly buildScoresCsv: UnwrapRef<typeof import('./resources/js/utils/scoresCsv.js')['buildScoresCsv']>
+    readonly buildSequenceSwap: UnwrapRef<typeof import('./resources/js/utils/sequenceSwap.js')['buildSequenceSwap']>
+    readonly buildStaleNotice: UnwrapRef<typeof import('./resources/js/utils/cacheNotice.js')['buildStaleNotice']>
+    readonly buildTimelineHtml: UnwrapRef<typeof import('./resources/js/utils/presentationExport.js')['buildTimelineHtml']>
+    readonly buildUsersRangeLabel: UnwrapRef<typeof import('./resources/js/utils/usersPagination.js')['buildUsersRangeLabel']>
+    readonly calcAverageScore: UnwrapRef<typeof import('./resources/js/utils/scoreStats.js')['calcAverageScore']>
+    readonly calcGroupLabelWidth: UnwrapRef<typeof import('./resources/js/utils/progressLayout.js')['calcGroupLabelWidth']>
+    readonly calcMaxGroupLength: UnwrapRef<typeof import('./resources/js/utils/progressLayout.js')['calcMaxGroupLength']>
+    readonly calcMaxScore: UnwrapRef<typeof import('./resources/js/utils/scoreStats.js')['calcMaxScore']>
+    readonly calcMedianScore: UnwrapRef<typeof import('./resources/js/utils/scoreStats.js')['calcMedianScore']>
+    readonly calcMinScore: UnwrapRef<typeof import('./resources/js/utils/scoreStats.js')['calcMinScore']>
+    readonly calcPercent: UnwrapRef<typeof import('./resources/js/utils/progressStats.js')['calcPercent']>
+    readonly canDeleteUser: UnwrapRef<typeof import('./resources/js/utils/userDeleteRules.js')['canDeleteUser']>
+    readonly canExportScores: UnwrapRef<typeof import('./resources/js/utils/scoreTable.js')['canExportScores']>
+    readonly clearDeleteDialog: UnwrapRef<typeof import('./resources/js/utils/deleteDialog.js')['clearDeleteDialog']>
+    readonly clearNotice: UnwrapRef<typeof import('./resources/js/utils/staleNotice.js')['clearNotice']>
+    readonly collectCorrectAnswerIds: UnwrapRef<typeof import('./resources/js/utils/correctAnswers.js')['collectCorrectAnswerIds']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
-    readonly confirmedValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['confirmedValidator']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
+    readonly countCorrectAttempts: UnwrapRef<typeof import('./resources/js/utils/attemptStats.js')['countCorrectAttempts']>
+    readonly countPending: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['countPending']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
@@ -395,41 +548,67 @@ declare module 'vue' {
     readonly createSharedComposable: UnwrapRef<typeof import('@vueuse/core')['createSharedComposable']>
     readonly createTemplatePromise: UnwrapRef<typeof import('@vueuse/core')['createTemplatePromise']>
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
-    readonly createUrl: UnwrapRef<typeof import('./src/@core/composable/createUrl.js')['createUrl']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
+    readonly decodeCorrectScrambled: UnwrapRef<typeof import('./resources/js/gratclient/utils/correctScramble.js')['decodeCorrectScrambled']>
+    readonly defaultPageSizeOptions: UnwrapRef<typeof import('./resources/js/utils/pageSizeOptions.js')['defaultPageSizeOptions']>
+    readonly defaultScoringScheme: UnwrapRef<typeof import('./resources/js/utils/scoringSchemes.js')['defaultScoringScheme']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
-    readonly definePage: UnwrapRef<typeof import('unplugin-vue-router/runtime')['definePage']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
+    readonly descramble: UnwrapRef<typeof import('./resources/js/gratclient/utils/scramble.js')['descramble']>
+    readonly displayStem: UnwrapRef<typeof import('./resources/js/utils/questionFormat.js')['displayStem']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
-    readonly emailValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['emailValidator']>
+    readonly ensureCsrfCookie: UnwrapRef<typeof import('./resources/js/utils/http.js')['ensureCsrfCookie']>
+    readonly escapeHtml: UnwrapRef<typeof import('./resources/js/utils/textFormat.js')['escapeHtml']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
-    readonly formatDate: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDate']>
-    readonly formatDateToMonthShort: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDateToMonthShort']>
+    readonly extractAikenErrorLines: UnwrapRef<typeof import('./resources/js/utils/aikenErrors.js')['extractAikenErrorLines']>
+    readonly extractApiErrorMessage: UnwrapRef<typeof import('./resources/js/utils/apiError.js')['extractApiErrorMessage']>
+    readonly extractPasswordStatus: UnwrapRef<typeof import('./resources/js/utils/changePassword.js')['extractPasswordStatus']>
+    readonly fetchBlobOrThrow: UnwrapRef<typeof import('./resources/js/utils/http.js')['fetchBlobOrThrow']>
+    readonly fetchJson: UnwrapRef<typeof import('./resources/js/utils/http.js')['fetchJson']>
+    readonly fetchJsonOrThrow: UnwrapRef<typeof import('./resources/js/utils/http.js')['fetchJsonOrThrow']>
+    readonly filterAssessments: UnwrapRef<typeof import('./resources/js/utils/assessmentFilters.js')['filterAssessments']>
+    readonly filterEditableAssessments: UnwrapRef<typeof import('./resources/js/utils/assessmentLocking.js')['filterEditableAssessments']>
+    readonly filterUsers: UnwrapRef<typeof import('./resources/js/utils/userFilters.js')['filterUsers']>
+    readonly formatAssessmentError: UnwrapRef<typeof import('./resources/js/utils/assessmentErrors.js')['formatAssessmentError']>
+    readonly formatLoginError: UnwrapRef<typeof import('./resources/js/utils/loginError.js')['formatLoginError']>
+    readonly formatScheduledDate: UnwrapRef<typeof import('./resources/js/utils/dateLabels.js')['formatScheduledDate']>
+    readonly formatScore: UnwrapRef<typeof import('./resources/js/utils/scoreFormatting.js')['formatScore']>
+    readonly formatTimestamp: UnwrapRef<typeof import('./resources/js/utils/dateFormat.js')['formatTimestamp']>
+    readonly getActiveFilterLabel: UnwrapRef<typeof import('./resources/js/utils/assessmentFilterLabels.js')['getActiveFilterLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
+    readonly getAssessmentPageCount: UnwrapRef<typeof import('./resources/js/utils/assessmentsPagination.js')['getAssessmentPageCount']>
+    readonly getCorrectForAnswer: UnwrapRef<typeof import('./resources/js/gratclient/utils/correctMap.js')['getCorrectForAnswer']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
+    readonly getErrorMessage: UnwrapRef<typeof import('./resources/js/utils/apiError.js')['getErrorMessage']>
+    readonly getFullscreenElement: UnwrapRef<typeof import('./resources/js/utils/progressFullscreen.js')['getFullscreenElement']>
+    readonly getQueueState: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['getQueueState']>
+    readonly getXsrfToken: UnwrapRef<typeof import('./resources/js/utils/csrf.js')['getXsrfToken']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
-    readonly hexToRgb: UnwrapRef<typeof import('./src/@core/utils/colorConverter.js')['hexToRgb']>
+    readonly handleFullscreenShortcut: UnwrapRef<typeof import('./resources/js/utils/fullscreenHandler.js')['handleFullscreenShortcut']>
+    readonly handleLogoutAction: UnwrapRef<typeof import('./resources/js/utils/topNavLogout.js')['handleLogoutAction']>
+    readonly hasUserAssessments: UnwrapRef<typeof import('./resources/js/utils/userDeleteRules.js')['hasUserAssessments']>
+    readonly idbDelete: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['idbDelete']>
+    readonly idbGet: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['idbGet']>
+    readonly idbGetAll: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['idbGetAll']>
+    readonly idbGetAllByIndex: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['idbGetAllByIndex']>
+    readonly idbSet: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['idbSet']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
-    readonly integerValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['integerValidator']>
+    readonly isAssessmentLocked: UnwrapRef<typeof import('./resources/js/utils/assessmentLocking.js')['isAssessmentLocked']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
-    readonly isEmpty: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isEmpty']>
-    readonly isEmptyArray: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isEmptyArray']>
-    readonly isNullOrUndefined: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isNullOrUndefined']>
-    readonly isObject: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isObject']>
+    readonly isLastAdminUser: UnwrapRef<typeof import('./resources/js/utils/userDeleteRules.js')['isLastAdminUser']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
-    readonly isToday: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isToday']>
-    readonly kFormatter: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['kFormatter']>
-    readonly lengthValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['lengthValidator']>
+    readonly isStorageAvailable: UnwrapRef<typeof import('./resources/js/gratclient/utils/idb.js')['isStorageAvailable']>
+    readonly loadIdentifier: UnwrapRef<typeof import('./resources/js/gratclient/utils/cache.js')['loadIdentifier']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>
@@ -439,12 +618,17 @@ declare module 'vue' {
     readonly mapState: UnwrapRef<typeof import('pinia')['mapState']>
     readonly mapStores: UnwrapRef<typeof import('pinia')['mapStores']>
     readonly mapWritableState: UnwrapRef<typeof import('pinia')['mapWritableState']>
+    readonly markAttemptSynced: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['markAttemptSynced']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
+    readonly needsSessionRefresh: UnwrapRef<typeof import('./resources/js/utils/errorFlags.js')['needsSessionRefresh']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
+    readonly normalizeAikenMessage: UnwrapRef<typeof import('./resources/js/utils/aikenErrors.js')['normalizeAikenMessage']>
+    readonly normalizeRole: UnwrapRef<typeof import('./resources/js/utils/userSorting.js')['normalizeRole']>
+    readonly normalizeUserId: UnwrapRef<typeof import('./resources/js/utils/textFormat.js')['normalizeUserId']>
+    readonly normalizeUserRole: UnwrapRef<typeof import('./resources/js/utils/userDeleteRules.js')['normalizeUserRole']>
+    readonly offlineBannerMessage: UnwrapRef<typeof import('./resources/js/utils/offlineBanner.js')['offlineBannerMessage']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
-    readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router/auto')['onBeforeRouteLeave']>
-    readonly onBeforeRouteUpdate: UnwrapRef<typeof import('vue-router/auto')['onBeforeRouteUpdate']>
     readonly onBeforeUnmount: UnwrapRef<typeof import('vue')['onBeforeUnmount']>
     readonly onBeforeUpdate: UnwrapRef<typeof import('vue')['onBeforeUpdate']>
     readonly onClickOutside: UnwrapRef<typeof import('@vueuse/core')['onClickOutside']>
@@ -453,6 +637,7 @@ declare module 'vue' {
     readonly onKeyStroke: UnwrapRef<typeof import('@vueuse/core')['onKeyStroke']>
     readonly onLongPress: UnwrapRef<typeof import('@vueuse/core')['onLongPress']>
     readonly onMounted: UnwrapRef<typeof import('vue')['onMounted']>
+    readonly onQueueEvent: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['onQueueEvent']>
     readonly onRenderTracked: UnwrapRef<typeof import('vue')['onRenderTracked']>
     readonly onRenderTriggered: UnwrapRef<typeof import('vue')['onRenderTriggered']>
     readonly onScopeDispose: UnwrapRef<typeof import('vue')['onScopeDispose']>
@@ -461,18 +646,28 @@ declare module 'vue' {
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
-    readonly paginationMeta: UnwrapRef<typeof import('./src/utils/paginationMeta.js')['paginationMeta']>
-    readonly passwordValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['passwordValidator']>
+    readonly paginateAssessments: UnwrapRef<typeof import('./resources/js/utils/assessmentsPagination.js')['paginateAssessments']>
+    readonly paginationMeta: UnwrapRef<typeof import('./resources/js/utils/paginationMeta.js')['paginationMeta']>
+    readonly parseActiveFlag: UnwrapRef<typeof import('./resources/js/utils/assessmentState.js')['parseActiveFlag']>
+    readonly parseFilenameFromDisposition: UnwrapRef<typeof import('./resources/js/utils/contentDisposition.js')['parseFilenameFromDisposition']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
-    readonly prefixWithPlus: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['prefixWithPlus']>
+    readonly postAttemptWithRetry: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptClient.js')['postAttemptWithRetry']>
+    readonly progressBarColor: UnwrapRef<typeof import('./resources/js/utils/progressBar.js')['progressBarColor']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
+    readonly queueAttempt: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['queueAttempt']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly reactiveComputed: UnwrapRef<typeof import('@vueuse/core')['reactiveComputed']>
     readonly reactiveOmit: UnwrapRef<typeof import('@vueuse/core')['reactiveOmit']>
     readonly reactivePick: UnwrapRef<typeof import('@vueuse/core')['reactivePick']>
+    readonly readApiErrorDetail: UnwrapRef<typeof import('./resources/js/utils/apiError.js')['readApiErrorDetail']>
+    readonly readDemoWarningCache: UnwrapRef<typeof import('./resources/js/utils/demoWarning.js')['readDemoWarningCache']>
+    readonly readFeedbackCache: UnwrapRef<typeof import('./resources/js/utils/feedbackCache.js')['readFeedbackCache']>
+    readonly readPresentationCache: UnwrapRef<typeof import('./resources/js/gratclient/utils/presentationCache.js')['readPresentationCache']>
+    readonly readProgressCache: UnwrapRef<typeof import('./resources/js/utils/progressCache.js')['readProgressCache']>
+    readonly readScoresCache: UnwrapRef<typeof import('./resources/js/utils/scoresCache.js')['readScoresCache']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
     readonly refAutoReset: UnwrapRef<typeof import('@vueuse/core')['refAutoReset']>
@@ -480,31 +675,54 @@ declare module 'vue' {
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
-    readonly regexValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['regexValidator']>
-    readonly registerPlugins: UnwrapRef<typeof import('./src/@core/utils/plugins.js')['registerPlugins']>
-    readonly requiredValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['requiredValidator']>
+    readonly renderMarkdown: UnwrapRef<typeof import('./resources/js/gratclient/utils/markdown.js')['renderMarkdown']>
+    readonly renderMarkdownAsync: UnwrapRef<typeof import('./resources/js/gratclient/utils/markdown.js')['renderMarkdownAsync']>
+    readonly renderMathInDom: UnwrapRef<typeof import('./resources/js/gratclient/utils/markdown.js')['renderMathInDom']>
+    readonly requestFullscreen: UnwrapRef<typeof import('./resources/js/utils/progressFullscreen.js')['requestFullscreen']>
+    readonly resolveAuthNavigation: UnwrapRef<typeof import('./resources/js/utils/routeGuards.js')['resolveAuthNavigation']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
+    readonly resolveDemoWarningState: UnwrapRef<typeof import('./resources/js/utils/demoWarning.js')['resolveDemoWarningState']>
+    readonly resolveGroupLabel: UnwrapRef<typeof import('./resources/js/utils/progressGroups.js')['resolveGroupLabel']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
+    readonly resolveScoresCacheKey: UnwrapRef<typeof import('./resources/js/utils/scoresCacheKey.js')['resolveScoresCacheKey']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
-    readonly resolveVuetifyTheme: UnwrapRef<typeof import('./src/@core/utils/vuetify.js')['resolveVuetifyTheme']>
-    readonly rgbaToHex: UnwrapRef<typeof import('./src/@core/utils/colorConverter.js')['rgbaToHex']>
+    readonly saveIdentifier: UnwrapRef<typeof import('./resources/js/gratclient/utils/cache.js')['saveIdentifier']>
+    readonly schemeLabelFor: UnwrapRef<typeof import('./resources/js/utils/scoringLabels.js')['schemeLabelFor']>
+    readonly scoreSortOptions: UnwrapRef<typeof import('./resources/js/utils/scoreSortOptions.js')['scoreSortOptions']>
+    readonly scoringSchemeOptions: UnwrapRef<typeof import('./resources/js/utils/scoringSchemes.js')['scoringSchemeOptions']>
+    readonly scramble: UnwrapRef<typeof import('./resources/js/gratclient/utils/scramble.js')['scramble']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
+    readonly setCorrectMap: UnwrapRef<typeof import('./resources/js/gratclient/utils/correctMap.js')['setCorrectMap']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
+    readonly shouldFetchSearchResults: UnwrapRef<typeof import('./resources/js/utils/searchFetch.js')['shouldFetchSearchResults']>
+    readonly shouldResetPageOnPageSizeChange: UnwrapRef<typeof import('./resources/js/utils/paginationReset.js')['shouldResetPageOnPageSizeChange']>
+    readonly shouldResetPageOnToggle: UnwrapRef<typeof import('./resources/js/utils/paginationReset.js')['shouldResetPageOnToggle']>
+    readonly shouldResetUserPage: UnwrapRef<typeof import('./resources/js/utils/userFilters.js')['shouldResetUserPage']>
+    readonly shouldTriggerFullscreen: UnwrapRef<typeof import('./resources/js/utils/fullscreenShortcut.js')['shouldTriggerFullscreen']>
+    readonly sortAssessments: UnwrapRef<typeof import('./resources/js/utils/assessmentSorting.js')['sortAssessments']>
+    readonly sortPresentations: UnwrapRef<typeof import('./resources/js/utils/scoresSorting.js')['sortPresentations']>
+    readonly sortProgressRows: UnwrapRef<typeof import('./resources/js/utils/progressSorting.js')['sortProgressRows']>
+    readonly sortUsers: UnwrapRef<typeof import('./resources/js/utils/userSorting.js')['sortUsers']>
+    readonly startQueueSync: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['startQueueSync']>
+    readonly stopQueueSync: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['stopQueueSync']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
+    readonly syncQueue: UnwrapRef<typeof import('./resources/js/gratclient/utils/attemptQueue.js')['syncQueue']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
+    readonly toNumericScores: UnwrapRef<typeof import('./resources/js/utils/scoreStats.js')['toNumericScores']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
+    readonly truncateText: UnwrapRef<typeof import('./resources/js/utils/textFormat.js')['truncateText']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
     readonly tryOnMounted: UnwrapRef<typeof import('@vueuse/core')['tryOnMounted']>
@@ -513,11 +731,9 @@ declare module 'vue' {
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
-    readonly urlValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['urlValidator']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
-    readonly useApi: UnwrapRef<typeof import('./src/composables/useApi.js')['useApi']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
     readonly useArrayFilter: UnwrapRef<typeof import('@vueuse/core')['useArrayFilter']>
@@ -548,7 +764,6 @@ declare module 'vue' {
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
-    readonly useCookie: UnwrapRef<typeof import('./src/@core/composable/useCookie.js')['useCookie']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVar: UnwrapRef<typeof import('@vueuse/core')['useCssVar']>
@@ -587,7 +802,6 @@ declare module 'vue' {
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
     readonly useFullscreen: UnwrapRef<typeof import('@vueuse/core')['useFullscreen']>
     readonly useGamepad: UnwrapRef<typeof import('@vueuse/core')['useGamepad']>
-    readonly useGenerateImageVariant: UnwrapRef<typeof import('./src/@core/composable/useGenerateImageVariant.js')['useGenerateImageVariant']>
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n')['useI18n']>
     readonly useId: UnwrapRef<typeof import('vue')['useId']>
@@ -640,10 +854,7 @@ declare module 'vue' {
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
-    readonly useResponsiveLeftSidebar: UnwrapRef<typeof import('./src/@core/composable/useResponsiveSidebar.js')['useResponsiveLeftSidebar']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
-    readonly useRoute: UnwrapRef<typeof import('vue-router/auto')['useRoute']>
-    readonly useRouter: UnwrapRef<typeof import('vue-router/auto')['useRouter']>
     readonly useScreenOrientation: UnwrapRef<typeof import('@vueuse/core')['useScreenOrientation']>
     readonly useScreenSafeArea: UnwrapRef<typeof import('@vueuse/core')['useScreenSafeArea']>
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>
@@ -651,7 +862,6 @@ declare module 'vue' {
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
-    readonly useSkins: UnwrapRef<typeof import('./src/@core/composable/useSkins.js')['useSkins']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
@@ -695,6 +905,9 @@ declare module 'vue' {
     readonly useWindowFocus: UnwrapRef<typeof import('@vueuse/core')['useWindowFocus']>
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
+    readonly usersEmptyStateMessage: UnwrapRef<typeof import('./resources/js/utils/usersEmptyState.js')['usersEmptyStateMessage']>
+    readonly validateChangePasswordForm: UnwrapRef<typeof import('./resources/js/utils/changePasswordValidation.js')['validateChangePasswordForm']>
+    readonly validateResetEmail: UnwrapRef<typeof import('./resources/js/utils/loginReset.js')['validateResetEmail']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
     readonly watchAtMost: UnwrapRef<typeof import('@vueuse/core')['watchAtMost']>
@@ -711,5 +924,10 @@ declare module 'vue' {
     readonly watchTriggerable: UnwrapRef<typeof import('@vueuse/core')['watchTriggerable']>
     readonly watchWithFilter: UnwrapRef<typeof import('@vueuse/core')['watchWithFilter']>
     readonly whenever: UnwrapRef<typeof import('@vueuse/core')['whenever']>
+    readonly writeDemoWarningCache: UnwrapRef<typeof import('./resources/js/utils/demoWarning.js')['writeDemoWarningCache']>
+    readonly writeFeedbackCache: UnwrapRef<typeof import('./resources/js/utils/feedbackCache.js')['writeFeedbackCache']>
+    readonly writePresentationCache: UnwrapRef<typeof import('./resources/js/gratclient/utils/presentationCache.js')['writePresentationCache']>
+    readonly writeProgressCache: UnwrapRef<typeof import('./resources/js/utils/progressCache.js')['writeProgressCache']>
+    readonly writeScoresCache: UnwrapRef<typeof import('./resources/js/utils/scoresCache.js')['writeScoresCache']>
   }
 }

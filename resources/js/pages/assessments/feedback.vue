@@ -50,7 +50,9 @@ const fetchFeedback = async () => {
   }
   catch (err) {
     error.value = getErrorMessage(err, 'Unable to load feedback')
+
     const cached = loadFeedbackCache()
+
     applyCachedFallback({
       cached,
       applyData: data => { assessment.value = data },
@@ -72,17 +74,20 @@ const dismissAppealsToast = () => {
   appealsToastDismissed.value = true
 }
 
-const updateAppealsOpen = async (nextValue) => {
+const updateAppealsOpen = async nextValue => {
   if (!assessment.value || appealsToggleBusy.value)
     return
   appealsToggleBusy.value = true
+
   const previous = appealsOpen.value
+
   appealsOpen.value = nextValue
   try {
     const { error: apiError } = await api(`/assessments/${assessment.value.id}/appeals`, {
       method: 'PATCH',
       body: { appeals_open: nextValue },
     })
+
     if (apiError.value)
       throw apiError.value
     assessment.value = {
@@ -99,7 +104,7 @@ const updateAppealsOpen = async (nextValue) => {
   }
 }
 
-watch(assessment, (value) => {
+watch(assessment, value => {
   if (typeof value?.appeals_open !== 'undefined')
     appealsOpen.value = !!value.appeals_open
 })
@@ -140,6 +145,7 @@ const answerSizeClass = count => {
     return 'answers-xs'
   if (count >= 7)
     return 'answers-sm'
+  
   return 'answers-md'
 }
 
@@ -149,6 +155,7 @@ const questionFeedback = computed(() => {
 
   return assessment.value.questions.map(question => {
     const counts = {}
+
     question.answers?.forEach(ans => {
       counts[ans.id] = 0
     })
@@ -166,6 +173,7 @@ const questionFeedback = computed(() => {
     const answers = question.answers?.map(ans => {
       const count = counts[ans.id] || 0
       const pct = total ? Math.round((count / total) * 100) : 0
+      
       return {
         ...ans,
         percent: pct,
@@ -207,6 +215,7 @@ onMounted(() => {
     if (existing)
       return
     const link = document.createElement('link')
+
     link.rel = 'stylesheet'
     link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
     link.crossOrigin = 'anonymous'
@@ -214,6 +223,7 @@ onMounted(() => {
     link.setAttribute('data-fa-cdn', 'true')
     document.head.appendChild(link)
   }
+
   ensureFontAwesome()
 
   const handleKey = event => {
@@ -230,6 +240,7 @@ onMounted(() => {
       toggleFullscreen()
     }
   }
+
   window.addEventListener('keydown', handleKey)
   onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleKey)
@@ -238,7 +249,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <VContainer fluid class="py-8 feedback-page">
+  <VContainer fluid
+              class="py-8 feedback-page"
+  >
     <VRow>
       <div class="menu-spacer" />
       <VCol cols="12">
@@ -301,13 +314,22 @@ onMounted(() => {
               @click:close="clearStaleNotice"
             >
               <div class="d-flex align-center gap-2">
-                <VChip size="x-small" color="warning" variant="tonal">Stale</VChip>
+                <VChip size="x-small"
+                       color="warning"
+                       variant="tonal"
+                >
+                  Stale
+                </VChip>
                 <span>{{ staleNotice }}</span>
               </div>
             </VAlert>
 
-            <div v-if="loading" class="text-center py-6">
-              <VProgressCircular indeterminate color="primary" />
+            <div v-if="loading"
+                 class="text-center py-6"
+            >
+              <VProgressCircular indeterminate
+                                 color="primary"
+              />
             </div>
 
             <div v-else>
@@ -343,7 +365,9 @@ onMounted(() => {
                       :value="idx"
                     >
                       <div class="slide-shell">
-                        <VCard class="slide-card card-radius-md elevate-soft slide-card-light" elevation="0">
+                        <VCard class="slide-card card-radius-md elevate-soft slide-card-light"
+                               elevation="0"
+                        >
                           <VCardText class="py-6 px-6">
                             <div
                               v-if="question.title && question.title !== question.stem"
@@ -353,19 +377,25 @@ onMounted(() => {
                                 {{ question.title }}
                               </p>
                             </div>
-                            <div class="question-stem mb-4" v-html="renderMarkdown(question.stem)" />
+                            <div class="question-stem mb-4"
+                                 v-html="renderMarkdown(question.stem)"
+                            />
                             <hr class="question-divider">
-                            <div :class="['answers-stack', answerSizeClass(question.answers?.length || 0)]">
+                            <div class="answers-stack"
+                                 :class="[answerSizeClass(question.answers?.length || 0)]"
+                            >
                               <div
                                 v-for="answer in question.answers"
                                 :key="answer.id"
+                                class="d-flex justify-space-between align-center answer-row"
                                 :class="[
-                                  'd-flex justify-space-between align-center answer-row',
                                   answerSizeClass(question.answers?.length || 0),
                                   { 'correct-answer': !!Number(answer.correct) },
                                 ]"
                               >
-                                <span class="answer-text" v-html="renderMarkdown(answer.answer_text)" />
+                                <span class="answer-text"
+                                      v-html="renderMarkdown(answer.answer_text)"
+                                />
                                 <span class="percent-chip">
                                   {{ answer.percent }}%
                                 </span>
@@ -385,8 +415,14 @@ onMounted(() => {
                 </div>
               </template>
               <template v-else>
-                <VSheet class="empty-state" color="white" rounded="lg" elevation="2">
-                  <VIcon class="empty-icon" icon="mdi-clipboard-text-outline" />
+                <VSheet class="empty-state"
+                        color="white"
+                        rounded="lg"
+                        elevation="2"
+                >
+                  <VIcon class="empty-icon"
+                         icon="mdi-clipboard-text-outline"
+                  />
                   <div class="empty-title">
                     No feedback data available
                   </div>

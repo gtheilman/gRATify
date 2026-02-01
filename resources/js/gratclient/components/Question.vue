@@ -1,24 +1,27 @@
 <template>
   <div class="question-shell">
     <div class="content-wrap">
-      <div class="md-body question-stem" :style="textStyle" v-html="stemHtml" />
+      <div class="md-body question-stem"
+           :style="textStyle"
+           v-html="stemHtml"
+      />
       <div class="answers-list">
-        <answer
+        <Answer
           v-for="answer in question.answers"
           :key="answer.id"
           :presentation_id="presentation_id"
           :answer="answer"
           :answered="answered"
-          :questionLocked="inFlight || answered || hasCorrect"
+          :question-locked="inFlight || answered || hasCorrect"
           :attempts="attempts"
           :password="password"
-          :presentationKey="presentationKey"
-          :textStyle="textStyle"
-          @markAnswered="markAnswered"
+          :presentation-key="presentationKey"
+          :text-style="textStyle"
+          @mark-answered="markAnswered"
           @attempt-start="onAttemptStart"
           @attempt-end="onAttemptEnd"
-          @answer-correct="onAnswerCorrect">
-        </answer>
+          @answer-correct="onAnswerCorrect"
+        />
       </div>
     </div>
   </div>
@@ -32,30 +35,30 @@ import { renderMarkdown } from '../utils/markdown'
 export default {
   name: 'QuestionComponent',
   components: {
-    Answer
+    Answer,
   },
   props: {
     question: {
-      type: Object
+      type: Object,
     },
     presentation_id: {
-      type: Number
+      type: Number,
     },
     attempts: {
-      type: Array
+      type: Array,
     },
     password: {
       type: String,
-      default: ''
+      default: '',
     },
     presentationKey: {
       type: String,
-      default: ''
+      default: '',
     },
     appeals: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   emits: ['questionComplete', 'attempt-start', 'attempt-end'],
   data () {
@@ -66,8 +69,8 @@ export default {
       hasCorrect: false,
       window: {
         width: 0,
-        height: 0
-      }
+        height: 0,
+      },
     }
   },
   methods: {
@@ -108,7 +111,7 @@ export default {
     handleResize () {
       this.window.width = window.innerWidth
       this.window.height = window.innerHeight
-    }
+    },
   },
   mounted () {
     window.addEventListener('resize', this.handleResize)
@@ -123,14 +126,14 @@ export default {
       immediate: true,
       handler () {
         this.initializeAnsweredFromAttempts()
-      }
+      },
     },
     appeals: {
       immediate: true,
       handler () {
         // Placeholder to react to appeal updates from parent.
-      }
-    }
+      },
+    },
   },
   computed: {
     stemHtml () {
@@ -175,15 +178,16 @@ export default {
           proposedFontSize = 12
         }
       }
+      
       return proposedFontSize
     },
     textStyle () {
       return {
         '--font-size': this.fontSize + 'px',
-        'text-align': 'left'
+        'text-align': 'left',
       }
-    }
-  }
+    },
+  },
 }
 </script>
 

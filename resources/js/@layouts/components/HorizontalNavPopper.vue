@@ -107,8 +107,9 @@ To avoid this, we use `position: absolute` instead of `position: fixed`.
 NOTE: This issue starts from third level children (Top Level > Sub item > Sub item).
 */
 
-// strategy: 'fixed',
-})
+  // strategy: 'fixed',
+  return true
+}).catch(() => {})
 
 const isContentShown = ref(false)
 

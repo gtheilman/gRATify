@@ -14,5 +14,6 @@ export const decodeCorrectScrambled = (scrambled, password) => {
   } catch {
     return null
   }
+  
   return null
 }

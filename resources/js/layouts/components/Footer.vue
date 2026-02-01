@@ -41,7 +41,9 @@ const gratifyVersion = __GRATIFY_VERSION__ || ''
         target="noopener noreferrer"
       >Support</a>
     </span>
-    <span v-if="gratifyVersion" class="text-body-2 text-medium-emphasis d-none d-md-inline">
+    <span v-if="gratifyVersion"
+          class="text-body-2 text-medium-emphasis d-none d-md-inline"
+    >
       {{ gratifyVersion }}
     </span>
   </div>

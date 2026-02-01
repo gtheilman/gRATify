@@ -17,10 +17,10 @@ describe('Answer offline behavior', () => {
   beforeEach(() => {
     global.navigator = { onLine: false }
     if (typeof global.atob === 'undefined') {
-      global.atob = (value) => Buffer.from(value, 'base64').toString('binary')
+      global.atob = value => Buffer.from(value, 'base64').toString('binary')
     }
     if (typeof global.btoa === 'undefined') {
-      global.btoa = (value) => Buffer.from(value, 'binary').toString('base64')
+      global.btoa = value => Buffer.from(value, 'binary').toString('base64')
     }
   })
 
@@ -29,6 +29,7 @@ describe('Answer offline behavior', () => {
     const mask = password.charCodeAt(0)
     const byte = '1'.charCodeAt(0) ^ mask
     const correctScrambled = btoa(String.fromCharCode(byte))
+
     const ctx = {
       answered: false,
       checking: false,
@@ -47,7 +48,7 @@ describe('Answer offline behavior', () => {
       messageInterval: null,
       messageIndex: 0,
       $emit: vi.fn(),
-      $nextTick: (fn) => fn(),
+      $nextTick: fn => fn(),
       $refs: { resultLive: { focus: vi.fn() } },
       getLocalCorrectFlag: AnswerComponent.methods.getLocalCorrectFlag,
       handleAttemptResponse: AnswerComponent.methods.handleAttemptResponse,

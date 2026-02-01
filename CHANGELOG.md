@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.2-beta
+- Removed remaining Sanctum package/config references and kept authentication on `auth:web`.
+- Completed ESLint 9 migration follow-up and enabled additional promise safety rules (`promise/always-return`, `promise/catch-or-return`).
+- Applied mechanical frontend lint cleanup required by the stricter ruleset.
+- Re-ran security checks (`composer audit --locked`, `npm audit`) and full test/build verification.
+
+## v0.3.1-beta
+- Tried to tighten up database requests to minimize memory use
+
 ## v0.3.0-beta
 - Added "Appeals" process
 

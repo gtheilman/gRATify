@@ -21,10 +21,8 @@ class AppealResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'presentation_id' => $this->presentation_id,
             'question_id' => $this->question_id,
             'body' => $this->body,
-            'created_at' => $this->created_at,
         ];
     }
 }

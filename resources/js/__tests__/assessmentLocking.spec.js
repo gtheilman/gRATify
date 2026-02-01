@@ -15,6 +15,7 @@ describe('assessment locking helpers', () => {
   it('filters locked assessments when editable-only is enabled', () => {
     const items = [{ id: 1, presentations_count: 1 }, { id: 2, presentations_count: 0 }]
     const filtered = filterEditableAssessments(items, true)
+
     expect(filtered.map(item => item.id)).toEqual([2])
   })
 })

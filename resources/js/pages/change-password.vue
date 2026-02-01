@@ -21,15 +21,17 @@ const form = ref({
 const submitting = ref(false)
 const message = ref('')
 const errorMessage = ref('')
+
 const handleSuccessClose = () => {
   message.value = ''
   router.push({ name: 'assessments' })
 }
 
-  const handleChange = async () => {
+const handleChange = async () => {
   const validationMessage = validateChangePasswordForm(form.value, !!authStore.user)
   if (validationMessage) {
     errorMessage.value = validationMessage
+    
     return
   }
   submitting.value = true
@@ -45,11 +47,13 @@ const handleSuccessClose = () => {
         new_password_confirmation: form.value.new_password_confirmation,
       },
     })
+
     // Gather any status clues from success or error payloads
     const statusFlag = await extractPasswordStatus(data.value, error.value)
 
     if (statusFlag === 'invalid_old_password') {
       errorMessage.value = 'Current Password is Not Correct.'
+      
       return
     }
 
@@ -71,6 +75,7 @@ const handleSuccessClose = () => {
     const statusFlag = await extractPasswordStatus(null, err)
     if (statusFlag === 'invalid_old_password') {
       errorMessage.value = 'Current Password is Not Correct.'
+      
       return
     }
     errorMessage.value = getErrorMessage(err, 'Unable to change password')
@@ -84,7 +89,9 @@ const handleSuccessClose = () => {
 <template>
   <VContainer class="py-8">
     <VRow justify="center">
-      <VCol cols="12" md="6">
+      <VCol cols="12"
+            md="6"
+      >
         <VCard class="change-password-card">
           <VCardTitle>Change Password</VCardTitle>
           <VCardText>

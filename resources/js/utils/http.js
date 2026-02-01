@@ -17,6 +17,7 @@ const statusFallbackMessage = status => {
     return 'Validation failed.'
   if (status >= 500)
     return 'Server error: please try again later.'
+  
   return ''
 }
 
@@ -24,6 +25,7 @@ const buildHeaders = (headers = {}) => {
   const xsrfToken = getXsrfToken()
   if (!xsrfToken)
     return headers
+  
   return {
     ...headers,
     'X-XSRF-TOKEN': xsrfToken,
@@ -31,12 +33,14 @@ const buildHeaders = (headers = {}) => {
 }
 
 export const buildHttpError = (response, data, fallback = 'Request failed') => {
-    const status = response?.status ?? 0
-    const message = extractApiErrorMessage(data) || statusFallbackMessage(status) || fallback
-    const error = new Error(message)
-    error.status = status
-    error.data = data
-    return error
+  const status = response?.status ?? 0
+  const message = extractApiErrorMessage(data) || statusFallbackMessage(status) || fallback
+  const error = new Error(message)
+
+  error.status = status
+  error.data = data
+  
+  return error
 }
 
 export const ensureCsrfCookie = () => {
@@ -53,6 +57,7 @@ export const fetchJson = async (url, options = {}) => {
   } = options
 
   let finalBody = body
+
   const finalHeaders = buildHeaders({
     Accept: 'application/json',
     ...headers,
@@ -97,6 +102,7 @@ export const fetchJsonOrThrow = async (url, options = {}) => {
   const { data, response } = await fetchJson(url, options)
   if (!response.ok)
     throw buildHttpError(response, data)
+  
   return { data, response }
 }
 
@@ -135,5 +141,6 @@ export const fetchBlobOrThrow = async (url, options = {}) => {
   }
 
   const blob = await response.blob()
+  
   return { blob, response }
 }

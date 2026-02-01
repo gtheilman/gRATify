@@ -29,6 +29,7 @@ describe('Appeals', () => {
   it('hides the appeal button when appeals are closed', () => {
     const filePath = path.resolve(__dirname, '../components/Assessment.vue')
     const content = fs.readFileSync(filePath, 'utf8')
+
     expect(content).toContain('v-if="appealsOpen"')
   })
 
@@ -48,6 +49,7 @@ describe('Appeals', () => {
       syncActiveQuestionFromSwiper: vi.fn(),
       ensureCsrfCookie: vi.fn().mockResolvedValue(undefined),
     }
+
     axios.post.mockResolvedValue({ data: { id: 1, question_id: 22, body: 'Reason' } })
 
     await AssessmentComponent.methods.submitAppeal.call(ctx)
@@ -73,6 +75,7 @@ describe('Appeals', () => {
         appeals: [],
       },
     }
+
     axios.get.mockResolvedValue({
       data: {
         assessment: { appeals_open: false },

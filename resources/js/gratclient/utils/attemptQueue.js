@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { idbGet, idbSet, idbDelete, idbGetAllByIndex, STORES } from './idb'
+import { ensureCsrfCookie } from '../../utils/http'
 
 const syncLocks = new Map()
 const syncIntervals = new Map()
@@ -15,17 +16,19 @@ const CONCURRENCY_STEP = 5
 const MIN_TIMEOUT_MS = 3000
 const MAX_TIMEOUT_MS = 15000
 
-const emit = (event) => {
+const emit = event => {
   listeners.forEach(fn => fn(event))
 }
+
 const isDebug = () => {
   if (typeof window === 'undefined')
     return false
   const value = new URLSearchParams(window.location.search || '').get('debug')
+  
   return value === '1' || value === 'true'
 }
 
-const getState = (presentationKey) => {
+const getState = presentationKey => {
   if (!stateByKey.has(presentationKey)) {
     stateByKey.set(presentationKey, {
       pendingCount: 0,
@@ -39,11 +42,13 @@ const getState = (presentationKey) => {
       lastBatch: null,
     })
   }
+  
   return stateByKey.get(presentationKey)
 }
 
 const updateState = (presentationKey, patch) => {
   const current = getState(presentationKey)
+
   Object.assign(current, patch)
   emit({ type: 'state', presentationKey, state: { ...current } })
 }
@@ -57,23 +62,30 @@ const getConcurrency = (presentationKey, requested) => {
   const current = concurrencyByKey.get(presentationKey)
   if (typeof requested === 'number' && requested > 0) {
     const next = Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, requested))
+
     concurrencyByKey.set(presentationKey, next)
+    
     return next
   }
+  
   return current
 }
 
 const getTimeoutMs = (presentationKey, requested) => {
   if (!timeoutByKey.has(presentationKey)) {
     const initial = typeof requested === 'number' ? requested : 8000
+
     timeoutByKey.set(presentationKey, clamp(initial, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS))
   }
   const current = timeoutByKey.get(presentationKey)
   if (typeof requested === 'number' && requested > 0) {
     const next = clamp(requested, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS)
+
     timeoutByKey.set(presentationKey, next)
+    
     return next
   }
+  
   return current
 }
 
@@ -84,7 +96,9 @@ const updateEma = (presentationKey, sampleMs) => {
   const prev = emaByKey.get(presentationKey)
   const alpha = 0.25
   const next = prev == null ? sampleMs : (alpha * sampleMs + (1 - alpha) * prev)
+
   emaByKey.set(presentationKey, next)
+  
   return next
 }
 
@@ -92,16 +106,21 @@ const adjustConcurrency = (presentationKey, { hadServerError, hadSuccess }) => {
   const current = getConcurrency(presentationKey)
   if (hadServerError) {
     const next = Math.max(MIN_CONCURRENCY, current - CONCURRENCY_STEP)
+
     concurrencyByKey.set(presentationKey, next)
     updateState(presentationKey, { concurrency: next })
+    
     return next
   }
   if (hadSuccess && current < MAX_CONCURRENCY) {
     const next = Math.min(MAX_CONCURRENCY, current + 1)
+
     concurrencyByKey.set(presentationKey, next)
     updateState(presentationKey, { concurrency: next })
+    
     return next
   }
+  
   return current
 }
 
@@ -116,17 +135,19 @@ const adjustTimeout = (presentationKey, { batchMs, hadTimeout, hadServerError })
   }
   timeoutByKey.set(presentationKey, next)
   updateState(presentationKey, { timeoutMs: next, emaMs: ema })
+  
   return next
 }
 
-export const onQueueEvent = (fn) => {
+export const onQueueEvent = fn => {
   listeners.add(fn)
+  
   return () => listeners.delete(fn)
 }
 
 const presentationKeyFor = (password, userId) => `${password || ''}|${userId || ''}`
 
-const startSyncForKey = (presentationKey) => {
+const startSyncForKey = presentationKey => {
   if (!presentationKey)
     return ''
   if (syncIntervals.has(presentationKey)) {
@@ -138,9 +159,11 @@ const startSyncForKey = (presentationKey) => {
   const interval = setInterval(() => {
     syncQueue(presentationKey)
   }, 5000)
+
   syncIntervals.set(presentationKey, interval)
 
   const handleOnline = () => syncQueue(presentationKey)
+
   onlineHandlers.set(presentationKey, handleOnline)
   window.addEventListener('online', handleOnline)
 
@@ -149,22 +172,25 @@ const startSyncForKey = (presentationKey) => {
   return presentationKey
 }
 
-const loadPending = async (presentationKey) => {
+const loadPending = async presentationKey => {
   try {
     const all = await idbGetAllByIndex(STORES.attempts, 'presentationKey', presentationKey)
+    
     return all.filter(item => item.status === 'pending')
   } catch {
     return []
   }
 }
 
-const refreshPendingCount = async (presentationKey) => {
+const refreshPendingCount = async presentationKey => {
   const pending = await loadPending(presentationKey)
+
   updateState(presentationKey, { pendingCount: pending.length })
+  
   return pending
 }
 
-export const countPending = async (presentationKey) => {
+export const countPending = async presentationKey => {
   return (await refreshPendingCount(presentationKey)).length
 }
 
@@ -186,13 +212,15 @@ export const queueAttempt = async ({ presentationId, answerId, questionId, passw
     createdAt: Date.now(),
     updatedAt: Date.now(),
   }
+
   await idbSet(STORES.attempts, payload)
   await refreshPendingCount(presentationKey)
   startSyncForKey(presentationKey)
+  
   return { id, presentationKey }
 }
 
-export const markAttemptSynced = async (attemptId) => {
+export const markAttemptSynced = async attemptId => {
   const attempt = await idbGet(STORES.attempts, attemptId).catch(() => null)
   if (!attempt)
     return
@@ -215,9 +243,11 @@ export const syncQueue = async (presentationKey, options = {}) => {
     }
     if (!pending.length)
       return
+
     const invalid = pending.filter(item =>
       !item || !item.presentationId || !item.answerId,
     )
+
     if (invalid.length) {
       await Promise.all(
         invalid.map(item => idbDelete(STORES.attempts, item.id)),
@@ -228,12 +258,14 @@ export const syncQueue = async (presentationKey, options = {}) => {
     const validPending = pending.filter(item =>
       item && item.presentationId && item.answerId,
     )
+
     if (!validPending.length)
       return
 
     const timeoutMs = getTimeoutMs(presentationKey, options.timeoutMs)
     const requestedConcurrent = Math.max(1, Number(options.maxConcurrent || 1))
     const maxConcurrent = getConcurrency(presentationKey, requestedConcurrent)
+
     updateState(presentationKey, { concurrency: maxConcurrent })
     let failureCount = 0
 
@@ -241,6 +273,11 @@ export const syncQueue = async (presentationKey, options = {}) => {
       const batch = validPending.slice(i, i + maxConcurrent)
       const batchStart = Date.now()
       const headers = isDebug() ? { 'X-Debug': '1' } : undefined
+      try {
+        await ensureCsrfCookie()
+      } catch {
+        // Ignore CSRF refresh errors; request will retry on failure.
+      }
       let results = []
       let bulkUsed = false
       let bulkResultsCount = null
@@ -255,6 +292,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
               answer_id: attempt.answerId,
             })),
           }, { timeout: timeoutMs, headers })
+
           bulkUsed = true
           bulkResultsCount = Array.isArray(response?.data?.results) ? response.data.results.length : null
           results = [{ ok: true, response, batch }]
@@ -277,6 +315,8 @@ export const syncQueue = async (presentationKey, options = {}) => {
                 timeout: timeoutMs,
                 headers,
               })
+
+              
               return { ok: true, response, attempt }
             } catch (error) {
               return { ok: false, error, attempt }
@@ -302,16 +342,19 @@ export const syncQueue = async (presentationKey, options = {}) => {
             const byKey = new Map(
               result.batch.map(attempt => [`${attempt.presentationId}|${attempt.answerId}`, attempt]),
             )
+
             for (const item of response.data.results) {
               const key = `${item.presentation_id}|${item.answer_id}`
               const attempt = byKey.get(key)
               if (!attempt)
                 continue
               const status = item.status
+
               const drop = status === 'created'
                 || status === 'already_attempted'
                 || status === 'not_found'
                 || status === 'invalid'
+
               if (drop) {
                 await markAttemptSynced(attempt.id)
                 emit({ type: 'response', presentationKey, answerId: attempt.answerId, payload: item })
@@ -324,6 +367,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
             serverErrorCount += 1
           } else if (result.attempt) {
             const attempt = result.attempt
+
             await markAttemptSynced(attempt.id)
             emit({ type: 'response', presentationKey, answerId: attempt.answerId, payload: response.data })
             hadSuccess = true
@@ -360,6 +404,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
         }
       }
       const batchMs = Date.now() - batchStart
+
       updateState(presentationKey, {
         lastBatch: {
           size: batch.length,
@@ -373,7 +418,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
           bulkFailed,
           bulkErrorStatus,
           bulkErrorCode,
-        }
+        },
       })
       adjustTimeout(presentationKey, { batchMs, hadTimeout, hadServerError })
 
@@ -392,6 +437,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
       if (failureCount >= batch.length) {
         const state = getState(presentationKey)
         const firstErrorAt = state.firstErrorAt || Date.now()
+
         updateState(presentationKey, {
           lastErrorAt: Date.now(),
           firstErrorAt,
@@ -407,10 +453,11 @@ export const syncQueue = async (presentationKey, options = {}) => {
 
 export const startQueueSync = (password, userId) => {
   const presentationKey = presentationKeyFor(password, userId)
+  
   return startSyncForKey(presentationKey)
 }
 
-export const stopQueueSync = (presentationKey) => {
+export const stopQueueSync = presentationKey => {
   const interval = syncIntervals.get(presentationKey)
   if (interval) {
     clearInterval(interval)
@@ -423,6 +470,6 @@ export const stopQueueSync = (presentationKey) => {
   }
 }
 
-export const getQueueState = (presentationKey) => {
+export const getQueueState = presentationKey => {
   return { ...getState(presentationKey) }
 }

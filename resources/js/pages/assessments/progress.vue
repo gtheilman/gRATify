@@ -53,7 +53,9 @@ const fetchProgress = async (silent = false) => {
   }
   catch (err) {
     error.value = getErrorMessage(err, 'Unable to load progress')
+
     const cached = loadProgressCache()
+
     applyCachedFallback({
       cached,
       applyData: data => { assessment.value = data },
@@ -108,6 +110,7 @@ const rows = computed(() => {
 
     const percent = calcPercent(correctCount, totalCorrect)
     const groupLabel = resolveGroupLabel(pres)
+    
     return {
       group: groupLabel,
       percent,
@@ -146,7 +149,9 @@ const goToFeedback = () => {
 </script>
 
 <template>
-  <VContainer fluid class="py-6 progress-page">
+  <VContainer fluid
+              class="py-6 progress-page"
+  >
     <VRow>
       <VCol cols="12">
         <VCard class="w-100">
@@ -155,7 +160,9 @@ const goToFeedback = () => {
               <div class="overline text-secondary">
                 Progress
               </div>
-              <div class="text-h6 mt-2" style="padding-top: 10px;">
+              <div class="text-h6 mt-2"
+                   style="padding-top: 10px;"
+              >
                 Completion by group
               </div>
             </div>
@@ -178,13 +185,22 @@ const goToFeedback = () => {
               @click:close="clearStaleNotice"
             >
               <div class="d-flex align-center gap-2">
-                <VChip size="x-small" color="warning" variant="tonal">Stale</VChip>
+                <VChip size="x-small"
+                       color="warning"
+                       variant="tonal"
+                >
+                  Stale
+                </VChip>
                 <span>{{ staleNotice }}</span>
               </div>
             </VAlert>
 
-            <div v-if="loading" class="text-center py-6">
-              <VProgressCircular indeterminate color="primary" />
+            <div v-if="loading"
+                 class="text-center py-6"
+            >
+              <VProgressCircular indeterminate
+                                 color="primary"
+              />
             </div>
 
             <div v-else>
@@ -206,7 +222,9 @@ const goToFeedback = () => {
                             class="ms-1"
                           />
                         </button>
-                        <div class="percent-header" :style="{ width: percentWidth }">
+                        <div class="percent-header"
+                             :style="{ width: percentWidth }"
+                        >
                           <button
                             class="sort-btn group-percent"
                             @click="toggleSort('percent')"
@@ -234,8 +252,16 @@ const goToFeedback = () => {
                   >
                     <td>
                       <div class="group-cell">
-                        <div class="group-label" :style="{ minWidth: groupLabelWidth }">{{ row.group }}</div>
-                        <div class="group-percent" :style="{ width: percentWidth }">{{ row.percent }}%</div>
+                        <div class="group-label"
+                             :style="{ minWidth: groupLabelWidth }"
+                        >
+                          {{ row.group }}
+                        </div>
+                        <div class="group-percent"
+                             :style="{ width: percentWidth }"
+                        >
+                          {{ row.percent }}%
+                        </div>
                       </div>
                     </td>
                     <td>
@@ -248,7 +274,9 @@ const goToFeedback = () => {
                     </td>
                   </tr>
                   <tr v-if="!rows.length">
-                    <td colspan="2" class="text-center py-4 text-medium-emphasis">
+                    <td colspan="2"
+                        class="text-center py-4 text-medium-emphasis"
+                    >
                       No progress data available.
                     </td>
                   </tr>

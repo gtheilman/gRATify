@@ -3,5 +3,6 @@ export const parseActiveFlag = value => {
     return value
   if (value === null || typeof value === 'undefined')
     return null
+  
   return !!Number(value)
 }

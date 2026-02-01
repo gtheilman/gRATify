@@ -22,11 +22,8 @@ class PublicAssessmentResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'course' => $this->course,
             'active' => (bool) $this->active,
             'appeals_open' => (bool) $this->appeals_open,
-            'short_url' => $this->short_url,
-            'bitly_error' => $this->bitly_error,
             'questions' => PublicQuestionResource::collection($this->questions ?? collect()),
         ];
     }

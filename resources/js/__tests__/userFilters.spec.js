@@ -15,12 +15,14 @@ describe('user filter helpers', () => {
   it('signals page reset when filters change', () => {
     const prev = { term: 'alice', role: 'all' }
     const next = { term: '', role: 'all' }
+
     expect(shouldResetUserPage(prev, next)).toBe(true)
   })
 
   it('does not reset when filters are unchanged', () => {
     const prev = { term: 'alice', role: 'all' }
     const next = { term: 'alice', role: 'all' }
+
     expect(shouldResetUserPage(prev, next)).toBe(false)
   })
 })

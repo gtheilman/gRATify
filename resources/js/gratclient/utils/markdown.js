@@ -38,13 +38,14 @@ const renderLatex = (expr, displayMode = false) => {
 const renderAscii = (expr, displayMode = false) => {
   try {
     const tex = asciimathToLatex(expr.trim())
+    
     return katex.renderToString(tex, { throwOnError: false, displayMode })
   } catch {
     return expr
   }
 }
 
-const MATH_PATTERN = /(?:`?\$[\s\S]*?\$`?|`?@[\s\S]*?@`?)/;
+const MATH_PATTERN = /(?:`?\$[\s\S]*?\$`?|`?@[\s\S]*?@`?)/
 
 const renderMathBlocks = text => {
   if (!text) return ''
@@ -52,12 +53,14 @@ const renderMathBlocks = text => {
   const placeholderRegex = /<[^>]+>/g
   let output = text.replace(placeholderRegex, match => {
     htmlTags.push(match)
+    
     return `__HTML_TAG_${htmlTags.length - 1}__`
   })
 
   // Fast path: if there are no math markers, skip the replace work.
   if (!MATH_PATTERN.test(output)) {
     if (!htmlTags.length) return output
+    
     return output.replace(/__HTML_TAG_(\d+)__/g, (_, index) => htmlTags[Number(index)])
   }
 
@@ -85,6 +88,7 @@ const MAX_CACHE_ENTRIES = 200
 
 const decodeHtmlEntities = text => {
   if (!text || !text.includes('&')) return text
+  
   return text
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -107,6 +111,7 @@ export function renderMarkdown (content = '') {
     if (firstKey) MARKDOWN_CACHE.delete(firstKey)
   }
   MARKDOWN_CACHE.set(key, rendered)
+  
   return rendered
 }
 

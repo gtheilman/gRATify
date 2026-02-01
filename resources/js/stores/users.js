@@ -14,7 +14,9 @@ export const useUsersStore = defineStore('users', {
   getters: {
     roles: state => {
       const roles = new Set()
+
       state.users.forEach(u => u?.role && roles.add(u.role))
+      
       return ['All', ...Array.from(roles)]
     },
   },
@@ -58,6 +60,7 @@ export const useUsersStore = defineStore('users', {
           method: 'POST',
           body: payload,
         })
+
         if (error.value)
           throw error.value
         await this.fetchUsers()
@@ -80,6 +83,7 @@ export const useUsersStore = defineStore('users', {
           method: 'PATCH',
           body: payload,
         })
+
         if (error.value)
           throw error.value
         await this.fetchUsers()

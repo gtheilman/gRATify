@@ -10,12 +10,17 @@ vi.mock('axios', () => ({
   default: { post: shared.axiosPost },
 }))
 
+vi.mock('../../utils/http', () => ({
+  ensureCsrfCookie: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock('../utils/idb', () => ({
   STORES: { attempts: 'attempt_queue' },
   idbGetAllByIndex: vi.fn(() => Promise.resolve(shared.pending)),
   idbGet: vi.fn((store, key) => Promise.resolve(shared.pending.find(item => item.id === key) || null)),
   idbDelete: vi.fn((store, key) => {
     shared.pending = shared.pending.filter(item => item.id !== key)
+    
     return Promise.resolve()
   }),
   idbSet: vi.fn(),
@@ -41,6 +46,7 @@ describe('attempt queue adaptive timeout', () => {
   it('increases timeout based on slow batch duration', async () => {
     shared.axiosPost.mockImplementation(() => {
       shared.now += 2000
+      
       return Promise.resolve({
         data: {
           results: [
@@ -56,6 +62,7 @@ describe('attempt queue adaptive timeout', () => {
     await syncQueue('p', { timeoutMs: 3000, maxConcurrent: 10 })
 
     const state = getQueueState('p')
+
     expect(state.timeoutMs).toBeGreaterThanOrEqual(4000)
     expect(state.emaMs).toBeGreaterThanOrEqual(2000)
   })

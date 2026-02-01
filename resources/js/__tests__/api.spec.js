@@ -34,6 +34,7 @@ describe('api client', () => {
 
   it('adds XSRF header when token exists', async () => {
     getXsrfToken.mockReturnValue('token')
+
     const options = { headers: { Existing: 'value' } }
 
     await $api.onRequest({ options })
@@ -46,6 +47,7 @@ describe('api client', () => {
 
   it('skips XSRF header when token is missing', async () => {
     getXsrfToken.mockReturnValue(null)
+
     const options = { headers: { Existing: 'value' } }
 
     await $api.onRequest({ options })

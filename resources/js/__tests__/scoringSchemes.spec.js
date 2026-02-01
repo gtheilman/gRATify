@@ -4,6 +4,7 @@ import { defaultScoringScheme, scoringSchemeOptions } from '../utils/scoringSche
 describe('scoring scheme options', () => {
   it('includes all supported schemes', () => {
     const values = scoringSchemeOptions.map(option => option.value)
+
     expect(values).toEqual([
       'geometric-decay',
       'linear-decay',

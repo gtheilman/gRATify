@@ -23,9 +23,7 @@ class PublicAttemptResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'presentation_id' => $this->presentation_id,
             'answer_id' => $this->answer_id,
-            'points' => $this->points,
             'answer_correct' => $answerCorrect,
             'answer' => $this->answer ? [
                 'id' => $this->answer->id,

@@ -21,9 +21,7 @@ class PublicQuestionResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'assessment_id' => $this->assessment_id,
             'stem' => $this->stem,
-            'points_possible' => $this->points_possible,
             'sequence' => $this->sequence,
             'answers' => PublicAnswerResource::collection($this->answers ?? collect()),
         ];

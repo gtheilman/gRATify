@@ -5,5 +5,6 @@ export const formatScheduledDate = value => {
   if (!Number.isNaN(dateFromIso))
     return dateFromIso.toISOString().slice(0, 10)
   const maybeDate = String(value).split('T')[0]
+  
   return maybeDate || value
 }

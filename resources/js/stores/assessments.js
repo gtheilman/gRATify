@@ -25,7 +25,9 @@ export const useAssessmentsStore = defineStore('assessments', {
         if (error.value)
           throw error.value
         const payload = data.value || []
+
         this.assessments = Array.isArray(payload) ? payload : Object.values(payload)
+        
         return this.assessments
       }
       catch (err) {
@@ -47,6 +49,7 @@ export const useAssessmentsStore = defineStore('assessments', {
       this.error = null
       try {
         const shortlink_provider = this.shortLinkProvider
+
         const { data, error } = await api('/assessments', {
           method: 'POST',
           body: {
@@ -54,10 +57,13 @@ export const useAssessmentsStore = defineStore('assessments', {
             shortlink_provider,
           },
         })
+
         if (error.value)
           throw error.value
         const created = data.value
+
         await this.fetchAssessments()
+        
         return created
       }
       catch (err) {
@@ -79,6 +85,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         const { data, error } = await api(`/assessments/${id}/edit${providerParam}`, { method: 'GET' })
         if (error.value)
           throw error.value
+
         // Normalize answers.correct to boolean for checkbox bindings
         const normalizeAssessment = assessment => {
           if (!assessment?.questions)
@@ -86,12 +93,15 @@ export const useAssessmentsStore = defineStore('assessments', {
           assessment.questions = assessment.questions.map(q => {
             if (q.answers)
               q.answers = q.answers.map(a => ({ ...a, correct: !!Number(a.correct) }))
+            
             return q
           })
+          
           return assessment
         }
 
         this.currentAssessment = normalizeAssessment(data.value)
+        
         return this.currentAssessment
       }
       catch (err) {
@@ -113,9 +123,11 @@ export const useAssessmentsStore = defineStore('assessments', {
           method: 'PUT',
           body: payload,
         })
+
         if (error.value)
           throw error.value
         const updated = data.value || {}
+
         // Preserve questions already in state (API response for update does not include them)
         this.currentAssessment = {
           ...(this.currentAssessment || {}),
@@ -123,6 +135,7 @@ export const useAssessmentsStore = defineStore('assessments', {
           questions: this.currentAssessment?.questions || [],
         }
         await this.fetchAssessments()
+        
         return data.value
       }
       catch (err) {
@@ -144,8 +157,10 @@ export const useAssessmentsStore = defineStore('assessments', {
           method: 'PUT',
           body: payload,
         })
+
         if (error.value)
           throw error.value
+        
         return data.value
       }
       catch (err) {
@@ -186,6 +201,7 @@ export const useAssessmentsStore = defineStore('assessments', {
           assessment_id: assessmentId,
         },
       })
+
       if (error.value)
         throw error.value
       const createdQuestion = data.value
@@ -195,6 +211,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         { answer_text: 'Answer A', correct: false, sequence: 1 },
         { answer_text: 'Answer B', correct: false, sequence: 2 },
       ]
+
       for (const ans of defaults) {
         await api('/answers', {
           method: 'POST',
@@ -206,6 +223,7 @@ export const useAssessmentsStore = defineStore('assessments', {
       }
 
       await this.loadAssessment(assessmentId)
+      
       return createdQuestion
     },
     async updateQuestion(question, options = { reload: true }) {
@@ -218,10 +236,12 @@ export const useAssessmentsStore = defineStore('assessments', {
           sequence: question.sequence,
         },
       })
+
       if (error.value)
         throw error.value
       if (options.reload !== false)
         await this.loadAssessment(this.currentAssessment?.id)
+      
       return data.value
     },
     async deleteQuestion(questionId) {
@@ -235,6 +255,7 @@ export const useAssessmentsStore = defineStore('assessments', {
     async promoteQuestion(questionId) {
       if (!this.currentAssessment)
         return
+
       const { error } = await api('/questions/promote', {
         method: 'POST',
         body: {
@@ -242,6 +263,7 @@ export const useAssessmentsStore = defineStore('assessments', {
           assessment_id: this.currentAssessment.id,
         },
       })
+
       if (error.value)
         throw error.value
       await this.loadAssessment(this.currentAssessment.id)
@@ -249,6 +271,7 @@ export const useAssessmentsStore = defineStore('assessments', {
     async demoteQuestion(questionId) {
       if (!this.currentAssessment)
         return
+
       const { error } = await api('/questions/demote', {
         method: 'POST',
         body: {
@@ -256,6 +279,7 @@ export const useAssessmentsStore = defineStore('assessments', {
           assessment_id: this.currentAssessment.id,
         },
       })
+
       if (error.value)
         throw error.value
       await this.loadAssessment(this.currentAssessment.id)
@@ -268,9 +292,11 @@ export const useAssessmentsStore = defineStore('assessments', {
           answer_text: 'New Answer',
         },
       })
+
       if (error.value)
         throw error.value
       await this.loadAssessment(this.currentAssessment?.id)
+      
       return data.value
     },
     async updateAnswer(answer, options = { reload: true }) {
@@ -283,10 +309,12 @@ export const useAssessmentsStore = defineStore('assessments', {
           sequence: answer.sequence,
         },
       })
+
       if (error.value)
         throw error.value
       if (options.reload !== false)
         await this.loadAssessment(this.currentAssessment?.id)
+      
       return data.value
     },
     async deleteAnswer(answerId) {

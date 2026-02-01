@@ -3,6 +3,7 @@ import { readProgressCache, writeProgressCache } from '../utils/progressCache'
 
 const mockStorage = () => {
   let store = {}
+  
   return {
     getItem: key => (key in store ? store[key] : null),
     setItem: (key, value) => { store[key] = String(value) },
@@ -22,7 +23,9 @@ describe('progress cache helpers', () => {
 
   it('writes and reads cached payloads', () => {
     writeProgressCache(12, { foo: 'bar' })
+
     const cached = readProgressCache(12)
+
     expect(cached?.data?.foo).toBe('bar')
   })
 

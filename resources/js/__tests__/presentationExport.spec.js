@@ -8,6 +8,7 @@ describe('buildTimelineHtml', () => {
       assessmentTitle: 'Test Assessment',
       scoringScheme: 'geometric-decay',
     })
+
     expect(html).toContain('<!doctype html>')
     expect(html).toContain('Test Assessment')
   })
@@ -18,6 +19,7 @@ describe('buildTimelineHtml', () => {
       assessmentTitle: 'Assessment',
       scoringScheme: 'linear-decay',
     })
+
     expect(html).toContain('Linear decay')
   })
 
@@ -27,6 +29,7 @@ describe('buildTimelineHtml', () => {
       assessmentTitle: 'Assessment',
       scoringScheme: 'geometric-decay',
     })
+
     expect(html).toContain('No questions')
   })
 
@@ -42,6 +45,7 @@ describe('buildTimelineHtml', () => {
       assessmentTitle: 'Assessment',
       scoringScheme: 'geometric-decay',
     })
+
     expect(html).toContain('No attempts')
   })
 
@@ -51,6 +55,7 @@ describe('buildTimelineHtml', () => {
       assessmentTitle: 'Assessment',
       scoringScheme: 'geometric-decay',
     })
+
     expect(html).toContain('No questions')
   })
 

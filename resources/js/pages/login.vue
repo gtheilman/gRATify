@@ -57,16 +57,19 @@ const handleReset = async () => {
   const validationMessage = validateResetEmail(form.value.email)
   if (validationMessage) {
     resetError.value = validationMessage
+    
     return
   }
 
   resetSubmitting.value = true
   try {
     await ensureCsrfCookie()
+
     const { data, error } = await api('/auth/password/email', {
       method: 'POST',
       body: { email: form.value.email },
     })
+
     if (error.value)
       throw error.value
 
@@ -163,7 +166,10 @@ onMounted(async () => {
                   Database migrations are required. Run <strong>php artisan migrate</strong>.
                   <span v-if="documentationLink">
                     See the README on
-                    <a :href="documentationLink" target="_blank" rel="noopener">GitHub</a>.
+                    <a :href="documentationLink"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                    >GitHub</a>.
                   </span>
                 </VAlert>
                 <VAlert
@@ -237,10 +243,14 @@ onMounted(async () => {
                   >
                     Forgot Password?
                   </VBtn>
-                  <div v-if="mailCheckLoaded && !mailEnabled" class="text-caption text-medium-emphasis mt-2">
+                  <div v-if="mailCheckLoaded && !mailEnabled"
+                       class="text-caption text-medium-emphasis mt-2"
+                  >
                     Password reset requires a configured mail server.
                   </div>
-                  <div v-else-if="mailCheckLoaded && !mailConfigured" class="text-caption text-medium-emphasis mt-2">
+                  <div v-else-if="mailCheckLoaded && !mailConfigured"
+                       class="text-caption text-medium-emphasis mt-2"
+                  >
                     Password reset requires a configured mail server.
                   </div>
                 </div>
@@ -255,9 +265,15 @@ onMounted(async () => {
                   Login
                 </VBtn>
                 <div class="text-caption text-medium-emphasis mt-3">
-                  <a href="/privacy" target="_blank" rel="noopener">Privacy</a>
+                  <a href="/privacy"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                  >Privacy</a>
                   <span class="mx-2">·</span>
-                  <a href="/terms" target="_blank" rel="noopener">Terms</a>
+                  <a href="/terms"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                  >Terms</a>
                 </div>
               </VForm>
             </VCol>

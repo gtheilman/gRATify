@@ -3,6 +3,7 @@ import { readFeedbackCache, writeFeedbackCache } from '../utils/feedbackCache'
 
 const mockStorage = () => {
   let store = {}
+  
   return {
     getItem: key => (key in store ? store[key] : null),
     setItem: (key, value) => { store[key] = String(value) },
@@ -22,7 +23,9 @@ describe('feedback cache helpers', () => {
 
   it('writes and reads cached payloads', () => {
     writeFeedbackCache(9, { foo: 'bar' })
+
     const cached = readFeedbackCache(9)
+
     expect(cached?.data?.foo).toBe('bar')
   })
 

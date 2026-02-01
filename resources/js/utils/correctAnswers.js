@@ -8,5 +8,6 @@ export const collectCorrectAnswerIds = questions => {
         ids.push(ans.id)
     })
   })
+  
   return ids
 }

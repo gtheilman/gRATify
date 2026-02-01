@@ -4,6 +4,7 @@ import { extractApiErrorMessage, readApiErrorDetail, getErrorMessage } from '../
 describe('apiError utilities', () => {
   it('extracts error.message when present', () => {
     const message = extractApiErrorMessage({ error: { message: 'Forbidden' } })
+
     expect(message).toBe('Forbidden')
   })
 
@@ -14,16 +15,19 @@ describe('apiError utilities', () => {
 
   it('prefers error.message over top-level message', () => {
     const message = extractApiErrorMessage({ error: { message: 'Nested' }, message: 'Top' })
+
     expect(message).toBe('Nested')
   })
 
   it('extracts validation errors from array payloads', () => {
     const message = extractApiErrorMessage({ errors: ['First error', 'Second error'] })
+
     expect(message).toBe('First error')
   })
 
   it('extracts validation errors from object payloads', () => {
     const message = extractApiErrorMessage({ errors: { field: ['Field error'] } })
+
     expect(message).toBe('Field error')
   })
 
@@ -36,6 +40,7 @@ describe('apiError utilities', () => {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     })
+
     await expect(readApiErrorDetail(response)).resolves.toBe('Unauthorized')
   })
 
@@ -44,6 +49,7 @@ describe('apiError utilities', () => {
       status: 500,
       headers: { 'Content-Type': 'text/plain' },
     })
+
     await expect(readApiErrorDetail(response)).resolves.toBe('plain error')
   })
 
@@ -52,16 +58,19 @@ describe('apiError utilities', () => {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
+
     await expect(readApiErrorDetail(response)).resolves.toBe('{"foo":"bar"}')
   })
 
   it('returns fallback for object errors without message', () => {
     const message = getErrorMessage({ foo: 'bar' }, 'Fallback message')
+
     expect(message).toBe('Fallback message')
   })
 
   it('avoids [object Object] messages', () => {
     const message = getErrorMessage({ message: '[object Object]', error: { message: 'Readable' } }, 'Fallback')
+
     expect(message).toBe('Readable')
   })
 })

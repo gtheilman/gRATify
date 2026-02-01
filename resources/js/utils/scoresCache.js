@@ -9,6 +9,7 @@ export const readScoresCache = key => {
     const raw = localStorage.getItem(key)
     if (!raw)
       return null
+    
     return JSON.parse(raw)
   } catch {
     return null

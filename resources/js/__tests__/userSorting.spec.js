@@ -12,7 +12,9 @@ describe('userSorting helpers', () => {
       { name: 'Alice Zebra' },
       { name: 'Bob Alpha' },
     ]
+
     const sorted = sortUsers(users, 'name', 'asc')
+
     expect(sorted[0].name).toBe('Bob Alpha')
   })
 
@@ -21,7 +23,9 @@ describe('userSorting helpers', () => {
       { email: 'z@example.com' },
       { email: 'a@example.com' },
     ]
+
     const sorted = sortUsers(users, 'email', 'asc')
+
     expect(sorted[0].email).toBe('a@example.com')
   })
 })

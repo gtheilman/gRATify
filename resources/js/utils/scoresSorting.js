@@ -12,6 +12,7 @@ export const sortPresentations = (presentations, sortKey) => {
     const bId = normalizeUserId(b.user_id)
     if (typeof aId === 'number' && typeof bId === 'number')
       return aId - bId
+    
     return String(aId || '').localeCompare(String(bId || ''))
   })
 }

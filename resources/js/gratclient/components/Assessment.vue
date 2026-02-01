@@ -7,8 +7,12 @@
       aria-live="polite"
       aria-atomic="true"
     >
-      <div class="toast-title">Complete!</div>
-      <div class="toast-note">You may close this tab.</div>
+      <div class="toast-title">
+        Complete!
+      </div>
+      <div class="toast-note">
+        You may close this tab.
+      </div>
     </div>
     <div
       v-if="showCloseWarning"
@@ -17,9 +21,15 @@
       aria-live="assertive"
       aria-atomic="true"
     >
-      <div class="toast-title">Completed!</div>
-      <div class="toast-note">Do Not Close!</div>
-      <div class="toast-note">Saving Answers: {{ queuePendingCount }}</div>
+      <div class="toast-title">
+        Completed!
+      </div>
+      <div class="toast-note">
+        Do Not Close!
+      </div>
+      <div class="toast-note">
+        Saving Answers: {{ queuePendingCount }}
+      </div>
     </div>
     <div
       v-if="showSoftSaving"
@@ -28,9 +38,15 @@
       aria-live="polite"
       aria-atomic="true"
     >
-      <div class="toast-title">Completed!</div>
-      <div class="toast-note">Saving answers…</div>
-      <div class="toast-spinner" aria-hidden="true"></div>
+      <div class="toast-title">
+        Completed!
+      </div>
+      <div class="toast-note">
+        Saving answers…
+      </div>
+      <div class="toast-spinner"
+           aria-hidden="true"
+      />
     </div>
     <div
       v-if="showTabWarning"
@@ -40,7 +56,9 @@
       aria-atomic="true"
     >
       <div>Another tab is open.</div>
-      <div class="complete-note">To avoid sync issues, please use a single tab.</div>
+      <div class="complete-note">
+        To avoid sync issues, please use a single tab.
+      </div>
     </div>
 
     <Swiper
@@ -53,7 +71,7 @@
       aria-label="gRAT questions"
       class="assessment-swiper"
       :aria-live="complete ? 'off' : liveMode"
-      @slideChange="onSlideChange"
+      @slide-change="onSlideChange"
     >
       <SwiperSlide
         v-for="(question, idx) in presentation.assessment.questions"
@@ -63,20 +81,22 @@
         aria-roledescription="slide"
         :aria-label="`Question ${idx + 1} of ${presentation.assessment.questions.length}`"
       >
-        <question
-          @questionComplete="checkCompletion"
-          @attempt-start="onAttemptStart"
-          @attempt-end="onAttemptEnd"
-          :presentation_id=presentation.id
-          :question=question
-          :attempts=presentation.attempts
+        <Question
+          :presentation_id="presentation.id"
+          :question="question"
+          :attempts="presentation.attempts"
           :appeals="presentation.appeals"
           :password="password"
-          :presentationKey="presentationKey">
-        </question>
+          :presentation-key="presentationKey"
+          @question-complete="checkCompletion"
+          @attempt-start="onAttemptStart"
+          @attempt-end="onAttemptEnd"
+        />
       </SwiperSlide>
     </Swiper>
-    <div v-if="complete" class="appeal-toolbar">
+    <div v-if="complete"
+         class="appeal-toolbar"
+    >
       <button
         v-if="appealsOpen"
         type="button"
@@ -86,19 +106,36 @@
       >
         Appeal
       </button>
-      <span v-if="appealSubmitted" class="appeal-badge saved">Saved</span>
-      <span v-else-if="!appealsOpen" class="appeal-badge closed">APPEALS CLOSED</span>
+      <span v-if="appealSubmitted"
+            class="appeal-badge saved"
+      >Saved</span>
+      <span v-else-if="!appealsOpen"
+            class="appeal-badge closed"
+      >APPEALS CLOSED</span>
     </div>
-    <div v-if="showAppealModal" class="appeal-modal" role="dialog" aria-modal="true">
-      <div class="appeal-modal-backdrop" @click.self="closeAppealModal"></div>
+    <div v-if="showAppealModal"
+         class="appeal-modal"
+         role="dialog"
+         aria-modal="true"
+    >
+      <div class="appeal-modal-backdrop"
+           @click.self="closeAppealModal"
+      />
       <div class="appeal-modal-card">
         <div class="appeal-modal-header">
           <div class="appeal-modal-title">
             Appeal · Question {{ activeQuestionNumber }}
           </div>
-          <button type="button" class="appeal-modal-close" @click="closeAppealModal">×</button>
+          <button type="button"
+                  class="appeal-modal-close"
+                  @click="closeAppealModal"
+          >
+            ×
+          </button>
         </div>
-        <p v-if="!appealsOpen" class="appeal-note">
+        <p v-if="!appealsOpen"
+           class="appeal-note"
+        >
           Appeals are closed for this assessment.
         </p>
         <textarea
@@ -107,7 +144,7 @@
           rows="4"
           placeholder="Explain briefy why your group's choice is BETTER than the key. It is not enough to just find fault with the key's choice. The faculty will review and respond after class."
           :disabled="appealLocked"
-        ></textarea>
+        />
         <div class="appeal-actions">
           <button
             type="button"
@@ -117,13 +154,20 @@
           >
             {{ appealSubmitting ? 'Submitting…' : 'Submit appeal' }}
           </button>
-          <span v-if="appealStatus" class="appeal-status-text">{{ appealStatus }}</span>
-          <span v-if="appealError" class="appeal-error">{{ appealError }}</span>
+          <span v-if="appealStatus"
+                class="appeal-status-text"
+          >{{ appealStatus }}</span>
+          <span v-if="appealError"
+                class="appeal-error"
+          >{{ appealError }}</span>
         </div>
       </div>
     </div>
 
-    <div v-if="debugMode" class="debug-panel" aria-live="polite">
+    <div v-if="debugMode"
+         class="debug-panel"
+         aria-live="polite"
+    >
       <div><strong>Debug</strong></div>
       <div>complete: {{ complete }}</div>
       <div>showCloseWarning: {{ showCloseWarning }}</div>
@@ -144,7 +188,6 @@
       <div>ticks: {{ debugTicks }}</div>
       <div>lastTick: {{ debugLastTick }}</div>
     </div>
-
   </div>
 </template>
 
@@ -167,7 +210,7 @@ export default {
   components: {
     Swiper,
     SwiperSlide,
-    Question
+    Question,
   },
   computed: {
     swiper () {
@@ -179,6 +222,7 @@ export default {
     presentationKey () {
       if (!this.password || !this.user_id)
         return ''
+      
       return `${this.password}|${this.user_id}`
     },
     showCloseWarning () {
@@ -189,6 +233,7 @@ export default {
       if (!this.saveWarningSince)
         return false
       const now = this.saveWarningNow || Date.now()
+      
       return (now - this.saveWarningSince) >= this.saveWarningHoldMs
     },
     showSoftSaving () {
@@ -199,6 +244,7 @@ export default {
       if (!this.saveWarningSince)
         return true
       const now = this.saveWarningNow || Date.now()
+      
       return (now - this.saveWarningSince) < this.saveWarningHoldMs
     },
     showTabWarning () {
@@ -208,23 +254,28 @@ export default {
       if (!this.totalQuestions)
         return false
       const allAnswered = this.completedIds.length === this.totalQuestions
+      
       return this.completionReady && allAnswered && !this.complete && (this.pendingAttempts > 0 || this.queuePendingCount > 0)
     },
     debugLastTick () {
       if (!this.debugLastTickAt) return 'never'
+      
       return new Date(this.debugLastTickAt).toLocaleTimeString()
     },
     debugLastSuccess () {
       if (!this.queueLastSuccessAt) return 'never'
+      
       return new Date(this.queueLastSuccessAt).toLocaleTimeString()
     },
     debugLastError () {
       if (!this.queueLastSuccessAt && !this.queueFirstErrorAt) return 'never'
       const ts = this.queueFirstErrorAt || this.queueLastSuccessAt
+      
       return ts ? new Date(ts).toLocaleTimeString() : 'never'
     },
     debugLastBatch () {
       if (!this.queueLastBatch) return 'none'
+
       const {
         size,
         ms,
@@ -238,8 +289,10 @@ export default {
         bulkErrorStatus,
         bulkErrorCode,
       } = this.queueLastBatch
+
       const bulkInfo = bulkFailed ? ` bulkFail=${bulkErrorStatus || bulkErrorCode || 'yes'}` : ''
       const bulkOk = bulkUsed ? ` bulk=${bulkResultsCount ?? 'yes'}` : ''
+      
       return `size=${size} ms=${ms} 5xx/429=${serverErrors} 4xx=${clientErrors} timeouts=${timeouts} network=${networkErrors}${bulkOk}${bulkInfo}`
     },
     debugServerMs () {
@@ -265,6 +318,7 @@ export default {
     },
     appealSubmitted () {
       if (!this.activeQuestionId) return false
+      
       return (this.presentation?.appeals || []).some(appeal => appeal.question_id === this.activeQuestionId)
     },
     appealLocked () {
@@ -272,7 +326,7 @@ export default {
     },
     appealDraftTrimmed () {
       return (this.appealDraft || '').trim()
-    }
+    },
   },
   methods: {
     setNavLabels () {
@@ -328,13 +382,16 @@ export default {
         const parsed = Number(domIndex)
         if (!Number.isNaN(parsed)) {
           this.activeQuestionIndex = parsed
+          
           return
         }
       }
       const swiper = this.swiper
       if (swiper) {
         const index = swiper.realIndex ?? swiper.activeIndex ?? 0
+
         this.activeQuestionIndex = index
+        
         return
       }
       this.activeQuestionIndex = 0
@@ -358,12 +415,14 @@ export default {
         const response = await axios.get(`/api/presentations/store/${this.password}/${this.user_id}`)
         const payload = response?.data || null
         if (payload?.assessment && this.presentation?.assessment) {
+          // eslint-disable-next-line vue/no-mutating-props
           this.presentation.assessment = {
             ...this.presentation.assessment,
-            appeals_open: payload.assessment.appeals_open
+            appeals_open: payload.assessment.appeals_open,
           }
         }
         if (payload?.appeals && this.presentation) {
+          // eslint-disable-next-line vue/no-mutating-props
           this.presentation.appeals = payload.appeals
         }
         if (this.presentation && this.password && this.user_id) {
@@ -409,13 +468,16 @@ export default {
         return
       }
       this.syncActiveQuestionFromSwiper()
+
       const trimmed = this.appealDraftTrimmed
       if (!trimmed) {
         this.appealError = 'Enter your appeal before submitting.'
+        
         return
       }
       if (!this.activeQuestionId) {
         this.appealError = 'No question selected.'
+        
         return
       }
       this.appealSubmitting = true
@@ -423,16 +485,19 @@ export default {
       this.appealStatus = ''
       try {
         await ensureCsrfCookie()
+
         const response = await axios.post('/api/appeals', {
           presentation_id: this.presentation.id,
           question_id: this.activeQuestionId,
-          body: trimmed
+          body: trimmed,
         })
+
         const appeal = response?.data || null
         if (appeal?.body) {
           this.appealDraft = appeal.body
         }
         if (appeal && this.presentation?.appeals) {
+          // eslint-disable-next-line vue/no-mutating-props
           this.presentation.appeals = [...this.presentation.appeals.filter(a => a.question_id !== this.activeQuestionId), appeal]
         }
         if (this.presentation && this.password && this.user_id) {
@@ -442,6 +507,7 @@ export default {
         this.showAppealModal = false
       } catch (error) {
         const message = error?.response?.data?.error?.message
+
         this.appealError = message || 'Unable to submit appeal.'
       } finally {
         this.appealSubmitting = false
@@ -451,6 +517,7 @@ export default {
       if (!this.tabChannel || !this.presentationKey)
         return
       const now = Date.now()
+
       this.tabChannel.postMessage({
         presentationKey: this.presentationKey,
         instanceId: this.tabInstanceId,
@@ -472,6 +539,7 @@ export default {
       }
       if (!peers.length) {
         this.duplicateTab = false
+        
         return
       }
       const all = [this.tabInstanceId, ...peers].sort()
@@ -534,6 +602,7 @@ export default {
         }
         this.complete = false
         this.completionHoldUntil = null
+        
         return
       }
       if (!this.completionReady) {
@@ -541,6 +610,7 @@ export default {
       }
       if (this.pendingAttempts > 0 || this.queuePendingCount > 0) {
         this.complete = false
+        
         return
       }
       if (this.complete)
@@ -555,6 +625,7 @@ export default {
       const attempts = Array.isArray(this.presentation?.attempts) ? this.presentation.attempts : []
       const answeredQuestionIds = []
       const answerIdToQuestionId = new Map()
+
       // Build an answer->question lookup so attempts can mark completion.
       this.presentation.assessment.questions.forEach(q => {
         q.answers.forEach(ans => {
@@ -574,19 +645,19 @@ export default {
         this.startCompletionHold()
       }
       this.evaluateCompletion()
-    }
+    },
   },
 
   props: [
     'presentation',
     'password',
-    'user_id'
+    'user_id',
   ],
   data () {
     return {
       complete: false,
       completionReady: false,
-      completionDelayMs: 3000,
+      completionDelayMs: 1500,
       completionHoldUntil: null,
       completedIds: [],
       pendingAttempts: 0,
@@ -626,16 +697,16 @@ export default {
       modules: [Navigation, Pagination, Keyboard],
       keyboard: {
         enabled: true,
-        onlyInViewport: false
+        onlyInViewport: false,
       },
       liveMode: 'polite',
       pagination: {
         clickable: true,
         renderBullet: function (index, className) {
           return `<span class="${className}" aria-label="Go to question ${index + 1}" role="button" tabindex="0">${index + 1}</span>`
-        }
+        },
       },
-      navigation: true
+      navigation: true,
     }
   },
   watch: {
@@ -646,7 +717,7 @@ export default {
       deep: true,
       handler () {
         this.syncAppealDraft()
-      }
+      },
     },
     complete (next) {
       if (next) {
@@ -676,11 +747,15 @@ export default {
               this.debugTicks += 1
               this.debugLastTickAt = Date.now()
             }
+            
+            return count
           }).catch(() => {})
         }, 1000)
+
         const handleOnline = () => {
           syncQueue(this.queueKey, { timeoutMs: 8000, maxConcurrent: 25 })
         }
+
         window.addEventListener('online', handleOnline, { once: true })
       } else if (this.fastSyncInterval) {
         clearInterval(this.fastSyncInterval)
@@ -695,17 +770,20 @@ export default {
       if (next > this.saveWarningPendingThreshold) {
         this.saveWarningSince = null
         this.saveWarningNow = Date.now()
+        
         return
       }
       if (!this.saveWarningSince) {
         this.saveWarningSince = Date.now()
         this.saveWarningNow = this.saveWarningSince
       }
-    }
+    },
   },
   mounted () {
     this.initializeCompletedFromAttempts()
+
     const params = new URLSearchParams(window.location.search || '')
+
     this.debugMode = params.get('debug') === '1'
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       this.tabInstanceId = crypto.randomUUID()
@@ -714,7 +792,7 @@ export default {
     }
     if (typeof BroadcastChannel !== 'undefined') {
       this.tabChannel = new BroadcastChannel('gratclient-tab-presence')
-      this.tabChannel.onmessage = (event) => {
+      this.tabChannel.onmessage = event => {
         const data = event?.data || {}
         if (data.presentationKey !== this.presentationKey)
           return
@@ -730,7 +808,9 @@ export default {
     }
     if (this.password && this.user_id) {
       this.queueKey = startQueueSync(this.password, this.user_id)
+
       const state = getQueueState(this.queueKey)
+
       this.queuePendingCount = state.pendingCount || 0
       this.queueFailureStreak = state.failureStreak || 0
       this.queueFirstErrorAt = state.firstErrorAt || null
@@ -765,21 +845,24 @@ export default {
       this.startAppealsPolling()
     }
     window.addEventListener('keydown', this.handleArrowKeys, { capture: true })
-      this.$nextTick(() => {
-        this.setNavLabels()
-        const swiper = this.swiper
-        this.activeQuestionIndex = swiper?.realIndex ?? swiper?.activeIndex ?? 0
-        this.syncAppealDraft()
-        if (swiper && !swiper.__appealListenerBound) {
-          const handler = () => this.onSlideChange()
-          swiper.on('slideChange', handler)
-          swiper.on('realIndexChange', handler)
-          swiper.on('activeIndexChange', handler)
-          swiper.on('slideChangeTransitionEnd', handler)
-          swiper.__appealListenerBound = true
-        }
-      })
-    },
+    this.$nextTick(() => {
+      this.setNavLabels()
+
+      const swiper = this.swiper
+
+      this.activeQuestionIndex = swiper?.realIndex ?? swiper?.activeIndex ?? 0
+      this.syncAppealDraft()
+      if (swiper && !swiper.__appealListenerBound) {
+        const handler = () => this.onSlideChange()
+
+        swiper.on('slideChange', handler)
+        swiper.on('realIndexChange', handler)
+        swiper.on('activeIndexChange', handler)
+        swiper.on('slideChangeTransitionEnd', handler)
+        swiper.__appealListenerBound = true
+      }
+    })
+  },
   beforeUnmount () {
     window.removeEventListener('keydown', this.handleArrowKeys, { capture: true })
     if (this.completionTimer) {
@@ -807,12 +890,12 @@ export default {
       this.tabChannel.close()
       this.tabChannel = null
     }
-  }
+  },
 
 }
 </script>
 
-<style  >
+<style>
   html,
   body {
     position: relative;

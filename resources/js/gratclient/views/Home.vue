@@ -2,10 +2,10 @@
   <div id="main">
     <div v-if="assessmentLoaded">
       <Assessment
-        :presentation=presentation
-        :user_id=user_id
-        :password=password
-      ></Assessment>
+        :presentation="presentation"
+        :user_id="user_id"
+        :password="password"
+      />
     </div>
     <div v-else>
       <div class="id-card">
@@ -19,43 +19,74 @@
                 <td><span class="indexHeader">Enter the identifier provided by your instructor</span></td>
               </tr>
               <tr v-if="errorMessage">
-                <td><div class="error" aria-live="polite">{{ errorMessage }}</div></td>
+                <td>
+                  <div class="error"
+                       aria-live="polite"
+                  >
+                    {{ errorMessage }}
+                  </div>
+                </td>
               </tr>
               <tr>
                 <td>
                   <input
+                    v-model="user_id"
                     type="text"
-                    @keyup.enter="getAssessment"
                     name="user_id"
                     placeholder="Your Identifier"
-                    v-model="user_id"
                     :disabled="disabled"
+                    @keyup.enter="getAssessment"
                   >
                 </td>
               </tr>
-              <tr v-show="disabled"><td align="center">
-                <div class="spinner" role="status" aria-label="Loading"></div>
-                <div class="loading-text">Loading gRAT…</div>
-                <div class="skeleton-card">
-                  <div class="skeleton line short"></div>
-                  <div class="skeleton line"></div>
-                  <div class="skeleton line"></div>
-                  <div class="skeleton line"></div>
-                </div>
-              </td></tr>
-              <tr v-show="!disabled"><td><button @click="getAssessment"   class="button" :disabled="!user_id">Submit</button></td></tr>
-          </tbody>
+              <tr v-show="disabled">
+                <td align="center">
+                  <div class="spinner"
+                       role="status"
+                       aria-label="Loading"
+                  />
+                  <div class="loading-text">
+                    Loading gRAT…
+                  </div>
+                  <div class="skeleton-card">
+                    <div class="skeleton line short" />
+                    <div class="skeleton line" />
+                    <div class="skeleton line" />
+                    <div class="skeleton line" />
+                  </div>
+                </td>
+              </tr>
+              <tr v-show="!disabled">
+                <td>
+                  <button class="button"
+                          :disabled="!user_id"
+                          @click="getAssessment"
+                  >
+                    Submit
+                  </button>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </form>
       </div>
     </div>
 
-    <div v-if="toastMessage" class="toast" role="status" aria-live="polite" @click="copyErrorCode">
+    <div v-if="toastMessage"
+         class="toast"
+         role="status"
+         aria-live="polite"
+         @click="copyErrorCode"
+    >
       {{ toastMessage }}
-      <button type="button" class="copy-btn" @click.stop="copyErrorCode">Copy code</button>
+      <button type="button"
+              class="copy-btn"
+              @click.stop="copyErrorCode"
+      >
+        Copy code
+      </button>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -67,7 +98,8 @@ import { readPresentationCache, writePresentationCache } from '../utils/presenta
 import { decodeCorrectScrambled } from '../utils/correctScramble'
 
 const RETRY_MIN_DURATION_MS = 14 * 1000
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 const decorateCorrectFlags = (presentation, password) => {
   const questions = presentation?.assessment?.questions
   if (!Array.isArray(questions) || !password)
@@ -82,6 +114,7 @@ const decorateCorrectFlags = (presentation, password) => {
     })
   })
 }
+
 export default {
   name: 'HomeView',
   data () {
@@ -95,11 +128,11 @@ export default {
       errorMessage: '',
       errorCode: '',
       autoResumeAttempted: false,
-      toastMessage: ''
+      toastMessage: '',
     }
   },
   components: {
-    Assessment: defineAsyncComponent(() => import('../components/Assessment.vue'))
+    Assessment: defineAsyncComponent(() => import('../components/Assessment.vue')),
   },
   props: [],
   created () {
@@ -113,6 +146,7 @@ export default {
       if (this.autoResumeAttempted) return
       this.autoResumeAttempted = true
       this.password = this.$route.params.password
+
       // Restore the last identifier for this assessment when available.
       const cachedIdentifier = loadIdentifier(this.password)
       if (cachedIdentifier) {
@@ -123,6 +157,7 @@ export default {
     getAssessment () {
       if (!this.serverUrl) {
         this.configError = 'Configuration missing, contact instructor.'
+        
         return
       }
       if (this.user_id) {
@@ -161,6 +196,7 @@ export default {
           throw lastError || new Error('fetch-failed')
         }
         const sorted = response.data.assessment.questions.sort((x, y) => x.sequence - y.sequence)
+
         response.data.assessment.questions = sorted
         await writePresentationCache(this.password, userId, response.data)
         decorateCorrectFlags(response.data, this.password)
@@ -168,6 +204,7 @@ export default {
         saveIdentifier(this.password, userId)
       } catch (error) {
         this.errorCode = `ERR-${Date.now().toString(36)}`
+
         const status = error?.response?.status
         if (status === 404) {
           this.errorMessage = 'gRAT not found. Check the code or link.'
@@ -195,13 +232,14 @@ export default {
       if (navigator?.clipboard?.writeText) {
         navigator.clipboard.writeText(this.errorCode).catch(() => {})
       }
-    }
+    },
   },
   computed: {
     serverUrl () {
       const env = (globalThis.importMetaEnv ?? (typeof import.meta !== 'undefined' ? import.meta.env : {})) || {}
+      
       return env?.VITE_SERVER_URL || '/'
-    }
+    },
   },
   mounted () {
     this.tryAutoResume()
@@ -211,8 +249,8 @@ export default {
       if (val) {
         setTimeout(() => { this.toastMessage = '' }, 5000)
       }
-    }
-  }
+    },
+  },
 }
 </script>
 

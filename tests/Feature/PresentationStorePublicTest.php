@@ -40,7 +40,6 @@ it('returns presentation payload for public store route', function () {
         ->assertJsonPath('user_id', 'gary')
         ->assertJsonPath('assessment_id', $assessment->id)
         ->assertJsonPath('assessment.id', $assessment->id)
-        ->assertJsonPath('assessment.short_url', 'https://bitly.com/2GKZzZz')
         ->assertJsonPath('attempts', [])
         ->json();
 

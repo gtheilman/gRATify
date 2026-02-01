@@ -1,8 +1,12 @@
 <template>
   <div id="app">
-    <a href="#client-main" class="skip-link">Skip to content</a>
-    <main id="client-main" role="main">
-      <router-view/>
+    <a href="#client-main"
+       class="skip-link"
+    >Skip to content</a>
+    <main id="client-main"
+          role="main"
+    >
+      <RouterView />
     </main>
   </div>
 </template>
@@ -10,9 +14,10 @@
 <script>
 // Minimal client shell with an accessible skip link for keyboard users.
 export default {
-  name: 'AppRoot'
+  name: 'AppRoot',
 }
 </script>
+
 <style>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;

@@ -13,5 +13,6 @@ export const canDeleteUser = (user, adminCount) => {
     return false
   if (hasUserAssessments(user))
     return false
+  
   return true
 }

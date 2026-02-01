@@ -6,5 +6,6 @@ export const countCorrectAttempts = (attempts, correctSet) => {
     if (correctSet.has(att.answer_id))
       correct += 1
   })
+  
   return correct
 }

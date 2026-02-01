@@ -4,6 +4,7 @@ export const extractPasswordStatus = async (data, error) => {
   if (!statusFlag && error?.response?.clone) {
     try {
       const json = await error.response.clone().json()
+
       statusFlag = json?.status
     } catch {
       // ignore parse errors
@@ -13,6 +14,7 @@ export const extractPasswordStatus = async (data, error) => {
   if (!statusFlag && error?.response?.clone) {
     try {
       const json = await error.response.clone().json()
+
       statusFlag = json?.status || json?.message
     } catch {
       // ignore parse errors

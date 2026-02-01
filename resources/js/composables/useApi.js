@@ -17,6 +17,7 @@ const apiFetch = createFetch({
     refetch: true,
     async beforeFetch({ options }) {
       const xsrfToken = getXsrfToken()
+
       options.credentials = 'same-origin'
       if (xsrfToken) {
         options.headers = {
@@ -62,13 +63,16 @@ export const applyApiError = async ctx => {
     return ctx
 
   const status = response.status
+
   error.status = status
 
   const contentType = response.headers?.get?.('content-type') || ''
   if (contentType.includes('json')) {
     try {
       const payload = await response.clone().json()
+
       error.data = payload
+
       const apiMessage = extractApiErrorMessage(payload)
       if (apiMessage && (!error.message || error.message === 'Failed to fetch'))
         error.message = apiMessage
@@ -103,5 +107,6 @@ export const useApi = (...args) => {
     console.error('useApi called without a URL', args)
     args[0] = ''
   }
+  
   return apiFetch(...args)
 }

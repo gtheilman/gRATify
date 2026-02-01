@@ -6,5 +6,6 @@ export const applyCachedFallback = ({ cached, applyData, applyNotice, formatter 
 
   applyData?.(cached.data)
   applyNotice?.(buildStaleNotice(cached.cachedAt, formatter))
+  
   return true
 }

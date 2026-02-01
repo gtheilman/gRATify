@@ -7,5 +7,6 @@ export const buildAnswerMap = questions => {
       map.set(ans.id, { question_id: question.id, correct: !!Number(ans.correct) })
     })
   })
+  
   return map
 }

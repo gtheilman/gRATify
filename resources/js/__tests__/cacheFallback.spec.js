@@ -4,12 +4,14 @@ import { applyCachedFallback } from '../utils/cacheFallback'
 describe('applyCachedFallback', () => {
   it('returns false when no cached data is available', () => {
     const applied = applyCachedFallback({ cached: null })
+
     expect(applied).toBe(false)
   })
 
   it('applies cached data and notice when available', () => {
     let dataValue = null
     let noticeValue = ''
+
     const applied = applyCachedFallback({
       cached: { data: { id: 1 }, cachedAt: '2024-01-02T03:04:05Z' },
       applyData: data => { dataValue = data },
@@ -24,6 +26,7 @@ describe('applyCachedFallback', () => {
 
   it('returns false when cached data is empty', () => {
     const applied = applyCachedFallback({ cached: { data: null } })
+
     expect(applied).toBe(false)
   })
 

@@ -4,8 +4,12 @@ import { postAttemptWithRetry } from '../utils/attemptClient'
 
 vi.mock('axios', () => ({
   default: {
-    post: vi.fn()
-  }
+    post: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/http', () => ({
+  ensureCsrfCookie: vi.fn().mockResolvedValue(undefined),
 }))
 
 beforeEach(() => {

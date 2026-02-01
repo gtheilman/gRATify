@@ -3,6 +3,7 @@ import { saveIdentifier, loadIdentifier } from '../utils/cache'
 
 const mockStorage = () => {
   let store = {}
+  
   return {
     getItem: vi.fn(key => store[key] || null),
     setItem: vi.fn((key, val) => { store[key] = String(val) }),
@@ -11,7 +12,7 @@ const mockStorage = () => {
     get length () {
       return Object.keys(store).length
     },
-    clear: () => { store = {} }
+    clear: () => { store = {} },
   }
 }
 
@@ -30,7 +31,9 @@ describe('identifier cache', () => {
 
   it('expires after ttl', () => {
     saveIdentifier('pw', 'abc')
+
     const originalDateNow = Date.now
+
     Date.now = () => originalDateNow() + (21 * 60 * 1000) // beyond ttl
     expect(loadIdentifier('pw')).toBeNull()
     Date.now = originalDateNow

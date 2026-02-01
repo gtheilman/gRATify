@@ -1,6 +1,6 @@
 const correctMap = new Map()
 
-export const setCorrectMap = (entries) => {
+export const setCorrectMap = entries => {
   correctMap.clear()
   if (!entries)
     return
@@ -8,6 +8,7 @@ export const setCorrectMap = (entries) => {
     entries.forEach((value, key) => {
       correctMap.set(Number(key), value)
     })
+    
     return
   }
   if (Array.isArray(entries)) {
@@ -17,11 +18,12 @@ export const setCorrectMap = (entries) => {
   }
 }
 
-export const getCorrectForAnswer = (answerId) => {
+export const getCorrectForAnswer = answerId => {
   if (answerId === null || typeof answerId === 'undefined')
     return null
   const key = Number(answerId)
   if (!correctMap.has(key))
     return null
+  
   return correctMap.get(key)
 }

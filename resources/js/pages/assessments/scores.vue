@@ -70,6 +70,7 @@ const fetchScores = async () => {
     }
     presentations.value = data
     storeScoresCache(data)
+
     const assessment = data?.[0]?.assessment
     if (assessment && typeof assessment.active !== 'undefined')
       assessmentActive.value = parseActiveFlag(assessment.active)
@@ -83,7 +84,9 @@ const fetchScores = async () => {
   }
   catch (err) {
     error.value = getErrorMessage(err, 'Unable to load scores')
+
     const cached = loadScoresCache()
+
     applyCachedFallback({
       cached,
       applyData: data => { presentations.value = data },
@@ -115,7 +118,7 @@ const sortedPresentations = computed(() => {
 
 const presentationsWithAppeals = computed(() => {
   return sortedPresentations.value.filter(presentation =>
-    (presentation?.assessment?.questions || []).some(question => (question.appeals || []).length)
+    (presentation?.assessment?.questions || []).some(question => (question.appeals || []).length),
   )
 })
 
@@ -140,6 +143,7 @@ const downloadCsv = () => {
       throw new Error('csv-blob-failed')
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
+
     a.href = url
     a.download = 'scores.csv'
     document.body.appendChild(a)
@@ -170,6 +174,7 @@ const copyCsvFallback = async () => {
 
 const buildTimelineHtml = () => {
   const assessmentTitle = sortedPresentations.value[0]?.assessment?.title || 'gRAT'
+  
   return buildTimelineReport({
     presentations: sortedPresentations.value,
     assessmentTitle,
@@ -194,6 +199,7 @@ const toggleActive = async () => {
     return
   if (isOffline.value) {
     error.value = 'You are offline. Connect to the internet before updating the assessment.'
+    
     return
   }
   if (assessmentActive.value === null) {
@@ -202,6 +208,7 @@ const toggleActive = async () => {
     }
     catch (err) {
       error.value = getErrorMessage(err, 'Unable to load assessment status')
+      
       return
     }
   }
@@ -211,10 +218,12 @@ const toggleActive = async () => {
     }
     catch (err) {
       error.value = getErrorMessage(err, 'Unable to load assessment details')
+      
       return
     }
   }
   const next = !assessmentActive.value
+
   assessmentActive.value = next
   activeToggleBusy.value = true
   try {
@@ -222,6 +231,7 @@ const toggleActive = async () => {
       method: 'PUT',
       body: { active: next, title: assessmentTitle.value },
     })
+
     if (apiError.value)
       throw apiError.value
   }
@@ -241,6 +251,7 @@ const showAppeals = () => {
 const applyShowResponses = () => {
   if (!sortedPresentations.value.length) {
     openPanelIds.value = []
+    
     return
   }
   openPanelIds.value = showResponses.value
@@ -260,7 +271,9 @@ watch(sortedPresentations, () => {
 </script>
 
 <template>
-  <VContainer class="py-8 scores-page" fluid>
+  <VContainer class="py-8 scores-page"
+              fluid
+  >
     <VRow>
       <VCol cols="12">
         <VCard class="first-card">
@@ -326,7 +339,7 @@ watch(sortedPresentations, () => {
                 color="secondary"
                 variant="tonal"
                 prepend-icon="tabler-printer"
-                    :disabled="!exportEnabled"
+                :disabled="!exportEnabled"
                 @click="printTimeline"
               >
                 Print Timeline
@@ -343,9 +356,13 @@ watch(sortedPresentations, () => {
             </div>
           </VCardTitle>
           <VCardText>
-            <VDialog v-model="csvFallbackOpen" max-width="720">
+            <VDialog v-model="csvFallbackOpen"
+                     max-width="720"
+            >
               <VCard>
-                <VCardTitle class="text-h6">Manual CSV Copy</VCardTitle>
+                <VCardTitle class="text-h6">
+                  Manual CSV Copy
+                </VCardTitle>
                 <VCardText>
                   <p class="text-body-2 text-medium-emphasis mb-3">
                     Automatic download failed. Copy the CSV below and save it as a file on your device.
@@ -359,44 +376,91 @@ watch(sortedPresentations, () => {
                   />
                 </VCardText>
                 <VCardActions class="justify-end gap-2">
-                  <VBtn variant="text" @click="csvFallbackOpen = false">Close</VBtn>
-                  <VBtn color="primary" variant="tonal" @click="copyCsvFallback">Copy</VBtn>
-                  <span v-if="copyCsvStatus" class="text-caption text-medium-emphasis">
+                  <VBtn variant="text"
+                        @click="csvFallbackOpen = false"
+                  >
+                    Close
+                  </VBtn>
+                  <VBtn color="primary"
+                        variant="tonal"
+                        @click="copyCsvFallback"
+                  >
+                    Copy
+                  </VBtn>
+                  <span v-if="copyCsvStatus"
+                        class="text-caption text-medium-emphasis"
+                  >
                     {{ copyCsvStatus }}
                   </span>
                 </VCardActions>
               </VCard>
             </VDialog>
             <VRow class="mb-4">
-              <VCol cols="12" sm="6" md="3">
-                <VCard class="stat-card" outlined>
+              <VCol cols="12"
+                    sm="6"
+                    md="3"
+              >
+                <VCard class="stat-card"
+                       outlined
+                >
                   <VCardText>
-                    <div class="text-caption text-medium-emphasis">Average</div>
-                    <div class="text-h5 font-weight-bold">{{ averageScore }}%</div>
+                    <div class="text-caption text-medium-emphasis">
+                      Average
+                    </div>
+                    <div class="text-h5 font-weight-bold">
+                      {{ averageScore }}%
+                    </div>
                   </VCardText>
                 </VCard>
               </VCol>
-              <VCol cols="12" sm="6" md="3">
-                <VCard class="stat-card" outlined>
+              <VCol cols="12"
+                    sm="6"
+                    md="3"
+              >
+                <VCard class="stat-card"
+                       outlined
+                >
                   <VCardText>
-                    <div class="text-caption text-medium-emphasis">Median</div>
-                    <div class="text-h5 font-weight-bold">{{ medianScore }}%</div>
+                    <div class="text-caption text-medium-emphasis">
+                      Median
+                    </div>
+                    <div class="text-h5 font-weight-bold">
+                      {{ medianScore }}%
+                    </div>
                   </VCardText>
                 </VCard>
               </VCol>
-              <VCol cols="12" sm="6" md="3">
-                <VCard class="stat-card" outlined>
+              <VCol cols="12"
+                    sm="6"
+                    md="3"
+              >
+                <VCard class="stat-card"
+                       outlined
+                >
                   <VCardText>
-                    <div class="text-caption text-medium-emphasis">High</div>
-                    <div class="text-h5 font-weight-bold">{{ maxScore }}%</div>
+                    <div class="text-caption text-medium-emphasis">
+                      High
+                    </div>
+                    <div class="text-h5 font-weight-bold">
+                      {{ maxScore }}%
+                    </div>
                   </VCardText>
                 </VCard>
               </VCol>
-              <VCol cols="12" sm="6" md="3">
-                <VCard class="stat-card" outlined>
+              <VCol cols="12"
+                    sm="6"
+                    md="3"
+              >
+                <VCard class="stat-card"
+                       outlined
+                >
                   <VCardText>
-                    <div class="text-caption text-medium-emphasis">Low</div>
-                    <div class="text-h5 font-weight-bold">{{ minScore }}%</div>
+                    <div class="text-caption text-medium-emphasis">
+                      Low
+                    </div>
+                    <div class="text-h5 font-weight-bold">
+                      {{ minScore }}%
+                    </div>
                   </VCardText>
                 </VCard>
               </VCol>
@@ -430,23 +494,32 @@ watch(sortedPresentations, () => {
               @click:close="clearStaleNotice"
             >
               <div class="d-flex align-center gap-2">
-                <VChip size="x-small" color="warning" variant="tonal">Stale</VChip>
+                <VChip size="x-small"
+                       color="warning"
+                       variant="tonal"
+                >
+                  Stale
+                </VChip>
                 <span>{{ staleNotice }}</span>
               </div>
             </VAlert>
 
-            <div v-if="loading" class="text-center py-6">
-              <VProgressCircular indeterminate color="primary" />
+            <div v-if="loading"
+                 class="text-center py-6"
+            >
+              <VProgressCircular indeterminate
+                                 color="primary"
+              />
             </div>
 
             <div v-else>
               <div class="d-flex justify-end mb-2">
-              <VSwitch
-                v-model="showResponses"
-                color="primary"
-                inset
-                label="Show Responses"
-              />
+                <VSwitch
+                  v-model="showResponses"
+                  color="primary"
+                  inset
+                  label="Show Responses"
+                />
               </div>
 
               <VExpansionPanels
@@ -469,7 +542,7 @@ watch(sortedPresentations, () => {
                   </VExpansionPanelTitle>
                   <VExpansionPanelText>
                     <div
-                      v-for="(question, qIndex) in presentation.assessment?.questions || []"
+                      v-for="question in presentation.assessment?.questions || []"
                       :key="question.id"
                       class="mb-4"
                     >
@@ -491,8 +564,12 @@ watch(sortedPresentations, () => {
                           {{ truncateText(attempt.answer?.answer_text) }}
                         </span>
                       </div>
-                      <div v-if="question.appeals?.length" class="appeals-block">
-                        <div class="appeals-label">Appeals</div>
+                      <div v-if="question.appeals?.length"
+                           class="appeals-block"
+                      >
+                        <div class="appeals-label">
+                          Appeals
+                        </div>
                         <div
                           v-for="appeal in question.appeals"
                           :key="appeal.id"
@@ -510,7 +587,8 @@ watch(sortedPresentations, () => {
                 <div
                   v-for="(presentation, idx) in sortedPresentations"
                   :key="presentation.id"
-                  :class="['mb-4', idx % 2 === 0 ? 'row-alt' : '']"
+                  class="mb-4"
+                  :class="[idx % 2 === 0 ? 'row-alt' : '']"
                 >
                   <VCard outlined>
                     <VCardTitle class="d-flex justify-space-between align-center">
@@ -519,7 +597,7 @@ watch(sortedPresentations, () => {
                     </VCardTitle>
                     <VCardText>
                       <div
-                        v-for="(question, qIndex) in presentation.assessment?.questions || []"
+                        v-for="question in presentation.assessment?.questions || []"
                         :key="question.id"
                         class="mb-4"
                       >
@@ -541,8 +619,12 @@ watch(sortedPresentations, () => {
                             {{ truncateText(attempt.answer?.answer_text) }}
                           </span>
                         </div>
-                        <div v-if="question.appeals?.length" class="appeals-block">
-                          <div class="appeals-label">Appeals</div>
+                        <div v-if="question.appeals?.length"
+                             class="appeals-block"
+                        >
+                          <div class="appeals-label">
+                            Appeals
+                          </div>
                           <div
                             v-for="appeal in question.appeals"
                             :key="appeal.id"
@@ -557,7 +639,9 @@ watch(sortedPresentations, () => {
                 </div>
               </div>
 
-              <div v-if="!sortedPresentations.length" class="text-center text-medium-emphasis">
+              <div v-if="!sortedPresentations.length"
+                   class="text-center text-medium-emphasis"
+              >
                 No scores available.
               </div>
             </div>

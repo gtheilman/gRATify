@@ -23,7 +23,7 @@ const handleLogout = async () => {
 const navButtons = computed(() => {
   const base = [
     { label: 'Home', to: { name: 'root' } },
-  { label: 'gRATs', to: { name: 'assessments' } },
+    { label: 'gRATs', to: { name: 'assessments' } },
     { label: 'Users', to: { name: 'users' } },
     { label: 'Change Password', to: { name: 'change-password' } },
   ]
@@ -37,6 +37,7 @@ const navButtons = computed(() => {
 const isAdmin = computed(() => {
   const role = authStore.user?.role
   const normalized = role === 'poobah' ? 'admin' : role
+  
   return normalized === 'admin'
 })
 
@@ -51,12 +52,16 @@ const isOffline = ref(typeof navigator !== 'undefined' ? !navigator.onLine : fal
 const updateFullscreen = () => {
   isFullscreen.value = !!document.fullscreenElement
 }
+
 const handleOnlineStatus = () => {
   isOffline.value = !navigator.onLine
 }
+
 const isMobile = computed(() => mdAndDown.value)
+
 const versionLabel = computed(() => {
   const envVersion = import.meta.env.VITE_APP_VERSION
+  
   return envVersion ? `v${envVersion}` : ''
 })
 
@@ -86,7 +91,9 @@ onBeforeUnmount(() => {
           <span class="app-title-accent-alt">☑</span>
           <span class="app-title-accent">gRAT</span><span class="app-title-accent-alt">ify</span>
         </span>
-        <span v-if="versionLabel" class="text-body-2 text-medium-emphasis ms-2">({{ versionLabel }})</span>
+        <span v-if="versionLabel"
+              class="text-body-2 text-medium-emphasis ms-2"
+        >({{ versionLabel }})</span>
       </VToolbarTitle>
       <VSpacer />
       <template v-if="authStore.user">
@@ -134,7 +141,9 @@ onBeforeUnmount(() => {
                 <VIcon icon="tabler-menu-2" />
               </VBtn>
             </template>
-            <VList density="compact" nav>
+            <VList density="compact"
+                   nav
+            >
               <VListItem
                 v-for="item in visibleNavButtons"
                 :key="item.label"
@@ -193,11 +202,17 @@ onBeforeUnmount(() => {
                 <VIcon icon="tabler-menu-2" />
               </VBtn>
             </template>
-            <VList density="compact" nav>
-              <VListItem :to="{ name: 'root' }" @click="menuOpen = false">
+            <VList density="compact"
+                   nav
+            >
+              <VListItem :to="{ name: 'root' }"
+                         @click="menuOpen = false"
+              >
                 <VListItemTitle>Home</VListItemTitle>
               </VListItem>
-              <VListItem :to="{ name: 'login' }" @click="menuOpen = false">
+              <VListItem :to="{ name: 'login' }"
+                         @click="menuOpen = false"
+              >
                 <VListItemTitle>Login</VListItemTitle>
               </VListItem>
             </VList>
@@ -215,7 +230,10 @@ onBeforeUnmount(() => {
       Database migrations are required. Run <strong>php artisan migrate</strong>.
       <span v-if="documentationLink">
         See the README on
-        <a :href="documentationLink" target="_blank" rel="noopener">GitHub</a>.
+        <a :href="documentationLink"
+           target="_blank"
+           rel="noopener noreferrer"
+        >GitHub</a>.
       </span>
     </VAlert>
     <VAlert
@@ -228,7 +246,11 @@ onBeforeUnmount(() => {
       @click:close="isOffline = false"
     >
       {{ offlineMessage }}
-      <VBtn variant="text" size="small" class="ms-2" @click="retryOffline">
+      <VBtn variant="text"
+            size="small"
+            class="ms-2"
+            @click="retryOffline"
+      >
         Retry
       </VBtn>
     </VAlert>

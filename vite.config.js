@@ -20,6 +20,7 @@ const readGratifyVersion = () => {
     const line = content.split('\n').find(row => row.startsWith('GRATIFY_VERSION='))
     if (!line) return ''
     const value = line.split('=')[1] ?? ''
+    
     return value.replace(/^"(.+)"$/, '$1').trim()
   } catch {
     return ''
@@ -108,13 +109,14 @@ export default defineConfig({
       output: {
         // Keep core libs in stable vendor chunks to improve caching and avoid
         // shipping admin-only deps to the student-first load path.
-        manualChunks: (id) => {
+        manualChunks: id => {
           if (!id.includes('node_modules')) return undefined
           if (id.includes('vue')) return 'vue'
           if (id.includes('vuetify')) return 'vuetify'
           if (id.includes('swiper')) return 'swiper'
           if (id.includes('katex') || id.includes('asciimath')) return 'math'
           if (id.includes('chart.js') || id.includes('apexcharts')) return 'charts'
+          
           return undefined
         },
       },

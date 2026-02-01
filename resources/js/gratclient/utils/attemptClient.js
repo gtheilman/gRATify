@@ -1,12 +1,15 @@
 // Lightweight client helper to retry attempt submissions once.
 import axios from 'axios'
+import { ensureCsrfCookie } from '../../utils/http'
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const DEFAULT_TIMEOUT_MS = 2500
+
 const isDebug = () => {
   if (typeof window === 'undefined')
     return false
   const value = new URLSearchParams(window.location.search || '').get('debug')
+  
   return value === '1' || value === 'true'
 }
 
@@ -19,16 +22,20 @@ export async function postAttemptWithRetry (payload, retryDelay = 300, maxAttemp
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
+      await ensureCsrfCookie()
+      
       return await axios.post('/api/attempts', payload, {
         timeout: DEFAULT_TIMEOUT_MS,
         headers: isDebug() ? { 'X-Debug': '1' } : undefined,
       })
     } catch (error) {
       lastError = error
+
       const remaining = maxAttempts - attempt - 1
       if (remaining > 0) {
         const backoff = Math.min(1500, retryDelay * (2 ** attempt))
         const jitter = Math.round(Math.random() * 120)
+
         await sleep(backoff + jitter)
       }
     }

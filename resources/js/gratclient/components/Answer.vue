@@ -1,37 +1,54 @@
 <template>
-  <div class="answer-wrapper" :class="wrapperClasses">
+  <div class="answer-wrapper"
+       :class="wrapperClasses"
+  >
     <span
+      ref="answerButton"
       role="button"
       tabindex="0"
       :aria-label="`${statusLabel}: ${answer?.answer_text || ''}`"
       :aria-disabled="answered || checking || questionLocked || isCorrect ? 'true' : 'false'"
-      ref="answerButton"
       @click="checkAnswer"
       @keyup.enter="checkAnswer"
-      @keyup.space.prevent="checkAnswer">
-      <div v-if="checking" class="pending-overlay" aria-hidden="true">
-        <span class="pending-spinner"></span>
+      @keyup.space.prevent="checkAnswer"
+    >
+      <div v-if="checking"
+           class="pending-overlay"
+           aria-hidden="true"
+      >
+        <span class="pending-spinner" />
         <span class="pending-text">Checking…</span>
       </div>
       <div
         class="md-body answer-text"
         :class="{'correct-answer': isCorrect, 'incorrect-answer': isInCorrect, 'checking': checking, 'grayedOut': grayedOut}"
-        :style="textStyle">
+        :style="textStyle"
+      >
         <span v-html="answerHtml" />
-        <span v-if="checking" class="status-icon status-pending" aria-hidden="true">
+        <span v-if="checking"
+              class="status-icon status-pending"
+              aria-hidden="true"
+        >
           <span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
         </span>
-        <span v-if="isCorrect" class="status-icon status-correct" aria-hidden="true">✔</span>
-        <span v-else-if="isInCorrect" class="status-icon status-incorrect" aria-hidden="true">✖</span>
+        <span v-if="isCorrect"
+              class="status-icon status-correct"
+              aria-hidden="true"
+        >✔</span>
+        <span v-else-if="isInCorrect"
+              class="status-icon status-incorrect"
+              aria-hidden="true"
+        >✖</span>
       </div>
     </span>
     <div
       v-if="resultAnnouncement"
+      ref="resultLive"
       class="sr-live"
       aria-live="polite"
       aria-atomic="true"
-      ref="resultLive"
-      tabindex="-1">
+      tabindex="-1"
+    >
       {{ resultAnnouncement }}
     </div>
   </div>
@@ -62,36 +79,36 @@ export default {
       messageInterval: null,
       messageIndex: 0,
       resultAnnouncement: '',
-      queueUnsubscribe: null
+      queueUnsubscribe: null,
     }
   },
   props: {
     answer: {
-      type: Object
+      type: Object,
     },
     presentation_id: {
-      type: Number
+      type: Number,
     },
     answered: {
       type: Boolean,
-      default: false
+      default: false,
     },
     attempts: {
-      type: Array
+      type: Array,
     },
     questionLocked: {
       type: Boolean,
-      default: false
+      default: false,
     },
     textStyle: null,
     password: {
       type: String,
-      default: ''
+      default: '',
     },
     presentationKey: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   emits: ['markAnswered', 'attempt-start', 'attempt-end', 'answer-correct'],
   computed: {
@@ -102,6 +119,7 @@ export default {
       if (this.isCorrect) return 'Correct answer'
       if (this.isInCorrect) return 'Incorrect answer'
       if (this.grayedOut) return 'Answer disabled'
+      
       return 'Answer'
     },
     grayedOut () {
@@ -113,9 +131,9 @@ export default {
         checking: this.checking,
         'disabled-wrapper': this.grayedOut,
         'correct-wrapper': this.isCorrect,
-        'incorrect-wrapper': this.isInCorrect && !this.isCorrect
+        'incorrect-wrapper': this.isInCorrect && !this.isCorrect,
       }
-    }
+    },
   },
   methods: {
     resetRetryState () {
@@ -138,14 +156,17 @@ export default {
       const hasCorrect = attemptsForThisAnswer.some(attempt => {
         const flag = attempt.answer_correct
         const ans = attempt.answer
+        
         return flag === true || flag === 1 || (ans && (ans.correct === true || ans.correct === 1))
       })
+
       const hasIncorrect = attemptsForThisAnswer.some(attempt => {
         const flag = attempt.answer_correct
         const ans = attempt.answer
         // Only treat explicit false/0 as incorrect for marking.
         const incorrectFlag = flag === false || flag === 0
         const incorrectAns = ans && (ans.correct === false || ans.correct === 0)
+        
         return incorrectFlag || incorrectAns
       })
 
@@ -162,6 +183,7 @@ export default {
         this.resetRetryState()
         this.errorMessage = ''
         this.retryAvailable = false
+        
         return true
       }
       const responseIsCorrect = payload && payload.correct === true
@@ -172,20 +194,24 @@ export default {
         this.$emit('markAnswered', true)
         this.$emit('answer-correct')
         this.resultAnnouncement = 'Answer marked correct.'
+        
         return true
       } else if (responseIsIncorrect && !this.isCorrect) {
         this.isInCorrect = true
         this.resultAnnouncement = 'Answer marked incorrect.'
+        
         return true
       }
 
       if (import.meta.env.DEV)
         console.warn('Unexpected attempt response', payload)
+      
       return false
     },
     getLocalCorrectFlag () {
       if (typeof this.answer?.correct === 'boolean')
         return this.answer.correct
+      
       return decodeCorrectScrambled(this.answer?.correct_scrambled, this.password)
     },
     startSilentRetry () {
@@ -196,21 +222,25 @@ export default {
       this.messageIndex = 0
 
       this.messageTimer = setTimeout(() => {
-      this.retryAvailable = false
+        this.retryAvailable = false
       }, 15000)
     },
     async retryServerOnly (payload) {
       this.serverRetryActive = true
-      const wait = (ms) => new Promise(resolve => {
+
+      const wait = ms => new Promise(resolve => {
         this.serverRetryTimer = setTimeout(resolve, ms)
       })
+
       while (this.serverRetryActive) {
         try {
           const response = await this.postAttempt(payload)
+
           this.handleAttemptResponse(response.data)
           this.$nextTick(() => {
             this.$refs.resultLive?.focus?.()
           })
+          
           return
         } catch (error) {
           await wait(2000)
@@ -237,11 +267,13 @@ export default {
       try {
         const payload = {
           presentation_id: this.presentation_id,
-          answer_id: this.answer.id
+          answer_id: this.answer.id,
         }
+
         const storageOk = await isStorageAvailable()
         if (!storageOk) {
           await this.retryServerOnly(payload)
+          
           return
         }
         const localCorrect = this.getLocalCorrectFlag()
@@ -271,9 +303,11 @@ export default {
 
           syncLater().catch(error => {
             const code = `ERR-${Date.now().toString(36)}`
+
             console.error('Attempt failed', code, error)
             this.startSilentRetry()
           })
+          
           return
         }
 
@@ -288,6 +322,7 @@ export default {
         }
 
         const response = await this.postAttempt(payload)
+
         this.handleAttemptResponse(response.data)
         if (queued?.id)
           await markAttemptSynced(queued.id)
@@ -296,7 +331,9 @@ export default {
         })
       } catch (error) {
         const code = `ERR-${Date.now().toString(36)}`
+
         console.error('Attempt failed', code, error)
+
         const storageOk = await isStorageAvailable()
         if (storageOk) {
           const localCorrect = this.getLocalCorrectFlag()
@@ -312,11 +349,12 @@ export default {
     },
     postAttempt (payload, options = {}) {
       const { retryDelay, maxAttempts } = options
+      
       return this.$options.attemptClient(payload, retryDelay, maxAttempts)
     },
     manualRetry () {
       // Deprecated: retry UI removed for student calmness.
-    }
+    },
   },
   mounted () {
     this.applyAttempts()
@@ -355,9 +393,9 @@ export default {
       handler () {
         this.applyAttempts()
       },
-      deep: true
-    }
-  }
+      deep: true,
+    },
+  },
 }
 </script>
 

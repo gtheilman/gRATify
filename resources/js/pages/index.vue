@@ -1,7 +1,13 @@
 <template>
-  <VContainer class="home-wrapper py-10" fluid>
+  <VContainer class="home-wrapper py-10"
+              fluid
+  >
     <VRow justify="center">
-      <VCol cols="12" md="9" lg="8" class="home-shell">
+      <VCol cols="12"
+            md="9"
+            lg="8"
+            class="home-shell"
+      >
         <VAlert
           v-if="showDemoWarning"
           type="info"
@@ -16,31 +22,41 @@
             :src="gratifyLogo"
             alt="gRATify"
             height="60"
-          />
+          >
           <h1 class="text-h4 text-md-h3 font-weight-bold mb-2">
             Group Readiness Assurance Testing
           </h1>
         </div>
 
-        <VCard class="home-card mb-6" elevation="2">
+        <VCard class="home-card mb-6"
+               elevation="2"
+        >
           <VCardText class="home-body">
             <h5 class="home-subtitle text-h5 mb-3">
               This software manages a very small part of the Team-based Learning Process
             </h5>
             <div class="d-flex flex-column gap-2">
               <div class="d-flex align-center gap-2">
-                <VIcon color="primary" icon="tabler-check" size="18" />
+                <VIcon color="primary"
+                       icon="tabler-check"
+                       size="18"
+                />
                 <span>The Group Readiness Assurance Test</span>
               </div>
               <div class="d-flex align-center gap-2">
-                <VIcon color="primary" icon="tabler-check" size="18" />
+                <VIcon color="primary"
+                       icon="tabler-check"
+                       size="18"
+                />
                 <span>The Instructor Feedback</span>
               </div>
             </div>
           </VCardText>
         </VCard>
 
-        <VCard class="home-card" elevation="2">
+        <VCard class="home-card"
+               elevation="2"
+        >
           <VCardText class="text-center">
             <img
               :src="tblProcess"
@@ -51,7 +67,7 @@
               decoding="async"
               width="800"
               height="253"
-            />
+            >
           </VCardText>
         </VCard>
       </VCol>
@@ -69,10 +85,12 @@ import gratifyLogo from '../../assets/images/gratify-logo-300x90.webp'
 
 // Start hidden to avoid flash; visibility is decided after we fetch the flag.
 const showDemoWarning = ref(false)
+
 const fetchDemoWarning = async () => {
   try {
     const { data } = await axios.get('/api/demo-warning')
     const shouldShow = resolveDemoWarningState(data)
+
     showDemoWarning.value = shouldShow
     writeDemoWarningCache(shouldShow)
   } catch (e) {
@@ -85,10 +103,12 @@ onMounted(() => {
   const cached = readDemoWarningCache()
   if (cached !== null) {
     showDemoWarning.value = cached
+    
     return
   }
   // Defer the network call until idle to avoid blocking first contentful paint.
   const schedule = window.requestIdleCallback || function (cb) { return setTimeout(cb, 150) }
+
   schedule(() => { fetchDemoWarning() })
 })
 </script>

@@ -5,11 +5,13 @@ import { escapeHtml, truncateText } from '@/utils/textFormat'
 export const buildTimelineHtml = ({ presentations = [], assessmentTitle = '', scoringScheme }) => {
   const schemeLabel = schemeLabelFor(scoringScheme)
   const printedAt = formatTimestamp(new Date().toISOString())
+
   const rows = presentations.map(presentation => {
     const questions = (presentation.assessment?.questions || []).map(question => {
       const attempts = (question.attempts || []).map(attempt => {
         const timestamp = escapeHtml(formatTimestamp(attempt.created_at))
         const answer = escapeHtml(truncateText(attempt.answer?.answer_text))
+        
         return `<div class="attempt-row"><span class="attempt-time">${timestamp}</span><span>${answer}</span></div>`
       }).join('')
 

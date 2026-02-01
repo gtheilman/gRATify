@@ -81,6 +81,7 @@ const showEmptyQuestions = computed(() => {
 
   const hasQuestions = questions.value.length > 0
   const currentHasQuestions = !!assessmentsStore.currentAssessment?.questions?.length
+  
   return !hasQuestions && !currentHasQuestions
 })
 
@@ -98,6 +99,7 @@ const formatScheduledValue = value => {
   const s = parsed.getSeconds()
   if (h === 0 && m === 0 && s === 0)
     return datePart
+  
   return `${datePart} ${pad(h)}:${pad(m)}`
 }
 
@@ -166,6 +168,7 @@ const saveQuestionWithAnswers = async question => {
     stem: question.stem,
     sequence: question.sequence,
   }
+
   const answers = (question.answers || []).map(ans => ({
     id: ans.id,
     answer_text: ans.answer_text,
@@ -264,6 +267,7 @@ const saveField = async (field, value) => {
     ...form.value,
     [field]: value,
   }
+
   try {
     saving.value = true
     await assessmentsStore.updateAssessment(payload)
@@ -300,6 +304,7 @@ const toggleActiveStatus = async () => {
   if (activeToggleBusy.value)
     return
   const nextValue = !form.value.active
+
   form.value.active = nextValue
   activeToggleBusy.value = true
   try {
@@ -343,6 +348,7 @@ const saveAll = async () => {
   savingAll.value = true
   try {
     const questionList = questions.value || []
+
     await assessmentsStore.bulkUpdateAssessment(buildAssessmentBulkPayload(form.value, questionList))
 
     await assessmentsStore.loadAssessment(form.value.id)
@@ -373,6 +379,7 @@ const triggerImport = () => {
 const exportQuestions = () => {
   if (!questions.value.length) {
     alert('No questions to export.')
+    
     return
   }
 
@@ -380,12 +387,15 @@ const exportQuestions = () => {
   let exportData = ''
 
   const sortedQuestions = [...questions.value].sort((a, b) => a.sequence - b.sequence)
+
   sortedQuestions.forEach(q => {
     exportData += `${(q.stem || '').trim()}\n`
     let correctLetter = ''
     const sortedAnswers = (q.answers || []).sort((a, b) => a.sequence - b.sequence)
+
     sortedAnswers.forEach((ans, idx) => {
       const letter = letters[idx] || '?'
+
       exportData += `${letter}) ${(ans.answer_text || '').trim()}\n`
       if (ans.correct) {
         correctLetter = letter
@@ -397,6 +407,7 @@ const exportQuestions = () => {
   const blob = new Blob([exportData], { type: 'text/plain;charset=utf-8;' })
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
+
   a.href = url
   a.download = 'aiken.txt'
   document.body.appendChild(a)
@@ -429,10 +440,12 @@ const saveQuestion = async question => {
   try {
     busyQuestion.value = question.id
     setQuestionStatus(question.id, 'saving')
+
     const payload = {
       ...question,
       title: (question.title || '').trim() || question.stem,
     }
+
     await assessmentsStore.updateQuestion(payload)
     setQuestionStatus(question.id, 'saved')
     setTimeout(() => setQuestionStatus(question.id, 'idle'), 1800)
@@ -531,6 +544,7 @@ const handleFileUpload = async event => {
     formError.value = 'You are offline. Connect to the internet before uploading.'
     if (fileInput.value)
       fileInput.value.value = ''
+    
     return
   }
 
@@ -546,6 +560,7 @@ const handleFileUpload = async event => {
   formError.value = ''
 
   const formData = new FormData()
+
   formData.append('assessment', file)
   formData.append('assessment_id', form.value.id)
   formData.append('format', 'aiken')
@@ -556,6 +571,7 @@ const handleFileUpload = async event => {
       body: formData,
       parseText: true,
     })
+
     if (!response.ok) {
       const rawText = text || ''
       let json = null
@@ -573,6 +589,7 @@ const handleFileUpload = async event => {
         invalidAikenMessages.value = buildAikenMessages(json, rawText)
         showImportDialog.value = false
         showInvalidAikenDialog.value = true
+        
         return
       }
       throw new Error(message || 'Upload failed')
@@ -631,6 +648,7 @@ const downloadAikenErrors = () => {
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
+
   a.href = url
   a.download = 'aiken-upload-errors.txt'
   document.body.appendChild(a)
@@ -641,7 +659,9 @@ const downloadAikenErrors = () => {
 </script>
 
 <template>
-<VContainer class="py-6 edit-assessment-page bg-white" fluid>
+  <VContainer class="py-6 edit-assessment-page bg-white"
+              fluid
+  >
     <div class="menu-spacer" />
     <VRow>
       <VCol cols="12">
@@ -652,7 +672,9 @@ const downloadAikenErrors = () => {
           >
             <VCardTitle class="d-flex justify-space-between align-center">
               <div class="d-flex align-center gap-3">
-                <h3 class="text-h5 mb-0">Edit gRAT</h3>
+                <h3 class="text-h5 mb-0">
+                  Edit gRAT
+                </h3>
                 <div class="d-flex align-center gap-2">
                   <VBtn
                     size="small"
@@ -660,7 +682,8 @@ const downloadAikenErrors = () => {
                     :color="form.active ? 'success' : 'grey'"
                     :loading="activeToggleBusy"
                     prepend-icon="tabler-power"
-                    :class="['active-toggle-btn', { 'active-toggle-btn--inactive': !form.active }]"
+                    class="active-toggle-btn"
+                    :class="[{ 'active-toggle-btn--inactive': !form.active }]"
                     @click="toggleActiveStatus"
                   >
                     {{ form.active ? 'Active' : 'Inactive' }}
@@ -690,50 +713,68 @@ const downloadAikenErrors = () => {
                 {{ formError }}
               </VAlert>
 
-              <VRow dense class="title-course-row">
-                <VCol cols="12" md="6">
-                <div class="field-label">gRAT Title (required)</div>
-                <VTextField
-                  ref="titleInput"
-                  class="legacy-input"
-                  v-model="form.title"
-                  variant="outlined"
-                  placeholder="gRAT Title"
-                  density="comfortable"
-                  @focus="maybeSelectDefaultTitle"
-                  @blur="scheduleAutosave('title', form.title)"
-                />
-              </VCol>
-              <VCol cols="12" md="6">
-                <div class="field-label">Course (optional)</div>
-                <VTextField
-                  class="legacy-input"
-                  v-model="form.course"
-                  variant="outlined"
-                  placeholder="Course"
-                  density="comfortable"
-                  @blur="scheduleAutosave('course', form.course)"
-                />
-              </VCol>
+              <VRow dense
+                    class="title-course-row"
+              >
+                <VCol cols="12"
+                      md="6"
+                >
+                  <div class="field-label">
+                    gRAT Title (required)
+                  </div>
+                  <VTextField
+                    ref="titleInput"
+                    v-model="form.title"
+                    class="legacy-input"
+                    variant="outlined"
+                    placeholder="gRAT Title"
+                    density="comfortable"
+                    @focus="maybeSelectDefaultTitle"
+                    @blur="scheduleAutosave('title', form.title)"
+                  />
+                </VCol>
+                <VCol cols="12"
+                      md="6"
+                >
+                  <div class="field-label">
+                    Course (optional)
+                  </div>
+                  <VTextField
+                    v-model="form.course"
+                    class="legacy-input"
+                    variant="outlined"
+                    placeholder="Course"
+                    density="comfortable"
+                    @blur="scheduleAutosave('course', form.course)"
+                  />
+                </VCol>
               </VRow>
 
               <VRow dense>
-                <VCol cols="12" md="6">
-                  <div class="field-label">Scheduled On (optional)</div>
+                <VCol cols="12"
+                      md="6"
+                >
+                  <div class="field-label">
+                    Scheduled On (optional)
+                  </div>
                   <VTextField
-                    class="legacy-input"
                     v-model="form.scheduled_at"
+                    class="legacy-input"
                     variant="outlined"
                     type="date"
                     density="comfortable"
                     @blur="scheduleAutosave('scheduled_at', form.scheduled_at)"
                   />
                 </VCol>
-                <VCol cols="12" md="6">
-                  <div class="field-label">Details (optional)</div>
+                <VCol cols="12"
+                      md="6"
+                >
+                  <div class="field-label">
+                    Details (optional)
+                  </div>
                   <VTextarea
-                    class="legacy-input"
                     v-model="form.memo"
+                    class="legacy-input"
                     variant="outlined"
                     placeholder="Details"
                     rows="3"
@@ -743,7 +784,6 @@ const downloadAikenErrors = () => {
                   />
                 </VCol>
               </VRow>
-
             </VCardText>
           </VCard>
 
@@ -756,7 +796,11 @@ const downloadAikenErrors = () => {
                 <span class="text-h6">Questions</span>
                 <span class="text-body-2 text-medium-emphasis">Autosaves; only one correct answer per question.</span>
               </div>
-              <VBtn color="primary" variant="text" size="small" @click="advancedFormatting">
+              <VBtn color="primary"
+                    variant="text"
+                    size="small"
+                    @click="advancedFormatting"
+              >
                 Advanced Formatting
               </VBtn>
             </VCardTitle>
@@ -792,10 +836,16 @@ const downloadAikenErrors = () => {
                 v-if="questionsLoading && !questions.length"
                 class="d-flex align-center justify-center gap-2 text-medium-emphasis mb-3"
               >
-                <VProgressCircular indeterminate size="24" width="2" color="primary" />
+                <VProgressCircular indeterminate
+                                   size="24"
+                                   width="2"
+                                   color="primary"
+                />
                 <span>Loading questions…</span>
               </div>
-              <div v-if="questions.length" class="d-flex flex-column gap-4 question-stack question-stack--ruled">
+              <div v-if="questions.length"
+                   class="d-flex flex-column gap-4 question-stack question-stack--ruled"
+              >
                 <VCard
                   v-for="question in questions"
                   :key="question.id"
@@ -804,39 +854,39 @@ const downloadAikenErrors = () => {
                 >
                   <VCardTitle class="d-flex align-center justify-space-between">
                     <div class="d-flex align-center gap-2">
-                  <span class="seq-chip">Question {{ question.sequence }}</span>
-                  <VTooltip
-                    v-if="question.sequence > 1"
-                    text="Move up in question order"
-                    location="top"
-                  >
-                    <template #activator="{ props }">
-                      <VBtn
-                        v-bind="props"
-                        icon="tabler-arrow-up"
-                        variant="text"
-                        size="x-small"
-                        :loading="busyQuestion === question.id"
-                        @click="promote(question)"
-                      />
-                    </template>
-                  </VTooltip>
-                  <VTooltip
-                    v-if="question.sequence < questions.length"
-                    text="Move down in question order"
-                    location="top"
-                  >
-                    <template #activator="{ props }">
-                      <VBtn
-                        v-bind="props"
-                        icon="tabler-arrow-down"
-                        variant="text"
-                        size="x-small"
-                        :loading="busyQuestion === question.id"
-                        @click="demote(question)"
-                      />
-                    </template>
-                  </VTooltip>
+                      <span class="seq-chip">Question {{ question.sequence }}</span>
+                      <VTooltip
+                        v-if="question.sequence > 1"
+                        text="Move up in question order"
+                        location="top"
+                      >
+                        <template #activator="{ props }">
+                          <VBtn
+                            v-bind="props"
+                            icon="tabler-arrow-up"
+                            variant="text"
+                            size="x-small"
+                            :loading="busyQuestion === question.id"
+                            @click="promote(question)"
+                          />
+                        </template>
+                      </VTooltip>
+                      <VTooltip
+                        v-if="question.sequence < questions.length"
+                        text="Move down in question order"
+                        location="top"
+                      >
+                        <template #activator="{ props }">
+                          <VBtn
+                            v-bind="props"
+                            icon="tabler-arrow-down"
+                            variant="text"
+                            size="x-small"
+                            :loading="busyQuestion === question.id"
+                            @click="demote(question)"
+                          />
+                        </template>
+                      </VTooltip>
                     </div>
                     <div class="question-action-group d-flex gap-2 align-center">
                       <VChip
@@ -916,39 +966,39 @@ const downloadAikenErrors = () => {
                           />
                           <div class="d-flex align-center gap-2">
                             <div class="answer-arrows d-flex gap-1 justify-center">
-                            <VTooltip
-                              v-if="answer.sequence > 1"
-                              text="Move up in answer order"
-                              location="top"
-                            >
-                              <template #activator="{ props }">
-                                <VBtn
-                                  v-bind="props"
-                                  icon="tabler-arrow-up"
-                                  variant="text"
-                                  size="x-small"
-                                  :loading="busyAnswer === `move-${answer.id}`"
-                                  @click="moveAnswer(question, answer, 'up')"
-                                />
-                              </template>
-                            </VTooltip>
-                            <VTooltip
-                              v-if="answer.sequence < (question.answers?.length || 0)"
-                              text="Move down in answer order"
-                              location="top"
-                            >
-                              <template #activator="{ props }">
-                                <VBtn
-                                  v-bind="props"
-                                  icon="tabler-arrow-down"
-                                  variant="text"
-                                  size="x-small"
-                                  :loading="busyAnswer === `move-${answer.id}`"
-                              @click="moveAnswer(question, answer, 'down')"
-                                />
-                              </template>
-                            </VTooltip>
-                          </div>
+                              <VTooltip
+                                v-if="answer.sequence > 1"
+                                text="Move up in answer order"
+                                location="top"
+                              >
+                                <template #activator="{ props }">
+                                  <VBtn
+                                    v-bind="props"
+                                    icon="tabler-arrow-up"
+                                    variant="text"
+                                    size="x-small"
+                                    :loading="busyAnswer === `move-${answer.id}`"
+                                    @click="moveAnswer(question, answer, 'up')"
+                                  />
+                                </template>
+                              </VTooltip>
+                              <VTooltip
+                                v-if="answer.sequence < (question.answers?.length || 0)"
+                                text="Move down in answer order"
+                                location="top"
+                              >
+                                <template #activator="{ props }">
+                                  <VBtn
+                                    v-bind="props"
+                                    icon="tabler-arrow-down"
+                                    variant="text"
+                                    size="x-small"
+                                    :loading="busyAnswer === `move-${answer.id}`"
+                                    @click="moveAnswer(question, answer, 'down')"
+                                  />
+                                </template>
+                              </VTooltip>
+                            </div>
                           </div>
                           <div class="d-flex gap-2">
                             <VBtn
@@ -978,14 +1028,23 @@ const downloadAikenErrors = () => {
                   </VCardText>
                 </VCard>
               </div>
-              <div v-else-if="showEmptyQuestions" class="text-medium-emphasis mb-3">
+              <div v-else-if="showEmptyQuestions"
+                   class="text-medium-emphasis mb-3"
+              >
                 No questions yet. Add your first question below.
               </div>
               <div class="d-flex gap-2 flex-wrap justify-end mt-4">
-                <VBtn color="primary" variant="flat" size="small" :loading="busyQuestion === 'new'" @click="createQuestion">
+                <VBtn color="primary"
+                      variant="flat"
+                      size="small"
+                      :loading="busyQuestion === 'new'"
+                      @click="createQuestion"
+                >
                   Add Question
                 </VBtn>
-                <VTooltip location="top" text="Import questions from text file">
+                <VTooltip location="top"
+                          text="Import questions from text file"
+                >
                   <template #activator="{ props }">
                     <VBtn
                       v-bind="props"
@@ -998,7 +1057,9 @@ const downloadAikenErrors = () => {
                     </VBtn>
                   </template>
                 </VTooltip>
-                <VTooltip location="top" text="Export questions to text file">
+                <VTooltip location="top"
+                          text="Export questions to text file"
+                >
                   <template #activator="{ props }">
                     <VBtn
                       v-bind="props"
@@ -1015,14 +1076,24 @@ const downloadAikenErrors = () => {
             </VCardText>
           </VCard>
 
-          <VCard class="panel-card surface-glass surface-glass-blur card-radius-lg elevate-soft" elevation="0">
+          <VCard class="panel-card surface-glass surface-glass-blur card-radius-lg elevate-soft"
+                 elevation="0"
+          >
             <VCardText>
               <div class="actions-row sticky-actions">
                 <div class="d-flex align-center gap-2 flex-wrap">
-                  <VBtn color="primary" variant="flat" :loading="savingAll" @click="saveAll">
+                  <VBtn color="primary"
+                        variant="flat"
+                        :loading="savingAll"
+                        @click="saveAll"
+                  >
                     Save All
                   </VBtn>
-                  <VBtn color="secondary" variant="flat" class="close-btn-contrast" @click="closePage">
+                  <VBtn color="secondary"
+                        variant="flat"
+                        class="close-btn-contrast"
+                        @click="closePage"
+                  >
                     Close
                   </VBtn>
                 </div>
@@ -1032,11 +1103,18 @@ const downloadAikenErrors = () => {
         </template>
 
         <template v-else>
-          <VCard class="mb-4 panel-card surface-glass surface-glass-blur card-radius-lg elevate-soft" elevation="0">
+          <VCard class="mb-4 panel-card surface-glass surface-glass-blur card-radius-lg elevate-soft"
+                 elevation="0"
+          >
             <VCardTitle class="d-flex justify-space-between align-center">
               <div class="d-flex align-center gap-3">
-                <h3 class="text-h5 mb-0">gRAT Locked</h3>
-                <VChip color="warning" variant="tonal" size="small">
+                <h3 class="text-h5 mb-0">
+                  gRAT Locked
+                </h3>
+                <VChip color="warning"
+                       variant="tonal"
+                       size="small"
+                >
                   Responses exist
                 </VChip>
                 <div class="d-flex align-center gap-2">
@@ -1046,7 +1124,8 @@ const downloadAikenErrors = () => {
                     :color="form.active ? 'success' : 'grey'"
                     :loading="activeToggleBusy"
                     prepend-icon="tabler-power"
-                    :class="['active-toggle-btn', { 'active-toggle-btn--inactive': !form.active }]"
+                    class="active-toggle-btn"
+                    :class="[{ 'active-toggle-btn--inactive': !form.active }]"
                     @click="toggleActiveStatus"
                   >
                     {{ form.active ? 'Active' : 'Inactive' }}
@@ -1062,37 +1141,63 @@ const downloadAikenErrors = () => {
             </VCardTitle>
             <VCardText class="pt-0">
               <VRow>
-                <VCol cols="12" md="6">
+                <VCol cols="12"
+                      md="6"
+                >
                   <div class="display-field">
-                    <div class="label">Title</div>
-                    <div class="value">{{ form.title || '—' }}</div>
+                    <div class="label">
+                      Title
+                    </div>
+                    <div class="value">
+                      {{ form.title || '—' }}
+                    </div>
                   </div>
                 </VCol>
-                <VCol cols="12" md="6">
+                <VCol cols="12"
+                      md="6"
+                >
                   <div class="display-field">
-                    <div class="label">Course</div>
-                    <div class="value">{{ form.course || '—' }}</div>
+                    <div class="label">
+                      Course
+                    </div>
+                    <div class="value">
+                      {{ form.course || '—' }}
+                    </div>
                   </div>
                 </VCol>
               </VRow>
               <VRow>
-                <VCol cols="12" md="6">
+                <VCol cols="12"
+                      md="6"
+                >
                   <div class="display-field">
-                    <div class="label">Scheduled On</div>
-                    <div class="value">{{ form.scheduled_at || '—' }}</div>
+                    <div class="label">
+                      Scheduled On
+                    </div>
+                    <div class="value">
+                      {{ form.scheduled_at || '—' }}
+                    </div>
                   </div>
                 </VCol>
-                <VCol cols="12" md="6">
+                <VCol cols="12"
+                      md="6"
+                >
                   <div class="display-field">
-                    <div class="label">Details</div>
-                    <div class="value">{{ form.memo || '—' }}</div>
+                    <div class="label">
+                      Details
+                    </div>
+                    <div class="value">
+                      {{ form.memo || '—' }}
+                    </div>
                   </div>
                 </VCol>
               </VRow>
             </VCardText>
           </VCard>
 
-          <VCard class="panel-card surface-glass surface-glass-blur card-radius-lg elevate-soft" elevation="0">
+          <VCard class="panel-card surface-glass surface-glass-blur card-radius-lg elevate-soft"
+                 elevation="0"
+          >
             <VCardTitle class="d-flex justify-space-between align-center flex-wrap gap-2">
               <span class="text-h6">Questions (read-only)</span>
               <VBtn
@@ -1105,7 +1210,9 @@ const downloadAikenErrors = () => {
               </VBtn>
             </VCardTitle>
             <VCardText class="pt-1">
-              <div v-if="questions.length" class="d-flex flex-column gap-4 question-stack">
+              <div v-if="questions.length"
+                   class="d-flex flex-column gap-4 question-stack"
+              >
                 <VCard
                   v-for="question in questions"
                   :key="question.id"
@@ -1119,9 +1226,13 @@ const downloadAikenErrors = () => {
                   </VCardTitle>
                   <VCardText class="d-flex flex-column gap-3">
                     <div class="display-field">
-                      <div class="label">Question</div>
+                      <div class="label">
+                        Question
+                      </div>
                       <div class="value">
-                        <div class="locked-stem" v-text="question.stem || '—'" />
+                        <div class="locked-stem"
+                             v-text="question.stem || '—'"
+                        />
                       </div>
                     </div>
                     <div class="d-flex flex-column gap-2">
@@ -1144,7 +1255,9 @@ const downloadAikenErrors = () => {
                   </VCardText>
                 </VCard>
               </div>
-              <div v-else-if="showEmptyQuestions" class="text-medium-emphasis">
+              <div v-else-if="showEmptyQuestions"
+                   class="text-medium-emphasis"
+              >
                 No questions available.
               </div>
             </VCardText>
@@ -1160,21 +1273,31 @@ const downloadAikenErrors = () => {
       <VCard>
         <VCardTitle class="justify-space-between align-center">
           <span>Import Questions in Aiken Format</span>
-          <VBtn icon variant="text" @click="showImportDialog = false">
+          <VBtn icon
+                variant="text"
+                @click="showImportDialog = false"
+          >
             <VIcon icon="tabler-x" />
           </VBtn>
         </VCardTitle>
         <VCardText class="d-flex flex-column gap-3">
           <p>
             The
-            <a href="https://docs.moodle.org/39/en/Aiken_format" target="_blank" rel="noopener">
+            <a href="https://docs.moodle.org/39/en/Aiken_format"
+               target="_blank"
+               rel="noopener noreferrer"
+            >
               Aiken format
             </a>
             is a very simple way of creating multiple choice questions using a clear human-readable format in a text file.
           </p>
           <p>
             I've tested uploading question using
-            <a href="/files/sample_aiken.txt" target="_blank" rel="noopener" download>
+            <a href="/files/sample_aiken.txt"
+               target="_blank"
+               rel="noopener noreferrer"
+               download
+            >
               this file
             </a>. It works. If you get an error, please double-check the formatting of your text file.
           </p>
@@ -1187,11 +1310,18 @@ const downloadAikenErrors = () => {
             >
               Upload File
             </VBtn>
-            <div v-if="uploadBusy" class="mt-3 d-flex align-center justify-center gap-2">
-              <VProgressCircular indeterminate color="primary" size="28" />
+            <div v-if="uploadBusy"
+                 class="mt-3 d-flex align-center justify-center gap-2"
+            >
+              <VProgressCircular indeterminate
+                                 color="primary"
+                                 size="28"
+              />
               <span class="text-medium-emphasis">Importing Questions</span>
             </div>
-            <div v-if="uploadSlow" class="mt-2 text-caption text-medium-emphasis text-center">
+            <div v-if="uploadSlow"
+                 class="mt-2 text-caption text-medium-emphasis text-center"
+            >
               This is taking longer than usual. Please wait…
             </div>
             <input
@@ -1215,8 +1345,12 @@ const downloadAikenErrors = () => {
           Invalid Aiken File
         </VCardTitle>
         <VCardText>
-          <ul v-if="invalidAikenMessages.length" class="aiken-error-list">
-            <li v-for="message in invalidAikenMessages" :key="message">
+          <ul v-if="invalidAikenMessages.length"
+              class="aiken-error-list"
+          >
+            <li v-for="message in invalidAikenMessages"
+                :key="message"
+            >
               {{ message }}
             </li>
           </ul>
@@ -1246,18 +1380,23 @@ const downloadAikenErrors = () => {
               size="small"
               :href="invalidAikenSampleLink"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               download
             >
               Download sample file
             </VBtn>
-            <span v-if="copyAikenStatus" class="text-caption text-medium-emphasis">
+            <span v-if="copyAikenStatus"
+                  class="text-caption text-medium-emphasis"
+            >
               {{ copyAikenStatus }}
             </span>
           </div>
         </VCardText>
         <VCardActions class="justify-end">
-          <VBtn color="primary" variant="text" @click="dismissInvalidAiken">
+          <VBtn color="primary"
+                variant="text"
+                @click="dismissInvalidAiken"
+          >
             Dismiss
           </VBtn>
         </VCardActions>
@@ -1270,20 +1409,28 @@ const downloadAikenErrors = () => {
       <VCard>
         <VCardTitle class="justify-space-between align-center">
           <span>Advanced Formatting</span>
-          <VBtn icon variant="text" @click="showAdvancedDialog = false">
+          <VBtn icon
+                variant="text"
+                @click="showAdvancedDialog = false"
+          >
             <VIcon icon="tabler-x" />
           </VBtn>
         </VCardTitle>
         <VCardText class="d-flex flex-column gap-3">
           <p>
             While plain text is the preferred way to display questions and answers, questions can include some
-            <a href="/files/advanced_formatting.html" target="_blank" rel="noopener">
+            <a href="/files/advanced_formatting.html"
+               target="_blank"
+               rel="noopener noreferrer"
+            >
               simple formatting, equations and images
             </a>.
           </p>
           <p>
             This
-            <a href="/files/advanced_aiken_formatting.txt" download>
+            <a href="/files/advanced_aiken_formatting.txt"
+               download
+            >
               Aiken format file
             </a>
             has working examples.
@@ -1298,10 +1445,16 @@ const downloadAikenErrors = () => {
     >
       {{ answerRetryMessage }}
       <template #actions>
-        <VBtn color="white" variant="text" @click="retrySaveAnswer">
+        <VBtn color="white"
+              variant="text"
+              @click="retrySaveAnswer"
+        >
           Retry
         </VBtn>
-        <VBtn color="white" variant="text" @click="showAnswerRetry = false">
+        <VBtn color="white"
+              variant="text"
+              @click="showAnswerRetry = false"
+        >
           Dismiss
         </VBtn>
       </template>

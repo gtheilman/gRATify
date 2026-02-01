@@ -5,7 +5,7 @@ const apiResponses = new Map()
 
 vi.mock('@/composables/useApi', () => {
   return {
-    useApi: (url) => apiResponses.get(url) ?? ({
+    useApi: url => apiResponses.get(url) ?? ({
       data: { value: null },
       error: { value: null },
     }),
@@ -21,8 +21,10 @@ vi.mock('@/utils/http', () => {
     }),
     buildHttpError: (response, data, message) => {
       const err = new Error(message)
+
       err.status = response?.status
       err.data = data
+      
       return err
     },
   }
@@ -30,6 +32,7 @@ vi.mock('@/utils/http', () => {
 
 const mockStorage = () => {
   let store = {}
+  
   return {
     getItem: key => (key in store ? store[key] : null),
     setItem: (key, value) => { store[key] = String(value) },
@@ -63,6 +66,7 @@ describe('auth store', () => {
       data: { value: { id: 1, force_password_reset: true } },
       error: { value: null },
     })
+
     const { useAuthStore } = await import('@/stores/auth')
     const store = useAuthStore()
 
@@ -75,6 +79,7 @@ describe('auth store', () => {
   it('clears force_password_reset flag on logout', async () => {
     const { useAuthStore } = await import('@/stores/auth')
     const store = useAuthStore()
+
     store.forcePasswordReset = true
     globalThis.localStorage.setItem('forcePasswordReset', 'true')
 

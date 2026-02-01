@@ -9,7 +9,7 @@
 <script>
 // Simple fallback for incomplete student links so routing failures are clear.
 export default {
-  name: 'IncompleteLink'
+  name: 'IncompleteLink',
 }
 </script>
 

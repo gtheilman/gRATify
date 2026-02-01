@@ -10,6 +10,7 @@ export const readDemoWarningCache = () => {
   const cached = sessionStorage.getItem(cacheKey)
   if (cached === null)
     return null
+  
   return cached === '1'
 }
 
@@ -21,5 +22,6 @@ export const writeDemoWarningCache = value => {
 
 export const applyDemoWarningFallback = () => {
   writeDemoWarningCache(true)
+  
   return true
 }

@@ -30,6 +30,7 @@ const roleOptions = ref([
   { label: 'Admin', value: 'admin' },
   { label: 'Editor', value: 'editor' },
 ])
+
 const dialogRoleOptions = ref([
   { label: 'Admin', value: 'admin' },
   { label: 'Editor', value: 'editor' },
@@ -39,6 +40,7 @@ const dialogOpen = ref(false)
 const dialogMode = ref('create') // create | edit
 const dialogError = ref('')
 const deleteError = ref('')
+
 const dialogForm = ref({
   id: null,
   name: '',
@@ -48,18 +50,22 @@ const dialogForm = ref({
   password: '',
   company: '',
 })
+
 const dialogOriginalRole = ref(null)
 
 const changePasswordDialog = ref(false)
 const changePasswordError = ref('')
 const changePasswordTarget = ref(null)
+
 const changePasswordForm = ref({
   password: '',
   confirm: '',
 })
+
 const changePasswordSuccess = ref('')
 
 const loaded = ref(false)
+
 onMounted(async () => {
   await authStore.ensureSession()
   await usersStore.fetchUsers()
@@ -80,6 +86,7 @@ const filteredUsers = computed(() => filterUsers(usersStore.users || [], search.
 const pagedUsers = computed(() => {
   const list = sortUsers(filteredUsers.value, sortBy.value, sortDir.value)
   const start = (currentPage.value - 1) * pageSize.value
+  
   return list.slice(start, start + pageSize.value)
 })
 
@@ -120,14 +127,17 @@ const submitChangePassword = async () => {
   changePasswordSuccess.value = ''
   if (!changePasswordTarget.value?.id) {
     changePasswordError.value = 'No user selected.'
+    
     return
   }
   if (!changePasswordForm.value.password || !changePasswordForm.value.confirm) {
     changePasswordError.value = 'Please enter and confirm the new password.'
+    
     return
   }
   if (changePasswordForm.value.password !== changePasswordForm.value.confirm) {
     changePasswordError.value = 'Passwords do not match.'
+    
     return
   }
   try {
@@ -139,6 +149,7 @@ const submitChangePassword = async () => {
         new_password_confirmation: changePasswordForm.value.confirm,
       },
     })
+
     if (error.value)
       throw error.value
     changePasswordSuccess.value = 'Password Successfully Changed'
@@ -177,10 +188,12 @@ const deleteUser = async user => {
   deleteError.value = ''
   if (isOffline.value) {
     deleteError.value = 'You are offline. Connect to the internet before deleting a user.'
+    
     return
   }
   if (isLastAdmin(user)) {
     alert('You cannot delete the last admin. Create another admin before deleting this one.')
+    
     return
   }
   if (!confirm(`Are you sure you want to delete ${user.username || 'this user'}?`))
@@ -191,6 +204,7 @@ const deleteUser = async user => {
   catch (err) {
     if (err?.status === 409 || err?.response?.status === 409) {
       deleteError.value = getErrorMessage(err, 'Cannot delete user with existing assessments.')
+      
       return
     }
     deleteError.value = getErrorMessage(err, 'Unable to delete user.')
@@ -201,6 +215,7 @@ const submitDialog = async () => {
   dialogError.value = ''
   if (!dialogForm.value.username || !dialogForm.value.email) {
     dialogError.value = 'Username and email are required.'
+    
     return
   }
   // Block demoting the last admin
@@ -209,6 +224,7 @@ const submitDialog = async () => {
     && dialogForm.value.role !== 'admin'
     && adminCount.value <= 1) {
     dialogError.value = 'You cannot demote the last admin. Create another admin first.'
+    
     return
   }
 
@@ -242,9 +258,14 @@ const resetFilters = () => {
 </script>
 
 <template>
-  <div id="page-user-list" class="users-page">
+  <div id="page-user-list"
+       class="users-page"
+  >
     <div class="hero-card minimal-hero d-flex justify-end mb-3">
-      <VBtn color="primary" prepend-icon="tabler-user-plus" @click="registerUser">
+      <VBtn color="primary"
+            prepend-icon="tabler-user-plus"
+            @click="registerUser"
+      >
         Add User
       </VBtn>
     </div>
@@ -277,7 +298,9 @@ const resetFilters = () => {
         <thead>
           <tr>
             <th>
-              <button class="sort-btn" @click="() => { sortBy = 'name'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }">
+              <button class="sort-btn"
+                      @click="() => { sortBy = 'name'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }"
+              >
                 User
                 <VIcon
                   v-if="sortBy === 'name'"
@@ -288,7 +311,9 @@ const resetFilters = () => {
               </button>
             </th>
             <th>
-              <button class="sort-btn" @click="() => { sortBy = 'username'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }">
+              <button class="sort-btn"
+                      @click="() => { sortBy = 'username'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }"
+              >
                 Username
                 <VIcon
                   v-if="sortBy === 'username'"
@@ -299,7 +324,9 @@ const resetFilters = () => {
               </button>
             </th>
             <th>
-              <button class="sort-btn" @click="() => { sortBy = 'email'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }">
+              <button class="sort-btn"
+                      @click="() => { sortBy = 'email'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }"
+              >
                 Email
                 <VIcon
                   v-if="sortBy === 'email'"
@@ -310,7 +337,9 @@ const resetFilters = () => {
               </button>
             </th>
             <th>
-              <button class="sort-btn" @click="() => { sortBy = 'company'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }">
+              <button class="sort-btn"
+                      @click="() => { sortBy = 'company'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }"
+              >
                 School/Company
                 <VIcon
                   v-if="sortBy === 'company'"
@@ -321,7 +350,9 @@ const resetFilters = () => {
               </button>
             </th>
             <th>
-              <button class="sort-btn" @click="() => { sortBy = 'role'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }">
+              <button class="sort-btn"
+                      @click="() => { sortBy = 'role'; sortDir = sortDir === 'asc' ? 'desc' : 'asc' }"
+              >
                 Role
                 <VIcon
                   v-if="sortBy === 'role'"
@@ -331,23 +362,43 @@ const resetFilters = () => {
                 />
               </button>
             </th>
-            <th class="text-right">Actions</th>
+            <th class="text-right">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="!loaded && !(usersStore.users || []).length">
-            <td colspan="6" class="text-center py-6">
-              <VProgressCircular indeterminate color="primary" size="32" class="mb-2" />
-              <div class="text-medium-emphasis">Loading users…</div>
+            <td colspan="6"
+                class="text-center py-6"
+            >
+              <VProgressCircular indeterminate
+                                 color="primary"
+                                 size="32"
+                                 class="mb-2"
+              />
+              <div class="text-medium-emphasis">
+                Loading users…
+              </div>
             </td>
           </tr>
-          <tr v-for="user in pagedUsers" :key="user.id">
+          <tr v-for="user in pagedUsers"
+              :key="user.id"
+          >
             <td data-label="User">
-              <div class="font-weight-medium">{{ user.name || user.username }}</div>
+              <div class="font-weight-medium">
+                {{ user.name || user.username }}
+              </div>
             </td>
-            <td data-label="Username">{{ user.username }}</td>
-            <td data-label="Email">{{ user.email }}</td>
-            <td data-label="School/Company">{{ user.company }}</td>
+            <td data-label="Username">
+              {{ user.username }}
+            </td>
+            <td data-label="Email">
+              {{ user.email }}
+            </td>
+            <td data-label="School/Company">
+              {{ user.company }}
+            </td>
             <td data-label="Role">
               <VTooltip location="top">
                 <template #activator="{ props }">
@@ -367,7 +418,9 @@ const resetFilters = () => {
                 </span>
               </VTooltip>
             </td>
-            <td data-label="Actions" class="text-right">
+            <td data-label="Actions"
+                class="text-right"
+            >
               <VMenu location="bottom end">
                 <template #activator="{ props }">
                   <VBtn
@@ -386,7 +439,9 @@ const resetFilters = () => {
                   <VListItem @click="changePassword(user)">
                     <VListItemTitle>Change Password</VListItemTitle>
                   </VListItem>
-                  <VTooltip v-if="hasAssessments(user)" location="top">
+                  <VTooltip v-if="hasAssessments(user)"
+                            location="top"
+                  >
                     <template #activator="{ props }">
                       <span v-bind="props">
                         <VListItem
@@ -403,14 +458,18 @@ const resetFilters = () => {
                     :disabled="isLastAdmin(user) || isOffline"
                     @click="deleteUser(user)"
                   >
-                    <VListItemTitle class="text-error">Delete</VListItemTitle>
+                    <VListItemTitle class="text-error">
+                      Delete
+                    </VListItemTitle>
                   </VListItem>
                 </VList>
               </VMenu>
             </td>
           </tr>
           <tr v-if="loaded && !pagedUsers.length">
-            <td colspan="6" class="text-center py-4 text-medium-emphasis">
+            <td colspan="6"
+                class="text-center py-4 text-medium-emphasis"
+            >
               {{ emptyStateMessage }}
             </td>
           </tr>
@@ -447,7 +506,10 @@ const resetFilters = () => {
       <VCard>
         <VCardTitle class="justify-space-between align-center">
           <span>{{ dialogMode === 'create' ? 'Register User' : 'Edit User' }}</span>
-          <VBtn icon variant="text" @click="dialogOpen = false">
+          <VBtn icon
+                variant="text"
+                @click="dialogOpen = false"
+          >
             <VIcon icon="tabler-x" />
           </VBtn>
         </VCardTitle>
@@ -508,10 +570,14 @@ const resetFilters = () => {
           />
         </VCardText>
         <VCardActions class="justify-end gap-2">
-          <VBtn variant="text" @click="dialogOpen = false">
+          <VBtn variant="text"
+                @click="dialogOpen = false"
+          >
             Cancel
           </VBtn>
-          <VBtn color="primary" @click="submitDialog">
+          <VBtn color="primary"
+                @click="submitDialog"
+          >
             Save
           </VBtn>
         </VCardActions>
@@ -525,7 +591,10 @@ const resetFilters = () => {
       <VCard>
         <VCardTitle class="justify-space-between align-center">
           <span>Change Password</span>
-          <VBtn icon variant="text" @click="changePasswordDialog = false">
+          <VBtn icon
+                variant="text"
+                @click="changePasswordDialog = false"
+          >
             <VIcon icon="tabler-x" />
           </VBtn>
         </VCardTitle>
@@ -572,10 +641,15 @@ const resetFilters = () => {
               class="mb-4"
             />
             <VCardActions class="justify-end gap-2 pa-0 pt-1">
-              <VBtn variant="text" type="button" @click="changePasswordDialog = false">
+              <VBtn variant="text"
+                    type="button"
+                    @click="changePasswordDialog = false"
+              >
                 Cancel
               </VBtn>
-              <VBtn color="primary" type="submit">
+              <VBtn color="primary"
+                    type="submit"
+              >
                 Save
               </VBtn>
             </VCardActions>

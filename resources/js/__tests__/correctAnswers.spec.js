@@ -4,6 +4,7 @@ import { collectCorrectAnswerIds } from '../utils/correctAnswers'
 describe('collectCorrectAnswerIds', () => {
   it('collects only correct answer ids', () => {
     const ids = collectCorrectAnswerIds([{ answers: [{ id: 1, correct: 1 }, { id: 2, correct: 0 }] }])
+
     expect(ids).toEqual([1])
   })
 
@@ -13,6 +14,7 @@ describe('collectCorrectAnswerIds', () => {
 
   it('treats string correct flags as truthy', () => {
     const ids = collectCorrectAnswerIds([{ answers: [{ id: 3, correct: '1' }] }])
+
     expect(ids).toEqual([3])
   })
 })

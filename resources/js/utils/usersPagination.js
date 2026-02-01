@@ -4,5 +4,6 @@ export const buildUsersRangeLabel = (currentPage, pageSize, total) => {
     return 'Rows 0 - 0 of 0'
   const start = (currentPage - 1) * pageSize + 1
   const end = Math.min(currentPage * pageSize, safeTotal)
+  
   return `Rows ${start} - ${end} of ${safeTotal}`
 }

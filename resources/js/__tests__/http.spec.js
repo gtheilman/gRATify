@@ -8,6 +8,7 @@ afterEach(() => {
 describe('http utilities', () => {
   it('returns parsed json for successful responses', async () => {
     const payload = { ok: true }
+
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       new Response(JSON.stringify(payload), {
         status: 200,
@@ -16,6 +17,7 @@ describe('http utilities', () => {
     ))
 
     const { data } = await fetchJsonOrThrow('/api/test')
+
     expect(data).toEqual(payload)
   })
 
@@ -35,6 +37,7 @@ describe('http utilities', () => {
 
   it('builds fallback message when no payload is provided', () => {
     const error = buildHttpError({ status: 404 }, null)
+
     expect(error.message).toBe('Not found.')
     expect(error.status).toBe(404)
   })
@@ -48,6 +51,7 @@ describe('http utilities', () => {
     ))
 
     const { data, text } = await fetchJson('/api/test', { parseText: true })
+
     expect(data).toBeNull()
     expect(text).toBe('plain text')
   })
@@ -58,6 +62,7 @@ describe('http utilities', () => {
     ))
 
     const { data, response } = await fetchJson('/api/test')
+
     expect(response.ok).toBe(true)
     expect(data).toBeNull()
   })

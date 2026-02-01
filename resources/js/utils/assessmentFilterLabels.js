@@ -3,5 +3,6 @@ export const getActiveFilterLabel = value => {
     return 'Active only'
   if (value === 'inactive')
     return 'Inactive only'
+  
   return 'All statuses'
 }

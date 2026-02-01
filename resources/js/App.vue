@@ -24,21 +24,27 @@ const showVersion = computed(() => route.name === 'root' && gratifyVersion)
 </script>
 
 <template>
-    <VLocaleProvider :rtl="configStore.isAppRTL">
-      <!-- ℹ️ This is required to set the background color of active nav link based on currently active global theme's primary -->
-      <VApp :style="`--v-global-theme-primary: ${hexToRgb(global.current.value.colors.primary)}`">
-        <a href="#main-content" class="skip-link">Skip to main content</a>
-        <TopNav v-if="showTopNav" />
-        <main id="main-content" role="main">
-          <RouterView />
-        </main>
-        <div v-if="showVersion" class="app-version text-body-2 text-medium-emphasis">
-          {{ gratifyVersion }}
-        </div>
+  <VLocaleProvider :rtl="configStore.isAppRTL">
+    <!-- ℹ️ This is required to set the background color of active nav link based on currently active global theme's primary -->
+    <VApp :style="`--v-global-theme-primary: ${hexToRgb(global.current.value.colors.primary)}`">
+      <a href="#main-content"
+         class="skip-link"
+      >Skip to main content</a>
+      <TopNav v-if="showTopNav" />
+      <main id="main-content"
+            role="main"
+      >
+        <RouterView />
+      </main>
+      <div v-if="showVersion"
+           class="app-version text-body-2 text-medium-emphasis"
+      >
+        {{ gratifyVersion }}
+      </div>
 
-        <ScrollToTop />
-      </VApp>
-    </VLocaleProvider>
+      <ScrollToTop />
+    </VApp>
+  </VLocaleProvider>
 </template>
 
 <style scoped>

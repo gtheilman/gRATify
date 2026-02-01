@@ -16,6 +16,7 @@ describe('buildSequenceSwap', () => {
 
   it('returns the correct neighbor for upward swaps', () => {
     const swap = buildSequenceSwap(items, 2, 'up')
+
     expect(swap?.current?.id).toBe(2)
     expect(swap?.neighbor?.id).toBe(1)
     expect(swap?.currentSequence).toBe(2)
@@ -24,6 +25,7 @@ describe('buildSequenceSwap', () => {
 
   it('returns the correct neighbor for downward swaps', () => {
     const swap = buildSequenceSwap(items, 2, 'down')
+
     expect(swap?.current?.id).toBe(2)
     expect(swap?.neighbor?.id).toBe(3)
   })

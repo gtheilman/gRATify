@@ -15,6 +15,7 @@ const ensureFontAwesome = () => {
   if (existing)
     return
   const link = document.createElement('link')
+
   link.rel = 'stylesheet'
   link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
   link.crossOrigin = 'anonymous'
@@ -22,6 +23,7 @@ const ensureFontAwesome = () => {
   link.setAttribute('data-fa-cdn', 'true')
   document.head.appendChild(link)
 }
+
 ensureFontAwesome()
 
 const app = createApp(App, { ...(mountEl?.dataset || {}) })

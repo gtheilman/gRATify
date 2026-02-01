@@ -13,6 +13,7 @@ describe('progress fullscreen helpers', () => {
 
   it('invokes standard requestFullscreen when available', () => {
     const el = { requestFullscreen: vi.fn() }
+
     expect(requestFullscreen(el)).toBe(true)
     expect(el.requestFullscreen).toHaveBeenCalled()
   })

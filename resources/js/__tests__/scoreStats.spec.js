@@ -4,6 +4,7 @@ import { calcAverageScore, calcMedianScore, toNumericScores } from '../utils/sco
 describe('score stats helpers', () => {
   it('converts presentations to numeric scores', () => {
     const scores = toNumericScores([{ score: '90' }, { score: 'abc' }])
+
     expect(scores).toEqual([90])
   })
 

@@ -8,6 +8,7 @@ describe('csvDownload', () => {
 
   it('builds a CSV blob with the correct type', () => {
     const blob = buildCsvBlob('a,b')
+
     expect(blob).not.toBeNull()
     expect(blob.type).toContain('text/csv')
   })

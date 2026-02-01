@@ -15,6 +15,7 @@ export const filterAssessments = (assessments, options = {}) => {
     ].join(' ').toLowerCase()
 
     const matchesSearch = !term || haystack.includes(term)
+
     const matchesActive = activeFilter === 'all'
       || (activeFilter === 'active' && item.active)
       || (activeFilter === 'inactive' && !item.active)

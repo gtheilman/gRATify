@@ -2,6 +2,7 @@ import { isAssessmentLocked } from '@/utils/assessmentLocking'
 
 const compareStrings = (a, b, dir) => {
   const res = (a || '').localeCompare(b || '', undefined, { sensitivity: 'base' })
+  
   return dir === 'asc' ? res : -res
 }
 
@@ -17,12 +18,14 @@ export const sortAssessments = (assessments, key, direction) => {
       const da = a.scheduled_at ? new Date(a.scheduled_at).getTime() : 0
       const db = b.scheduled_at ? new Date(b.scheduled_at).getTime() : 0
       const res = da - db
+      
       return dir === 'asc' ? res : -res
     },
     active: (a, b) => {
       const av = a.active ? 1 : 0
       const bv = b.active ? 1 : 0
       const res = av - bv
+      
       return dir === 'asc' ? res : -res
     },
     actions: (a, b) => {
@@ -31,6 +34,7 @@ export const sortAssessments = (assessments, key, direction) => {
       const res = av - bv
       if (res !== 0)
         return dir === 'asc' ? res : -res
+      
       return compareStrings(a.title, b.title, dir)
     },
   }
@@ -38,5 +42,6 @@ export const sortAssessments = (assessments, key, direction) => {
   const sorter = sorters[key]
   if (!sorter)
     return list
+  
   return list.sort(sorter)
 }

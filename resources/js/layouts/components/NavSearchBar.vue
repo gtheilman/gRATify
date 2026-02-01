@@ -146,6 +146,7 @@ const fetchResults = async () => {
   if (!shouldFetchSearchResults(searchQuery.value)) {
     searchResult.value = []
     isLoading.value = false
+    
     return
   }
 

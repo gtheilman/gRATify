@@ -12,6 +12,7 @@ describe('defaultPageSizeOptions', () => {
 
   it('ensures values are unique', () => {
     const values = defaultPageSizeOptions.map(option => option.value)
+
     expect(new Set(values).size).toBe(values.length)
   })
 

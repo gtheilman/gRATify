@@ -32,13 +32,13 @@ class PresentationAssembler
             $created = true;
         }
 
-        $attempts = Attempt::select(['id', 'presentation_id', 'answer_id', 'points', 'created_at'])
+        $attempts = Attempt::select(['id', 'answer_id', 'created_at'])
             ->with(['answer:id,correct'])
             ->where('presentation_id', $presentation->id)
             ->orderBy('created_at')
             ->get();
 
-        $appeals = Appeal::select(['id', 'presentation_id', 'question_id', 'body', 'created_at'])
+        $appeals = Appeal::select(['id', 'question_id', 'body'])
             ->where('presentation_id', $presentation->id)
             ->orderBy('created_at')
             ->get();

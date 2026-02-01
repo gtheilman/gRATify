@@ -5,6 +5,7 @@ export const readProgressCache = id => {
     const raw = localStorage.getItem(cacheKey(id))
     if (!raw)
       return null
+    
     return JSON.parse(raw)
   } catch {
     return null

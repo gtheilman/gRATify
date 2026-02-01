@@ -28,16 +28,19 @@ export const normalizeAikenMessage = (message, requireErrorPrefix = true) => {
   cleaned = cleaned.replace(/\s+on\s+line\s*(\d+)/i, ' on line $1')
   if (cleaned[0] && cleaned[0] === cleaned[0].toLowerCase())
     cleaned = cleaned[0].toUpperCase() + cleaned.slice(1)
+  
   return cleaned
 }
 
 export const extractAikenErrorLines = text => {
   if (!text)
     return []
+
   const normalized = String(text)
     .replace(/\\n/g, '\n')
     .replace(/\\r/g, '\r')
     .replace(/\\"/g, '"')
+
   const quotedMatches = []
   const quotedRegex = /"([^"]*)"/g
   let match = quotedRegex.exec(normalized)
@@ -48,9 +51,12 @@ export const extractAikenErrorLines = text => {
   }
   if (quotedMatches.length)
     return quotedMatches.map(item => item.trim())
+
   const matches = normalized.match(/Error:[\s\S]*?(?=string\(\d+\)|\{\\"status\\"|$)/gi)
     || normalized.match(/Error:[^\n\r]+/gi)
     || []
+
+  
   return matches.map(item => item.trim())
 }
 
@@ -60,6 +66,8 @@ export const buildAikenMessages = (json, rawText) => {
     const cleanedErrors = json.errors
       .map(msg => normalizeAikenMessage(msg, false))
       .filter(Boolean)
+
+    
     return cleanedErrors.length ? cleanedErrors : ['Invalid Aiken format text file.']
   } else if (json?.errors && typeof json.errors === 'object') {
     Object.values(json.errors).forEach(value => {
@@ -74,6 +82,7 @@ export const buildAikenMessages = (json, rawText) => {
     messages.push(apiMessage)
   if (rawText) {
     const errorMatches = extractAikenErrorLines(rawText)
+
     messages.push(...errorMatches)
     if (!errorMatches.length)
       messages.push(rawText)
@@ -81,6 +90,7 @@ export const buildAikenMessages = (json, rawText) => {
 
   if (apiMessage) {
     const errorMatches = extractAikenErrorLines(apiMessage)
+
     messages.push(...errorMatches)
   }
 

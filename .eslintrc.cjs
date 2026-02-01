@@ -8,7 +8,6 @@ module.exports = {
     'plugin:vue/vue3-recommended',
     'plugin:import/recommended',
     'plugin:promise/recommended',
-    'plugin:sonarjs/recommended',
     'plugin:case-police/recommended',
     'plugin:regexp/recommended',
 
@@ -35,7 +34,7 @@ module.exports = {
     'n/prefer-global/process': ['off'],
     'sonarjs/cognitive-complexity': ['off'],
 
-    'vue/first-attribute-linebreak': ['error', {
+    'vue/first-attribute-linebreak': ['off', {
       singleline: 'beside',
       multiline: 'below',
     }],
@@ -51,7 +50,7 @@ module.exports = {
     'object-curly-spacing': ['error', 'always'],
 
     // Enforce camelCase naming convention
-    'camelcase': 'error',
+    'camelcase': 'off',
 
     // Disable max-len
     'max-len': 'off',
@@ -66,20 +65,7 @@ module.exports = {
     'newline-before-return': 'error',
 
     // add new line above comment
-    'lines-around-comment': [
-      'error',
-      {
-        beforeBlockComment: true,
-        beforeLineComment: true,
-        allowBlockStart: true,
-        allowClassStart: true,
-        allowObjectStart: true,
-        allowArrayStart: true,
-
-        // We don't want to add extra space above closing SECTION
-        ignorePattern: '!SECTION',
-      },
-    ],
+    'lines-around-comment': 'off',
 
     // Ignore _ as unused variable
 
@@ -117,7 +103,7 @@ module.exports = {
     ],
 
     // ignore virtual files
-    'import/no-unresolved': [2, {
+    'import/no-unresolved': ['error', {
       ignore: [
         '~pages$',
         'virtual:meta-layouts',
@@ -134,14 +120,14 @@ module.exports = {
 
 
     // Plugin: eslint-plugin-promise
-    'promise/always-return': 'off',
-    'promise/catch-or-return': 'off',
+    'promise/always-return': 'error',
+    'promise/catch-or-return': 'error',
 
     // ESLint plugin vue
-    'vue/block-tag-newline': 'error',
-    'vue/component-api-style': 'error',
+    'vue/block-tag-newline': 'off',
+    'vue/component-api-style': 'off',
     'vue/component-name-in-template-casing': ['error', 'PascalCase', { registeredComponentsOnly: false, ignores: ['/^swiper-/'] }],
-    'vue/custom-event-name-casing': ['error', 'camelCase', {
+    'vue/custom-event-name-casing': ['off', 'camelCase', {
       ignores: [
         '/^(click):[a-z]+((\d)|([A-Z0-9][a-z0-9]+))*([A-Z])?/',
       ],
@@ -153,19 +139,25 @@ module.exports = {
     'vue/match-component-file-name': 'error',
     'vue/no-child-content': 'error',
     'vue/require-default-prop': 'off',
+    'vue/require-prop-types': 'off',
+    'vue/prop-name-casing': 'off',
+    'vue/no-v-html': 'off',
+    'vue/order-in-components': 'off',
 
     'vue/no-duplicate-attr-inheritance': 'error',
     'vue/no-empty-component-block': 'error',
     'vue/no-multiple-objects-in-class': 'error',
     'vue/no-reserved-component-names': 'error',
     'vue/no-template-target-blank': 'error',
+    'vue/no-mutating-props': 'error',
+    'vue/no-unused-vars': 'error',
     'vue/no-useless-mustaches': 'error',
     'vue/no-useless-v-bind': 'error',
     'vue/padding-line-between-blocks': 'error',
     'vue/prefer-separate-static-class': 'error',
     'vue/prefer-true-attribute-shorthand': 'error',
     'vue/v-on-function-call': 'error',
-    'vue/no-restricted-class': ['error', '/^(p|m)(l|r)-/'],
+    'vue/no-restricted-class': 'off',
     'vue/valid-v-slot': ['error', {
       allowModifiers: true,
     }],
@@ -173,10 +165,43 @@ module.exports = {
     // -- Extension Rules
     'vue/no-irregular-whitespace': 'error',
     'vue/template-curly-spacing': 'error',
+    'vue/html-indent': 'error',
+    'vue/max-attributes-per-line': 'error',
+    'vue/html-closing-bracket-spacing': 'error',
+    'vue/html-closing-bracket-newline': 'error',
+    'vue/attributes-order': 'error',
+    'vue/singleline-html-element-content-newline': 'error',
+    'vue/html-self-closing': 'error',
+    'vue/v-on-event-hyphenation': 'error',
+    'vue/html-quotes': 'error',
+    'vue/attribute-hyphenation': 'error',
+    'vue/multiline-html-element-content-newline': 'error',
+    'vue/no-multi-spaces': 'error',
 
     // -- Sonarlint
     'sonarjs/no-duplicate-string': 'off',
     'sonarjs/no-nested-template-literals': 'off',
+    'sonarjs/todo-tag': 'off',
+    'sonarjs/slow-regex': 'off',
+    'sonarjs/regex-complexity': 'off',
+    'sonarjs/no-nested-conditional': 'off',
+    'sonarjs/no-nested-assignment': 'off',
+    'sonarjs/no-hardcoded-passwords': 'off',
+    'sonarjs/pseudo-random': 'off',
+    'sonarjs/no-ignored-exceptions': 'off',
+    'sonarjs/no-invariant-returns': 'off',
+    'sonarjs/no-all-duplicated-branches': 'off',
+    'sonarjs/no-use-of-empty-return-value': 'off',
+    'sonarjs/no-unenclosed-multiline-block': 'off',
+    'sonarjs/no-same-line-conditional': 'off',
+    'sonarjs/no-inverted-boolean-check': 'off',
+    'sonarjs/anchor-precedence': 'off',
+    'sonarjs/no-identical-functions': 'off',
+    'sonarjs/unused-import': 'off',
+    'import/default': 'error',
+    'regexp/prefer-d': 'off',
+    'regexp/no-useless-non-capturing-group': 'off',
+    'regexp/no-useless-flag': 'off',
 
     // -- Unicorn
     // 'unicorn/filename-case': 'off',

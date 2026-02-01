@@ -17,9 +17,11 @@ const urlFontSize = ref(56) // px, will be adjusted to fit container
 const urlEl = ref(null)
 
 let qrLibPromise
+
 const loadQrLib = async () => {
   // Lazy-load the browser build to avoid Vite trying to bundle the Node target.
   qrLibPromise ??= import('qrcode/lib/browser').then(mod => mod.default || mod)
+  
   return qrLibPromise
 }
 
@@ -57,6 +59,7 @@ const toggleFullscreen = async () => {
 const generateQr = async text => {
   try {
     const qr = await loadQrLib()
+
     qrDataUrl.value = await qr.toDataURL(text || '')
   }
   catch (e) {
@@ -66,6 +69,7 @@ const generateQr = async text => {
 
 const shrinkUrlToFit = async () => {
   await nextTick()
+
   const el = urlEl.value
   if (!el)
     return
@@ -83,6 +87,7 @@ const shrinkUrlToFit = async () => {
 
   const contentWidth = el.scrollWidth || 1
   const scale = Math.min(1, (parentWidth * 0.98) / contentWidth)
+
   urlFontSize.value = Math.max(minSize, Math.floor(maxSize * scale))
 }
 
@@ -100,6 +105,7 @@ const coloredUrl = computed(() => displayUrl.value.split('').map(char => {
     return { char, class: 'url-upper' }
   if (/[a-z]/.test(char))
     return { char, class: 'url-lower' }
+  
   return { char, class: 'url-other' }
 }))
 
@@ -128,6 +134,7 @@ onMounted(async () => {
       // Prefer stored short URLs but fall back to the direct client URL.
       const clientUrl = `${window.location.origin}/client/${assessment.value.password || ''}`
       const candidateUrl = assessment.value.short_url || clientUrl
+
       shortUrl.value = candidateUrl
       await generateQr(candidateUrl)
       if (assessment.value.bitly_error) {
@@ -153,7 +160,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <VContainer fluid :class="['py-10', 'projector-page', { 'fullscreen-active': fullScreenActive }]">
+  <VContainer fluid
+              class="py-10 projector-page"
+              :class="[{ 'fullscreen-active': fullScreenActive }]"
+  >
     <VRow justify="center">
       <VCol cols="12">
         <div class="menu-spacer" />
@@ -184,12 +194,15 @@ onBeforeUnmount(() => {
           </VCardTitle>
           <VCardText>
             <div class="projector-url mb-6">
-              <span ref="urlEl" :style="{ fontSize: `${urlFontSize}px` }">
+              <span ref="urlEl"
+                    :style="{ fontSize: `${urlFontSize}px` }"
+              >
                 <template v-if="shortUrl">
                   <span
                     v-for="(segment, idx) in coloredUrl"
                     :key="idx"
-                    :class="['url-ch', segment.class]"
+                    class="url-ch"
+                    :class="[segment.class]"
                   >{{ segment.char }}</span>
                 </template>
                 <template v-else-if="loading">
@@ -201,16 +214,30 @@ onBeforeUnmount(() => {
               </span>
             </div>
 
-            <div v-if="loading" class="d-flex justify-center flex-column align-center gap-3">
-              <VProgressCircular indeterminate color="primary" size="52" />
-              <div class="text-medium-emphasis">Generating QR code…</div>
-            </div>
-            <div v-else-if="qrDataUrl" class="d-flex justify-center">
-              <div class="qr-wrapper">
-                <img :src="qrDataUrl" alt="gRAT QR code" class="qr-img">
+            <div v-if="loading"
+                 class="d-flex justify-center flex-column align-center gap-3"
+            >
+              <VProgressCircular indeterminate
+                                 color="primary"
+                                 size="52"
+              />
+              <div class="text-medium-emphasis">
+                Generating QR code…
               </div>
             </div>
-            <div v-else class="text-medium-emphasis">
+            <div v-else-if="qrDataUrl"
+                 class="d-flex justify-center"
+            >
+              <div class="qr-wrapper">
+                <img :src="qrDataUrl"
+                     alt="gRAT QR code"
+                     class="qr-img"
+                >
+              </div>
+            </div>
+            <div v-else
+                 class="text-medium-emphasis"
+            >
               QR code unavailable.
             </div>
           </VCardText>
@@ -241,20 +268,22 @@ onBeforeUnmount(() => {
       max-width="520"
     >
       <VCard>
-          <VCardTitle class="text-h6">
-            Short URL unavailable
-          </VCardTitle>
-          <VCardText class="text-body-2">
-            <p class="mb-2">
-              A short-link provider is configured, but we couldn’t generate a short link. The long URL below still works, so you can keep using it with your class.
-            </p>
-            <p class="text-caption mb-2">
-              Some providers won’t shorten localhost/127.0.0.1 URLs; if you’re testing locally, use the long URL.
-            </p>
-            <p class="font-mono text-caption break-all mb-3">
-              {{ shortUrl }}
-            </p>
-            <p v-if="bitlyError" class="text-caption text-error mb-0">
+        <VCardTitle class="text-h6">
+          Short URL unavailable
+        </VCardTitle>
+        <VCardText class="text-body-2">
+          <p class="mb-2">
+            A short-link provider is configured, but we couldn’t generate a short link. The long URL below still works, so you can keep using it with your class.
+          </p>
+          <p class="text-caption mb-2">
+            Some providers won’t shorten localhost/127.0.0.1 URLs; if you’re testing locally, use the long URL.
+          </p>
+          <p class="font-mono text-caption break-all mb-3">
+            {{ shortUrl }}
+          </p>
+          <p v-if="bitlyError"
+             class="text-caption text-error mb-0"
+          >
             Error: {{ bitlyError }}
           </p>
         </VCardText>
