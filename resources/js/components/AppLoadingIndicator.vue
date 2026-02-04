@@ -10,7 +10,7 @@ watch([
   isFallbackState,
 ], () => {
   if (progressValue.value > 80 && isFallbackState.value)
-    progressValue.value = 82
+  {progressValue.value = 82}
   startBuffer()
 })
 function startBuffer() {

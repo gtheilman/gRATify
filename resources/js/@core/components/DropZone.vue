@@ -25,7 +25,7 @@ function onDrop(DroppedFiles) {
 }
 onChange(selectedFiles => {
   if (!selectedFiles)
-    return
+  {return}
   for (const file of selectedFiles) {
     fileData.value.push({
       file,

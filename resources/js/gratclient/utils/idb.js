@@ -12,7 +12,7 @@ let storageProbePromise = null
 
 const openDb = () => {
   if (dbPromise)
-    return dbPromise
+  {return dbPromise}
 
   dbPromise = new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
@@ -84,11 +84,11 @@ export const idbGetAllByIndex = (storeName, indexName, value) =>
 
 export const isStorageAvailable = async () => {
   if (storageProbePromise)
-    return storageProbePromise
+  {return storageProbePromise}
   if (typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search || '')
     if (params.get('noidb') === '1')
-      return false
+    {return false}
   }
   storageProbePromise = (async () => {
     try {

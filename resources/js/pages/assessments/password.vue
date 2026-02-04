@@ -28,16 +28,16 @@ const loadQrLib = async () => {
 const fullScreenActive = ref(false)
 
 const handleFsChange = () => {
-  fullScreenActive.value = !!document.fullscreenElement
+  fullScreenActive.value = Boolean(document.fullscreenElement)
 }
 
 const handleKeydown = event => {
   if (event.defaultPrevented)
-    return
+  {return}
   if (event.metaKey || event.ctrlKey || event.altKey)
-    return
+  {return}
   if (event.key !== 'f' && event.key !== 'F')
-    return
+  {return}
   event.preventDefault()
   toggleFullscreen()
 }
@@ -72,11 +72,11 @@ const shrinkUrlToFit = async () => {
 
   const el = urlEl.value
   if (!el)
-    return
+  {return}
 
   const parentWidth = el.parentElement?.clientWidth ?? el.clientWidth
   if (!parentWidth)
-    return
+  {return}
 
   const maxSize = 150
   const minSize = 16
@@ -99,19 +99,19 @@ const displayUrl = computed(() => (shortUrl.value || '').replace(/^https?:\/\//,
 const copyStatus = ref('')
 
 const coloredUrl = computed(() => displayUrl.value.split('').map(char => {
-  if (/[0-9]/.test(char))
-    return { char, class: 'url-num' }
+  if (/\d/.test(char))
+  {return { char, class: 'url-num' }}
   if (/[A-Z]/.test(char))
-    return { char, class: 'url-upper' }
+  {return { char, class: 'url-upper' }}
   if (/[a-z]/.test(char))
-    return { char, class: 'url-lower' }
+  {return { char, class: 'url-lower' }}
   
   return { char, class: 'url-other' }
 }))
 
 const copyUrl = async () => {
   if (!shortUrl.value)
-    return
+  {return}
   try {
     await navigator.clipboard.writeText(shortUrl.value)
     copyStatus.value = 'Copied'
@@ -127,7 +127,7 @@ const copyUrl = async () => {
 onMounted(async () => {
   try {
     if (!assessmentsStore.assessments.length)
-      await assessmentsStore.fetchAssessments()
+    {await assessmentsStore.fetchAssessments()}
     await assessmentsStore.loadAssessment(route.params.id)
     assessment.value = assessmentsStore.currentAssessment
     if (assessment.value) {

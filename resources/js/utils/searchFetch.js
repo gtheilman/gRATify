@@ -1,1 +1,1 @@
-export const shouldFetchSearchResults = query => !!String(query || '').trim()
+export const shouldFetchSearchResults = query => Boolean(String(query || '').trim())

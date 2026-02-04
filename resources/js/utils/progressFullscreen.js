@@ -1,13 +1,13 @@
 export const getFullscreenElement = () => {
   if (typeof document === 'undefined')
-    return null
+  {return null}
   
   return document.documentElement
 }
 
 export const requestFullscreen = element => {
   if (!element)
-    return false
+  {return false}
   if (element.requestFullscreen) {
     element.requestFullscreen()
     

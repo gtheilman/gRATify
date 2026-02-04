@@ -8,11 +8,11 @@ export const isLastAdminUser = (user, adminCount) => {
 
 export const canDeleteUser = (user, adminCount) => {
   if (!user)
-    return false
+  {return false}
   if (isLastAdminUser(user, adminCount))
-    return false
+  {return false}
   if (hasUserAssessments(user))
-    return false
+  {return false}
   
   return true
 }

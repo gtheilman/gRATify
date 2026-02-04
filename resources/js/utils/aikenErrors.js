@@ -2,7 +2,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 
 export const normalizeAikenMessage = (message, requireErrorPrefix = true) => {
   if (!message)
-    return null
+  {return null}
   let cleaned = String(message)
     .replace(/string\(\d+\)/gi, '')
     .replace(/["']/g, '')
@@ -10,16 +10,16 @@ export const normalizeAikenMessage = (message, requireErrorPrefix = true) => {
     .replace(/\s+/g, ' ')
     .trim()
   if (!cleaned)
-    return null
+  {return null}
   if (requireErrorPrefix) {
     const errorIndex = cleaned.toLowerCase().indexOf('error')
     if (errorIndex === -1)
-      return null
+    {return null}
     if (errorIndex > 0)
-      cleaned = cleaned.slice(errorIndex)
+    {cleaned = cleaned.slice(errorIndex)}
     const errorPrefix = /^error\s*:?\s*/i
     if (!errorPrefix.test(cleaned))
-      return null
+    {return null}
     cleaned = cleaned.replace(errorPrefix, '')
   } else {
     cleaned = cleaned.replace(/^error\s*:?\s*/i, '')
@@ -27,14 +27,14 @@ export const normalizeAikenMessage = (message, requireErrorPrefix = true) => {
   cleaned = cleaned.replace(/questionnotcompleteon line\s*(\d+)/i, 'Question not complete on line $1')
   cleaned = cleaned.replace(/\s+on\s+line\s*(\d+)/i, ' on line $1')
   if (cleaned[0] && cleaned[0] === cleaned[0].toLowerCase())
-    cleaned = cleaned[0].toUpperCase() + cleaned.slice(1)
+  {cleaned = cleaned[0].toUpperCase() + cleaned.slice(1)}
   
   return cleaned
 }
 
 export const extractAikenErrorLines = text => {
   if (!text)
-    return []
+  {return []}
 
   const normalized = String(text)
     .replace(/\\n/g, '\n')
@@ -46,11 +46,11 @@ export const extractAikenErrorLines = text => {
   let match = quotedRegex.exec(normalized)
   while (match) {
     if (match[1] && match[1].includes('Error:'))
-      quotedMatches.push(match[1])
+    {quotedMatches.push(match[1])}
     match = quotedRegex.exec(normalized)
   }
   if (quotedMatches.length)
-    return quotedMatches.map(item => item.trim())
+  {return quotedMatches.map(item => item.trim())}
 
   const matches = normalized.match(/Error:[\s\S]*?(?=string\(\d+\)|\{\\"status\\"|$)/gi)
     || normalized.match(/Error:[^\n\r]+/gi)
@@ -72,20 +72,20 @@ export const buildAikenMessages = (json, rawText) => {
   } else if (json?.errors && typeof json.errors === 'object') {
     Object.values(json.errors).forEach(value => {
       if (Array.isArray(value))
-        messages.push(...value)
+      {messages.push(...value)}
       else if (value)
-        messages.push(value)
+      {messages.push(value)}
     })
   }
   const apiMessage = extractApiErrorMessage(json)
   if (apiMessage)
-    messages.push(apiMessage)
+  {messages.push(apiMessage)}
   if (rawText) {
     const errorMatches = extractAikenErrorLines(rawText)
 
     messages.push(...errorMatches)
     if (!errorMatches.length)
-      messages.push(rawText)
+    {messages.push(rawText)}
   }
 
   if (apiMessage) {

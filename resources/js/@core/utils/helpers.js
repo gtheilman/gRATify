@@ -1,9 +1,9 @@
 // 👉 IsEmpty
 export const isEmpty = value => {
   if (value === null || value === undefined || value === '')
-    return true
+  {return true}
   
-  return !!(Array.isArray(value) && value.length === 0)
+  return Boolean(Array.isArray(value) && value.length === 0)
 }
 
 // 👉 IsNullOrUndefined
@@ -17,7 +17,7 @@ export const isEmptyArray = arr => {
 }
 
 // 👉 IsObject
-export const isObject = obj => obj !== null && !!obj && typeof obj === 'object' && !Array.isArray(obj)
+export const isObject = obj => obj !== null && Boolean(obj) && typeof obj === 'object' && !Array.isArray(obj)
 
 // 👉 IsToday
 export const isToday = date => {

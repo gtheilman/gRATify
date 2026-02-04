@@ -10,11 +10,16 @@ const stateByKey = new Map()
 const concurrencyByKey = new Map()
 const timeoutByKey = new Map()
 const emaByKey = new Map()
+const rateLimitBackoffByKey = new Map()
+const rateLimitCooldownUntilByKey = new Map()
 const MAX_CONCURRENCY = 25
 const MIN_CONCURRENCY = 2
 const CONCURRENCY_STEP = 5
 const MIN_TIMEOUT_MS = 3000
 const MAX_TIMEOUT_MS = 15000
+const RATE_LIMIT_BASE_BACKOFF_MS = 1000
+const RATE_LIMIT_MAX_BACKOFF_MS = 30000
+const RATE_LIMIT_JITTER_MS = 500
 
 const emit = event => {
   listeners.forEach(fn => fn(event))
@@ -22,7 +27,7 @@ const emit = event => {
 
 const isDebug = () => {
   if (typeof window === 'undefined')
-    return false
+  {return false}
   const value = new URLSearchParams(window.location.search || '').get('debug')
   
   return value === '1' || value === 'true'
@@ -39,6 +44,8 @@ const getState = presentationKey => {
       concurrency: null,
       timeoutMs: null,
       emaMs: null,
+      rateLimitBackoffMs: null,
+      rateLimitCooldownUntil: null,
       lastBatch: null,
     })
   }
@@ -95,7 +102,7 @@ const updateEma = (presentationKey, sampleMs) => {
   }
   const prev = emaByKey.get(presentationKey)
   const alpha = 0.25
-  const next = prev == null ? sampleMs : (alpha * sampleMs + (1 - alpha) * prev)
+  const next = prev === null || prev === undefined ? sampleMs : (alpha * sampleMs + (1 - alpha) * prev)
 
   emaByKey.set(presentationKey, next)
   
@@ -139,6 +146,31 @@ const adjustTimeout = (presentationKey, { batchMs, hadTimeout, hadServerError })
   return next
 }
 
+const applyRateLimitCooldown = presentationKey => {
+  const previous = rateLimitBackoffByKey.get(presentationKey) || 0
+  const nextBackoff = previous > 0
+    ? Math.min(RATE_LIMIT_MAX_BACKOFF_MS, Math.round(previous * 2))
+    : RATE_LIMIT_BASE_BACKOFF_MS
+  const jitter = Math.round(Math.random() * RATE_LIMIT_JITTER_MS)
+  const cooldownUntil = Date.now() + nextBackoff + jitter
+
+  rateLimitBackoffByKey.set(presentationKey, nextBackoff)
+  rateLimitCooldownUntilByKey.set(presentationKey, cooldownUntil)
+  updateState(presentationKey, {
+    rateLimitBackoffMs: nextBackoff,
+    rateLimitCooldownUntil: cooldownUntil,
+  })
+}
+
+const clearRateLimitCooldown = presentationKey => {
+  rateLimitBackoffByKey.delete(presentationKey)
+  rateLimitCooldownUntilByKey.delete(presentationKey)
+  updateState(presentationKey, {
+    rateLimitBackoffMs: null,
+    rateLimitCooldownUntil: null,
+  })
+}
+
 export const onQueueEvent = fn => {
   listeners.add(fn)
   
@@ -149,7 +181,7 @@ const presentationKeyFor = (password, userId) => `${password || ''}|${userId || 
 
 const startSyncForKey = presentationKey => {
   if (!presentationKey)
-    return ''
+  {return ''}
   if (syncIntervals.has(presentationKey)) {
     return presentationKey
   }
@@ -223,7 +255,7 @@ export const queueAttempt = async ({ presentationId, answerId, questionId, passw
 export const markAttemptSynced = async attemptId => {
   const attempt = await idbGet(STORES.attempts, attemptId).catch(() => null)
   if (!attempt)
-    return
+  {return}
   await idbDelete(STORES.attempts, attemptId)
   await refreshPendingCount(attempt.presentationKey)
   emit({ type: 'synced', presentationKey: attempt.presentationKey, answerId: attempt.answerId })
@@ -231,7 +263,7 @@ export const markAttemptSynced = async attemptId => {
 
 export const syncQueue = async (presentationKey, options = {}) => {
   if (syncLocks.get(presentationKey))
-    return
+  {return}
   syncLocks.set(presentationKey, true)
   try {
     const pending = await refreshPendingCount(presentationKey)
@@ -242,7 +274,14 @@ export const syncQueue = async (presentationKey, options = {}) => {
       })
     }
     if (!pending.length)
+    {return}
+    const cooldownUntil = rateLimitCooldownUntilByKey.get(presentationKey)
+    if (cooldownUntil && cooldownUntil > Date.now()) {
+      updateState(presentationKey, { rateLimitCooldownUntil: cooldownUntil })
       return
+    }
+    if (cooldownUntil && cooldownUntil <= Date.now())
+    {clearRateLimitCooldown(presentationKey)}
 
     const invalid = pending.filter(item =>
       !item || !item.presentationId || !item.answerId,
@@ -260,7 +299,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
     )
 
     if (!validPending.length)
-      return
+    {return}
 
     const timeoutMs = getTimeoutMs(presentationKey, options.timeoutMs)
     const requestedConcurrent = Math.max(1, Number(options.maxConcurrent || 1))
@@ -328,6 +367,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
       let hadSuccess = false
       let hadServerError = false
       let hadTimeout = false
+      let hadRateLimit = false
       let serverErrorCount = 0
       let clientErrorCount = 0
       let timeoutCount = 0
@@ -347,8 +387,8 @@ export const syncQueue = async (presentationKey, options = {}) => {
               const key = `${item.presentation_id}|${item.answer_id}`
               const attempt = byKey.get(key)
               if (!attempt)
-                continue
-              const status = item.status
+              {continue}
+              const { status } = item
 
               const drop = status === 'created'
                 || status === 'already_attempted'
@@ -366,7 +406,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
             hadServerError = true
             serverErrorCount += 1
           } else if (result.attempt) {
-            const attempt = result.attempt
+            const { attempt } = result
 
             await markAttemptSynced(attempt.id)
             emit({ type: 'response', presentationKey, answerId: attempt.answerId, payload: response.data })
@@ -384,6 +424,8 @@ export const syncQueue = async (presentationKey, options = {}) => {
             hadServerError = true
             serverErrorCount += 1
           }
+          if (status === 429)
+          {hadRateLimit = true}
           if ([400, 401, 403, 404, 422].includes(status)) {
             clientErrorCount += 1
             // Diagnostics only: drop non-retryable attempts so queue can clear.
@@ -413,6 +455,7 @@ export const syncQueue = async (presentationKey, options = {}) => {
           clientErrors: clientErrorCount,
           timeouts: timeoutCount,
           networkErrors: networkErrorCount,
+          rateLimited: hadRateLimit,
           bulkUsed,
           bulkResultsCount,
           bulkFailed,
@@ -431,6 +474,11 @@ export const syncQueue = async (presentationKey, options = {}) => {
         })
         await refreshPendingCount(presentationKey)
       }
+
+      if (hadRateLimit)
+      {applyRateLimitCooldown(presentationKey)}
+      else if (hadSuccess)
+      {clearRateLimitCooldown(presentationKey)}
 
       adjustConcurrency(presentationKey, { hadServerError, hadSuccess })
 

@@ -1,6 +1,6 @@
 export const clearDeleteDialog = (pendingRef, showRef) => {
   if (pendingRef)
-    pendingRef.value = null
+  {pendingRef.value = null}
   if (showRef)
-    showRef.value = false
+  {showRef.value = false}
 }

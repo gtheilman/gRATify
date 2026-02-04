@@ -64,7 +64,7 @@ const questions = computed(() => {
 const hasAttempts = computed(() => {
   const assessment = assessmentsStore.currentAssessment
   if (!assessment)
-    return false
+  {return false}
 
   const presentationCount = Number(assessment.presentations_count || assessment.attempts_count || 0)
   const hasPresentations = Array.isArray(assessment.presentations) && assessment.presentations.length > 0
@@ -77,35 +77,35 @@ const allowEditing = computed(() => !hasAttempts.value)
 
 const showEmptyQuestions = computed(() => {
   if (assessmentsStore.loading || saving.value || busyQuestion.value || busyAnswer.value)
-    return false
+  {return false}
 
   const hasQuestions = questions.value.length > 0
-  const currentHasQuestions = !!assessmentsStore.currentAssessment?.questions?.length
+  const currentHasQuestions = Boolean(assessmentsStore.currentAssessment?.questions?.length)
   
   return !hasQuestions && !currentHasQuestions
 })
 
 const formatScheduledValue = value => {
   if (!value)
-    return ''
+  {return ''}
   // Accept both ISO strings and already formatted strings
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime()))
-    return value
+  {return value}
   const pad = n => String(n).padStart(2, '0')
   const datePart = `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`
   const h = parsed.getHours()
   const m = parsed.getMinutes()
   const s = parsed.getSeconds()
   if (h === 0 && m === 0 && s === 0)
-    return datePart
+  {return datePart}
   
   return `${datePart} ${pad(h)}:${pad(m)}`
 }
 
 const loadData = () => {
   if (!assessmentsStore.currentAssessment)
-    return
+  {return}
 
   form.value = {
     id: assessmentsStore.currentAssessment.id,
@@ -119,12 +119,15 @@ const loadData = () => {
 
 const fetchAssessment = async () => {
   const id = Number(route.params.id)
-  if (!id)
-    return router.push({ name: 'assessments' })
+  if (!id) {
+    await router.push({ name: 'assessments' })
+    
+    return
+  }
 
   const isNewAssessment = questionsLoadedFor.value !== id
   if (isNewAssessment)
-    questionsLoading.value = true
+  {questionsLoading.value = true}
   try {
     await assessmentsStore.loadAssessment(id)
     loadData()
@@ -147,10 +150,10 @@ const setAnswerStatus = (id, status) => {
 
 const scheduleQuestionAutosave = question => {
   if (!allowEditing.value || !question?.id)
-    return
+  {return}
 
   if (questionSaveTimeouts[question.id])
-    clearTimeout(questionSaveTimeouts[question.id])
+  {clearTimeout(questionSaveTimeouts[question.id])}
 
   questionSaveTimeouts[question.id] = setTimeout(async () => {
     await saveQuestionWithAnswers(question)
@@ -159,7 +162,7 @@ const scheduleQuestionAutosave = question => {
 
 const saveQuestionWithAnswers = async question => {
   if (!question?.id)
-    return
+  {return}
   setQuestionStatus(question.id, 'saving')
 
   const payload = {
@@ -193,10 +196,10 @@ const saveQuestionWithAnswers = async question => {
 
 const scheduleAnswerAutosave = answer => {
   if (!allowEditing.value || !answer?.id)
-    return
+  {return}
 
   if (answerSaveTimeouts[answer.id])
-    clearTimeout(answerSaveTimeouts[answer.id])
+  {clearTimeout(answerSaveTimeouts[answer.id])}
 
   answerSaveTimeouts[answer.id] = setTimeout(async () => {
     await saveAnswerDirect(answer)
@@ -205,7 +208,7 @@ const scheduleAnswerAutosave = answer => {
 
 const saveAnswerDirect = async answer => {
   if (!answer?.id)
-    return
+  {return}
   setAnswerStatus(answer.id, 'saving')
   try {
     await assessmentsStore.updateAnswer(answer, { reload: false })
@@ -226,9 +229,9 @@ const saveAnswerDirect = async answer => {
 
 const setCorrectAnswer = (question, answer) => {
   if (!question?.answers)
-    return
+  {return}
 
-  const targetChecked = !!answer.correct
+  const targetChecked = Boolean(answer.correct)
 
   // If marking an answer correct, uncheck all others in this question
   if (targetChecked) {
@@ -245,14 +248,14 @@ const setCorrectAnswer = (question, answer) => {
 
 const retrySaveAnswer = async () => {
   if (!answerRetry.value)
-    return
+  {return}
   await saveAnswerDirect(answerRetry.value)
   showAnswerRetry.value = false
 }
 
 const scheduleAutosave = (field, value) => {
   if (autosaveTimeouts[field])
-    clearTimeout(autosaveTimeouts[field])
+  {clearTimeout(autosaveTimeouts[field])}
   autosaveTimeouts[field] = setTimeout(async () => {
     await saveField(field, value)
   }, 800)
@@ -260,7 +263,7 @@ const scheduleAutosave = (field, value) => {
 
 const saveField = async (field, value) => {
   if (!form.value.id)
-    return
+  {return}
 
   // Send full payload so required fields (e.g., title) are always present
   const payload = {
@@ -283,26 +286,26 @@ const saveField = async (field, value) => {
 
 const maybeSelectDefaultTitle = () => {
   if (form.value.title !== 'New gRAT')
-    return
+  {return}
   const input = titleInput.value?.$el?.querySelector?.('input')
   if (input && typeof input.select === 'function')
-    input.select()
+  {input.select()}
 }
 
 const selectIfDefault = (event, expected) => {
   if (!expected)
-    return
+  {return}
   const target = event?.target
   if (!target || typeof target.select !== 'function')
-    return
+  {return}
   const defaults = Array.isArray(expected) ? expected : [expected]
   if (defaults.includes(target.value))
-    target.select()
+  {target.select()}
 }
 
 const toggleActiveStatus = async () => {
   if (activeToggleBusy.value)
-    return
+  {return}
   const nextValue = !form.value.active
 
   form.value.active = nextValue
@@ -316,7 +319,7 @@ const toggleActiveStatus = async () => {
 
 onMounted(async () => {
   if (!assessmentsStore.assessments.length)
-    await assessmentsStore.fetchAssessments()
+  {await assessmentsStore.fetchAssessments()}
   await fetchAssessment()
 })
 
@@ -343,7 +346,7 @@ const save = async () => {
 
 const saveAll = async () => {
   if (!form.value.id)
-    return
+  {return}
   formError.value = ''
   savingAll.value = true
   try {
@@ -373,7 +376,7 @@ const closePage = () => {
 
 const triggerImport = () => {
   if (fileInput.value)
-    fileInput.value.click()
+  {fileInput.value.click()}
 }
 
 const exportQuestions = () => {
@@ -422,7 +425,7 @@ const advancedFormatting = () => {
 
 const createQuestion = async () => {
   if (!form.value.id)
-    return
+  {return}
   try {
     busyQuestion.value = 'new'
     await assessmentsStore.createQuestion(form.value.id)
@@ -461,7 +464,7 @@ const saveQuestion = async question => {
 
 const startDeleteQuestion = question => {
   if (!question?.id)
-    return
+  {return}
   pendingQuestionDelete.value = question
   showQuestionDeleteConfirm.value = true
 }
@@ -473,7 +476,7 @@ const cancelDeleteQuestion = () => {
 
 const confirmDeleteQuestion = async () => {
   if (!pendingQuestionDelete.value?.id)
-    return
+  {return}
   try {
     busyQuestion.value = pendingQuestionDelete.value.id
     await assessmentsStore.deleteQuestion(pendingQuestionDelete.value.id)
@@ -520,7 +523,7 @@ const deleteAnswer = async answer => {
 const moveAnswer = async (question, answer, direction) => {
   const swap = buildSequenceSwap(question?.answers, answer?.id, direction)
   if (!swap)
-    return
+  {return}
 
   const { current, neighbor, currentSequence, neighborSequence } = swap
 
@@ -539,11 +542,11 @@ const moveAnswer = async (question, answer, direction) => {
 const handleFileUpload = async event => {
   const file = event.target.files?.[0]
   if (!file || !form.value.id)
-    return
+  {return}
   if (isOffline.value) {
     formError.value = 'You are offline. Connect to the internet before uploading.'
     if (fileInput.value)
-      fileInput.value.value = ''
+    {fileInput.value.value = ''}
     
     return
   }
@@ -551,10 +554,10 @@ const handleFileUpload = async event => {
   uploadBusy.value = true
   uploadSlow.value = false
   if (uploadSlowTimer)
-    clearTimeout(uploadSlowTimer)
+  {clearTimeout(uploadSlowTimer)}
   uploadSlowTimer = setTimeout(() => {
     if (uploadBusy.value)
-      uploadSlow.value = true
+    {uploadSlow.value = true}
   }, 6000)
   uploadMessage.value = ''
   formError.value = ''
@@ -609,7 +612,7 @@ const handleFileUpload = async event => {
     }
     uploadSlow.value = false
     if (fileInput.value)
-      fileInput.value.value = ''
+    {fileInput.value.value = ''}
   }
 }
 
@@ -622,12 +625,12 @@ const dismissInvalidAiken = () => {
 
 const openFilePicker = () => {
   if (fileInput.value)
-    fileInput.value.click()
+  {fileInput.value.click()}
 }
 
 const copyAikenErrors = async () => {
   if (!invalidAikenMessages.value.length)
-    return
+  {return}
   const text = invalidAikenMessages.value.join('\n')
   try {
     await navigator.clipboard.writeText(text)
@@ -643,7 +646,7 @@ const copyAikenErrors = async () => {
 
 const downloadAikenErrors = () => {
   if (!invalidAikenMessages.value.length)
-    return
+  {return}
   const text = invalidAikenMessages.value.join('\n')
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = window.URL.createObjectURL(blob)

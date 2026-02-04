@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="only light">
     <meta name="description" content="Reset your gRATify password to regain access to the team-based learning assessment platform." />
     <title>Password Reset</title>
     <style>

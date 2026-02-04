@@ -4,7 +4,7 @@ const buyNowUrl = ref(vm?.appContext.config.globalProperties.buyNowUrl || 'https
 
 watch(buyNowUrl, val => {
   if (vm)
-    vm.appContext.config.globalProperties.buyNowUrl = val
+  {vm.appContext.config.globalProperties.buyNowUrl = val}
 })
 </script>
 

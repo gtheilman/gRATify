@@ -66,6 +66,61 @@ module.exports = {
 
     // add new line above comment
     'lines-around-comment': 'off',
+    'eqeqeq': 'error',
+    'consistent-return': 'error',
+    'curly': 'error',
+    'default-case-last': 'error',
+    'dot-notation': 'error',
+    'no-array-constructor': 'error',
+    'no-caller': 'error',
+    'no-constructor-return': 'error',
+    'no-eval': 'error',
+    'no-useless-rename': 'error',
+    'no-constant-condition': 'error',
+    'no-else-return': 'error',
+    'no-implied-eval': 'error',
+    'no-lonely-if': 'error',
+    'no-multi-str': 'error',
+    'no-new-wrappers': 'error',
+    'no-script-url': 'error',
+    'no-shadow-restricted-names': 'error',
+    'no-throw-literal': 'error',
+    'no-return-await': 'error',
+    'no-implicit-coercion': 'error',
+    'no-param-reassign': 'error',
+    'no-extra-bind': 'error',
+    'no-new-object': 'error',
+    'no-new-func': 'error',
+    'no-restricted-globals': 'error',
+    'no-template-curly-in-string': 'error',
+    'no-useless-call': 'error',
+    'no-useless-catch': 'error',
+    'no-useless-constructor': 'error',
+    'no-unneeded-ternary': 'error',
+    'no-useless-computed-key': 'error',
+    'no-useless-concat': 'error',
+    'no-useless-escape': 'error',
+    'no-useless-return': 'error',
+    'no-proto': 'error',
+    'no-sequences': 'error',
+    'no-void': 'error',
+    'no-var': 'error',
+    'prefer-exponentiation-operator': 'error',
+    'prefer-destructuring': 'error',
+    'symbol-description': 'error',
+    'prefer-rest-params': 'error',
+    'prefer-spread': 'error',
+    'object-shorthand': 'error',
+    'prefer-object-has-own': 'error',
+    'prefer-object-spread': 'error',
+    'prefer-arrow-callback': 'error',
+    'prefer-const': 'error',
+    'prefer-numeric-literals': 'error',
+    'prefer-regex-literals': 'error',
+    'prefer-promise-reject-errors': 'error',
+    'prefer-template': 'error',
+    'radix': 'error',
+    'yoda': 'error',
 
     // Ignore _ as unused variable
 
@@ -111,12 +166,12 @@ module.exports = {
         '#components$',
 
         // Ignore vite's ?raw imports
-        '.*\?raw',
+        '.*\\?raw',
       ],
     }],
 
     // Thanks: https://stackoverflow.com/a/63961972/10796681
-    'no-shadow': 'off',
+    'no-shadow': 'error',
 
 
     // Plugin: eslint-plugin-promise
@@ -129,7 +184,7 @@ module.exports = {
     'vue/component-name-in-template-casing': ['error', 'PascalCase', { registeredComponentsOnly: false, ignores: ['/^swiper-/'] }],
     'vue/custom-event-name-casing': ['off', 'camelCase', {
       ignores: [
-        '/^(click):[a-z]+((\d)|([A-Z0-9][a-z0-9]+))*([A-Z])?/',
+        '/^(click):[a-z]+((\\d)|([A-Z0-9][a-z0-9]+))*([A-Z])?/',
       ],
     }],
     'vue/define-macros-order': 'error',
@@ -199,9 +254,9 @@ module.exports = {
     'sonarjs/no-identical-functions': 'off',
     'sonarjs/unused-import': 'off',
     'import/default': 'error',
-    'regexp/prefer-d': 'off',
-    'regexp/no-useless-non-capturing-group': 'off',
-    'regexp/no-useless-flag': 'off',
+    'regexp/prefer-d': 'error',
+    'regexp/no-useless-non-capturing-group': 'error',
+    'regexp/no-useless-flag': 'error',
 
     // -- Unicorn
     // 'unicorn/filename-case': 'off',
@@ -242,7 +297,7 @@ module.exports = {
       ],
 
       // Ignore files
-      '\.eslintrc\.cjs',
+      '\\.eslintrc\\.cjs',
     ],
   },
   settings: {

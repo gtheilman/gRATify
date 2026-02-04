@@ -13,7 +13,7 @@ const isExpired = cachedAt => (Date.now() - (cachedAt || 0)) > CACHE_TTL_MS
 const hasScrambledCorrect = data => {
   const questions = data?.assessment?.questions
   if (!Array.isArray(questions) || !questions.length)
-    return false
+  {return false}
   
   return questions.every(q =>
     Array.isArray(q.answers) &&
@@ -36,7 +36,7 @@ export const readPresentationCache = async (password, userId) => {
   try {
     const record = await idbGet(STORES.presentation, key)
     if (!record)
-      return null
+    {return null}
     if (isExpired(record.cachedAt)) {
       await idbDelete(STORES.presentation, key)
       

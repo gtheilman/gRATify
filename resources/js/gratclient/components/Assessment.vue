@@ -49,6 +49,20 @@
       />
     </div>
     <div
+      v-if="showRateLimitRetry"
+      class="status-toast toast-warning"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div class="toast-title">
+        High traffic detected
+      </div>
+      <div class="toast-note">
+        Retrying in {{ rateLimitRetrySeconds }}s…
+      </div>
+    </div>
+    <div
       v-if="showTabWarning"
       class="tab-warning"
       role="status"
@@ -221,28 +235,28 @@ export default {
     },
     presentationKey () {
       if (!this.password || !this.user_id)
-        return ''
+      {return ''}
       
       return `${this.password}|${this.user_id}`
     },
     showCloseWarning () {
       if (!this.isSaving)
-        return false
+      {return false}
       if (this.queuePendingCount > this.saveWarningPendingThreshold)
-        return true
+      {return true}
       if (!this.saveWarningSince)
-        return false
+      {return false}
       const now = this.saveWarningNow || Date.now()
       
       return (now - this.saveWarningSince) >= this.saveWarningHoldMs
     },
     showSoftSaving () {
       if (!this.isSaving)
-        return false
+      {return false}
       if (this.queuePendingCount > this.saveWarningPendingThreshold)
-        return false
+      {return false}
       if (!this.saveWarningSince)
-        return true
+      {return true}
       const now = this.saveWarningNow || Date.now()
       
       return (now - this.saveWarningSince) < this.saveWarningHoldMs
@@ -250,31 +264,44 @@ export default {
     showTabWarning () {
       return this.duplicateTab
     },
+    showRateLimitRetry () {
+      if (!this.queueRateLimitCooldownUntil)
+      {return false}
+
+      return this.queueRateLimitCooldownUntil > Date.now()
+    },
+    rateLimitRetrySeconds () {
+      if (!this.queueRateLimitCooldownUntil)
+      {return 0}
+      const ms = this.queueRateLimitCooldownUntil - Date.now()
+
+      return Math.max(0, Math.ceil(ms / 1000))
+    },
     isSaving () {
       if (!this.totalQuestions)
-        return false
+      {return false}
       const allAnswered = this.completedIds.length === this.totalQuestions
       
       return this.completionReady && allAnswered && !this.complete && (this.pendingAttempts > 0 || this.queuePendingCount > 0)
     },
     debugLastTick () {
-      if (!this.debugLastTickAt) return 'never'
+      if (!this.debugLastTickAt) {return 'never'}
       
       return new Date(this.debugLastTickAt).toLocaleTimeString()
     },
     debugLastSuccess () {
-      if (!this.queueLastSuccessAt) return 'never'
+      if (!this.queueLastSuccessAt) {return 'never'}
       
       return new Date(this.queueLastSuccessAt).toLocaleTimeString()
     },
     debugLastError () {
-      if (!this.queueLastSuccessAt && !this.queueFirstErrorAt) return 'never'
+      if (!this.queueLastSuccessAt && !this.queueFirstErrorAt) {return 'never'}
       const ts = this.queueFirstErrorAt || this.queueLastSuccessAt
       
       return ts ? new Date(ts).toLocaleTimeString() : 'never'
     },
     debugLastBatch () {
-      if (!this.queueLastBatch) return 'none'
+      if (!this.queueLastBatch) {return 'none'}
 
       const {
         size,
@@ -305,7 +332,7 @@ export default {
       return this.queueLastResponseDebug?.queries ?? 'n/a'
     },
     appealsOpen () {
-      return !!this.presentation?.assessment?.appeals_open
+      return Boolean(this.presentation?.assessment?.appeals_open)
     },
     activeQuestion () {
       return this.presentation?.assessment?.questions?.[this.activeQuestionIndex] || null
@@ -317,7 +344,7 @@ export default {
       return this.activeQuestionIndex + 1
     },
     appealSubmitted () {
-      if (!this.activeQuestionId) return false
+      if (!this.activeQuestionId) {return false}
       
       return (this.presentation?.appeals || []).some(appeal => appeal.question_id === this.activeQuestionId)
     },
@@ -331,24 +358,24 @@ export default {
   methods: {
     setNavLabels () {
       const root = this.$el
-      if (!root) return
+      if (!root) {return}
       const prev = root.querySelector('.swiper-button-prev')
       const next = root.querySelector('.swiper-button-next')
-      if (prev) prev.setAttribute('aria-label', 'Previous question')
-      if (next) next.setAttribute('aria-label', 'Next question')
+      if (prev) {prev.setAttribute('aria-label', 'Previous question')}
+      if (next) {next.setAttribute('aria-label', 'Next question')}
     },
     handleArrowKeys (event) {
       const tag = (event.target?.tagName || '').toLowerCase()
       const typingContext = ['input', 'textarea', 'select', 'option'].includes(tag) || event.target?.isContentEditable
-      if (typingContext) return
+      if (typingContext) {return}
 
       const key = event.key || event.code || event.keyCode
       const isRight = key === 'ArrowRight' || key === 'Right'
       const isLeft = key === 'ArrowLeft' || key === 'Left'
       const isEsc = key === 'Escape' || key === 'Esc' || key === 27
 
-      const swiper = this.swiper
-      if (!swiper) return
+      const { swiper } = this
+      if (!swiper) {return}
 
       if (isRight) {
         event.preventDefault()
@@ -386,7 +413,7 @@ export default {
           return
         }
       }
-      const swiper = this.swiper
+      const { swiper } = this
       if (swiper) {
         const index = swiper.realIndex ?? swiper.activeIndex ?? 0
 
@@ -515,7 +542,7 @@ export default {
     },
     sendTabPresence () {
       if (!this.tabChannel || !this.presentationKey)
-        return
+      {return}
       const now = Date.now()
 
       this.tabChannel.postMessage({
@@ -527,7 +554,7 @@ export default {
     },
     evaluateTabRole () {
       if (!this.tabInstanceId)
-        return
+      {return}
       const now = Date.now()
       const peers = []
       for (const [id, ts] of this.tabPeers.entries()) {
@@ -543,10 +570,10 @@ export default {
         return
       }
       const all = [this.tabInstanceId, ...peers].sort()
-      const primary = all[0]
+      const [primary] = all
       const isDuplicate = this.tabInstanceId !== primary
       if (isDuplicate === this.duplicateTab)
-        return
+      {return}
       this.duplicateTab = isDuplicate
       if (this.duplicateTab && this.queueKey) {
         stopQueueSync(this.queueKey)
@@ -591,9 +618,9 @@ export default {
       }, this.completionDelayMs)
     },
     evaluateCompletion () {
-      const totalQuestions = this.totalQuestions
+      const { totalQuestions } = this
       if (!totalQuestions)
-        return
+      {return}
       const allAnswered = this.completedIds.length === totalQuestions
       if (!allAnswered) {
         if (this.completionTimer) {
@@ -614,7 +641,7 @@ export default {
         return
       }
       if (this.complete)
-        return
+      {return}
       // Once everything is saved, show completion immediately.
       this.complete = true
     },
@@ -673,6 +700,8 @@ export default {
       queueConcurrency: null,
       queueTimeoutMs: null,
       queueEmaMs: null,
+      queueRateLimitBackoffMs: null,
+      queueRateLimitCooldownUntil: null,
       queueLastBatch: null,
       queueLastResponseDebug: null,
       debugMode: false,
@@ -702,7 +731,7 @@ export default {
       liveMode: 'polite',
       pagination: {
         clickable: true,
-        renderBullet: function (index, className) {
+        renderBullet (index, className) {
           return `<span class="${className}" aria-label="Go to question ${index + 1}" role="button" tabindex="0">${index + 1}</span>`
         },
       },
@@ -728,7 +757,7 @@ export default {
     },
     isSaving (next) {
       if (!this.queueKey)
-        return
+      {return}
       if (next) {
         if (!this.saveWarningSince && this.queuePendingCount <= this.saveWarningPendingThreshold) {
           this.saveWarningSince = Date.now()
@@ -736,7 +765,7 @@ export default {
           this.saveWarningSince = null
         }
         if (this.fastSyncInterval)
-          return
+        {return}
         this.fastSyncInterval = setInterval(() => {
           syncQueue(this.queueKey, { timeoutMs: 8000, maxConcurrent: 25 })
           countPending(this.queueKey).then(count => {
@@ -766,7 +795,7 @@ export default {
     },
     queuePendingCount (next) {
       if (!this.isSaving)
-        return
+      {return}
       if (next > this.saveWarningPendingThreshold) {
         this.saveWarningSince = null
         this.saveWarningNow = Date.now()
@@ -795,9 +824,9 @@ export default {
       this.tabChannel.onmessage = event => {
         const data = event?.data || {}
         if (data.presentationKey !== this.presentationKey)
-          return
+        {return}
         if (!data.instanceId || data.instanceId === this.tabInstanceId)
-          return
+        {return}
         this.tabPeers.set(data.instanceId, data.ts || Date.now())
         this.evaluateTabRole()
       }
@@ -818,11 +847,13 @@ export default {
       this.queueConcurrency = state.concurrency || null
       this.queueTimeoutMs = state.timeoutMs || null
       this.queueEmaMs = state.emaMs ? Math.round(state.emaMs) : null
+      this.queueRateLimitBackoffMs = state.rateLimitBackoffMs || null
+      this.queueRateLimitCooldownUntil = state.rateLimitCooldownUntil || null
       this.queueLastBatch = state.lastBatch || null
       this.queueLastResponseDebug = state.lastResponseDebug || null
       this.queueUnsubscribe = onQueueEvent(event => {
         if (event.presentationKey !== this.queueKey)
-          return
+        {return}
         if (event.type === 'state') {
           this.queuePendingCount = event.state.pendingCount || 0
           this.queueFailureStreak = event.state.failureStreak || 0
@@ -831,6 +862,8 @@ export default {
           this.queueConcurrency = event.state.concurrency || null
           this.queueTimeoutMs = event.state.timeoutMs || null
           this.queueEmaMs = event.state.emaMs ? Math.round(event.state.emaMs) : null
+          this.queueRateLimitBackoffMs = event.state.rateLimitBackoffMs || null
+          this.queueRateLimitCooldownUntil = event.state.rateLimitCooldownUntil || null
           this.queueLastBatch = event.state.lastBatch || null
           this.queueLastResponseDebug = event.state.lastResponseDebug || null
           this.evaluateCompletion()
@@ -848,7 +881,7 @@ export default {
     this.$nextTick(() => {
       this.setNavLabels()
 
-      const swiper = this.swiper
+      const { swiper } = this
 
       this.activeQuestionIndex = swiper?.realIndex ?? swiper?.activeIndex ?? 0
       this.syncAppealDraft()

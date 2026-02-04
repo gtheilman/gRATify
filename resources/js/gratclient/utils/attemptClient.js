@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT_MS = 2500
 
 const isDebug = () => {
   if (typeof window === 'undefined')
-    return false
+  {return false}
   const value = new URLSearchParams(window.location.search || '').get('debug')
   
   return value === '1' || value === 'true'

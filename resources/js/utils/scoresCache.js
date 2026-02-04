@@ -8,7 +8,7 @@ export const readScoresCache = key => {
   try {
     const raw = localStorage.getItem(key)
     if (!raw)
-      return null
+    {return null}
     
     return JSON.parse(raw)
   } catch {

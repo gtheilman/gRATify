@@ -1,26 +1,26 @@
 // Shared helpers to normalize API error envelopes into human-friendly messages.
 export const extractApiErrorMessage = payload => {
   if (!payload)
-    return ''
+  {return ''}
 
   if (payload.error && typeof payload.error === 'object') {
     if (payload.error.message)
-      return payload.error.message
+    {return payload.error.message}
   }
 
   if (payload.message)
-    return payload.message
+  {return payload.message}
 
   if (payload.status)
-    return payload.status
+  {return payload.status}
 
-  const errors = payload.errors
+  const { errors } = payload
   if (Array.isArray(errors) && errors.length)
-    return errors[0]
+  {return errors[0]}
   if (errors && typeof errors === 'object') {
-    const firstValue = Object.values(errors)[0]
+    const [firstValue] = Object.values(errors)
     if (Array.isArray(firstValue))
-      return firstValue[0] || ''
+    {return firstValue[0] || ''}
     
     return firstValue || ''
   }
@@ -30,26 +30,26 @@ export const extractApiErrorMessage = payload => {
 
 export const getErrorMessage = (err, fallback = '') => {
   if (!err)
-    return fallback
+  {return fallback}
 
   if (typeof err === 'string')
-    return err
+  {return err}
 
   if (typeof err.message === 'string' && err.message !== '[object Object]')
-    return err.message
+  {return err.message}
 
   const dataMessage = extractApiErrorMessage(err.data || err.response?.data || err)
   if (dataMessage)
-    return dataMessage
+  {return dataMessage}
 
   if (err.message && typeof err.message === 'object') {
     const nested = extractApiErrorMessage(err.message)
     if (nested)
-      return nested
+    {return nested}
   }
 
   if (typeof err.message === 'string')
-    return err.message
+  {return err.message}
 
   return fallback
 }

@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="color-scheme" content="only light">
     <meta name="description" content="gRATify encountered an error. Please try again later or return to the app." />
     <title>Error</title>
 </head>

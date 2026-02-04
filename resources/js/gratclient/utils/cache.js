@@ -6,7 +6,7 @@ const hasStorage = () => typeof localStorage !== 'undefined'
 const buildIdKey = password => `${ID_KEY_PREFIX}:${password || ''}`
 
 export function saveIdentifier (password, userId) {
-  if (!hasStorage() || !password || !userId) return
+  if (!hasStorage() || !password || !userId) {return}
   try {
     localStorage.setItem(buildIdKey(password), JSON.stringify({
       userId,
@@ -18,9 +18,9 @@ export function saveIdentifier (password, userId) {
 }
 
 export function loadIdentifier (password) {
-  if (!hasStorage() || !password) return null
+  if (!hasStorage() || !password) {return null}
   const raw = localStorage.getItem(buildIdKey(password))
-  if (!raw) return null
+  if (!raw) {return null}
   try {
     const parsed = JSON.parse(raw)
     const age = Date.now() - (parsed.cachedAt || 0)

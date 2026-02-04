@@ -33,7 +33,7 @@ const { ctrl_k, meta_k } = useMagicKeys({
   passive: false,
   onEventFired(e) {
     if (e.ctrlKey && e.key === 'k' && e.type === 'keydown')
-      e.preventDefault()
+    {e.preventDefault()}
   },
 })
 

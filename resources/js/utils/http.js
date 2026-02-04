@@ -4,19 +4,19 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 // Shared fetch helpers to standardize JSON parsing and error envelopes.
 const statusFallbackMessage = status => {
   if (status === 401)
-    return 'Unauthorized: please sign in again.'
+  {return 'Unauthorized: please sign in again.'}
   if (status === 403)
-    return 'Forbidden: you do not have access to this resource.'
+  {return 'Forbidden: you do not have access to this resource.'}
   if (status === 404)
-    return 'Not found.'
+  {return 'Not found.'}
   if (status === 409)
-    return 'Conflict: the request could not be completed.'
+  {return 'Conflict: the request could not be completed.'}
   if (status === 419)
-    return 'Session expired: please refresh and try again.'
+  {return 'Session expired: please refresh and try again.'}
   if (status === 422)
-    return 'Validation failed.'
+  {return 'Validation failed.'}
   if (status >= 500)
-    return 'Server error: please try again later.'
+  {return 'Server error: please try again later.'}
   
   return ''
 }
@@ -24,7 +24,7 @@ const statusFallbackMessage = status => {
 const buildHeaders = (headers = {}) => {
   const xsrfToken = getXsrfToken()
   if (!xsrfToken)
-    return headers
+  {return headers}
   
   return {
     ...headers,
@@ -101,7 +101,7 @@ export const fetchJson = async (url, options = {}) => {
 export const fetchJsonOrThrow = async (url, options = {}) => {
   const { data, response } = await fetchJson(url, options)
   if (!response.ok)
-    throw buildHttpError(response, data)
+  {throw buildHttpError(response, data)}
   
   return { data, response }
 }

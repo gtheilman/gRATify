@@ -146,7 +146,7 @@ export default {
       for (let i = 0; i < this.question.answers.length; i++) {
         textVolume = textVolume + this.question.answers[i].answer_text.length
       }
-      const width = this.window.width
+      const { width } = this.window
 
       // Dynamic scaling to keep long questions readable across viewport sizes.
       if (width < 576) {
@@ -183,7 +183,7 @@ export default {
     },
     textStyle () {
       return {
-        '--font-size': this.fontSize + 'px',
+        '--font-size': `${this.fontSize  }px`,
         'text-align': 'left',
       }
     },

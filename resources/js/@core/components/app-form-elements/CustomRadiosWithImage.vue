@@ -18,7 +18,7 @@ const emit = defineEmits(['update:selectedRadio'])
 
 const updateSelectedOption = value => {
   if (value !== null)
-    emit('update:selectedRadio', value)
+  {emit('update:selectedRadio', value)}
 }
 </script>
 

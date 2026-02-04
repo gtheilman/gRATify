@@ -38,7 +38,7 @@ const editor = useEditor({
   ],
   onUpdate() {
     if (!editor.value)
-      return
+    {return}
     emit('update:modelValue', editor.value.getHTML())
   },
 })
@@ -46,7 +46,7 @@ const editor = useEditor({
 watch(() => props.modelValue, () => {
   const isSame = editor.value?.getHTML() === props.modelValue
   if (isSame)
-    return
+  {return}
   editor.value?.commands.setContent(props.modelValue)
 })
 </script>

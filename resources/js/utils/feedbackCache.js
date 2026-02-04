@@ -4,7 +4,7 @@ export const readFeedbackCache = id => {
   try {
     const raw = localStorage.getItem(cacheKey(id))
     if (!raw)
-      return null
+    {return null}
     
     return JSON.parse(raw)
   } catch {

@@ -13,7 +13,7 @@ axios.defaults.baseURL = import.meta.env.VITE_SERVER_URL || '/'
 const ensureFontAwesome = () => {
   const existing = document.querySelector('link[data-fa-cdn]')
   if (existing)
-    return
+  {return}
   const link = document.createElement('link')
 
   link.rel = 'stylesheet'

@@ -28,7 +28,7 @@ const handleSuccessClose = () => {
 }
 
 const handleChange = async () => {
-  const validationMessage = validateChangePasswordForm(form.value, !!authStore.user)
+  const validationMessage = validateChangePasswordForm(form.value, Boolean(authStore.user))
   if (validationMessage) {
     errorMessage.value = validationMessage
     
@@ -58,7 +58,7 @@ const handleChange = async () => {
     }
 
     if (error.value)
-      throw error.value
+    {throw error.value}
 
     // Treat any success response as a completed update.
     message.value = data.value?.status === 'ok' ? 'Password updated.' : 'Password updated.'

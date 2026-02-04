@@ -71,7 +71,7 @@ const handleReset = async () => {
     })
 
     if (error.value)
-      throw error.value
+    {throw error.value}
 
     resetMessage.value = data.value?.status || 'If that address exists, a reset link has been sent.'
   }
@@ -94,7 +94,7 @@ onMounted(async () => {
       if (typeof data?.mailEnabled === 'boolean') {
         mailEnabled.value = data.mailEnabled
         if (!data.mailEnabled)
-          mailConfigured.value = false
+        {mailConfigured.value = false}
       }
     }
   } catch {

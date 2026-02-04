@@ -45,10 +45,10 @@ const renderAscii = (expr, displayMode = false) => {
   }
 }
 
-const MATH_PATTERN = /(?:`?\$[\s\S]*?\$`?|`?@[\s\S]*?@`?)/
+const MATH_PATTERN = /`?\$[\s\S]*?\$`?|`?@[\s\S]*?@`?/
 
 const renderMathBlocks = text => {
-  if (!text) return ''
+  if (!text) {return ''}
   const htmlTags = []
   const placeholderRegex = /<[^>]+>/g
   let output = text.replace(placeholderRegex, match => {
@@ -59,7 +59,7 @@ const renderMathBlocks = text => {
 
   // Fast path: if there are no math markers, skip the replace work.
   if (!MATH_PATTERN.test(output)) {
-    if (!htmlTags.length) return output
+    if (!htmlTags.length) {return output}
     
     return output.replace(/__HTML_TAG_(\d+)__/g, (_, index) => htmlTags[Number(index)])
   }
@@ -77,7 +77,7 @@ const renderMathBlocks = text => {
     output = output.replace(regex, (_, expr) => fn(expr))
   }
 
-  if (!htmlTags.length) return output
+  if (!htmlTags.length) {return output}
 
   return output.replace(/__HTML_TAG_(\d+)__/g, (_, index) => htmlTags[Number(index)])
 }
@@ -87,7 +87,7 @@ const MARKDOWN_CACHE = new Map()
 const MAX_CACHE_ENTRIES = 200
 
 const decodeHtmlEntities = text => {
-  if (!text || !text.includes('&')) return text
+  if (!text || !text.includes('&')) {return text}
   
   return text
     .replace(/&lt;/g, '<')
@@ -95,7 +95,7 @@ const decodeHtmlEntities = text => {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, '\'')
     .replace(/&#36;/g, '$')
-    .replace(/&#0*36;/gi, '$')
+    .replace(/&#0*36;/g, '$')
     .replace(/&#x0*24;/gi, '$')
     .replace(/&dollar;/g, '$')
     .replace(/&amp;/g, '&')
@@ -104,11 +104,11 @@ const decodeHtmlEntities = text => {
 export function renderMarkdown (content = '') {
   const key = decodeHtmlEntities(content || '')
   const cached = MARKDOWN_CACHE.get(key)
-  if (cached) return cached
+  if (cached) {return cached}
   const rendered = md.render(renderMathBlocks(key))
   if (MARKDOWN_CACHE.size >= MAX_CACHE_ENTRIES) {
     const firstKey = MARKDOWN_CACHE.keys().next().value
-    if (firstKey) MARKDOWN_CACHE.delete(firstKey)
+    if (firstKey) {MARKDOWN_CACHE.delete(firstKey)}
   }
   MARKDOWN_CACHE.set(key, rendered)
   

@@ -70,6 +70,44 @@
             >
           </VCardText>
         </VCard>
+
+        <VCard v-if="isAdmin"
+               class="home-card mt-6"
+               elevation="2"
+        >
+          <VCardTitle class="text-h6">
+            Operational Signals (Last {{ signalWindowMinutes }} min)
+          </VCardTitle>
+          <VCardText>
+            <div v-if="signalsLoading"
+                 class="text-medium-emphasis"
+            >
+              Loading signal report…
+            </div>
+            <div v-else-if="signalsError"
+                 class="text-error"
+            >
+              {{ signalsError }}
+            </div>
+            <div v-else>
+              <div class="d-flex flex-wrap gap-3">
+                <VChip color="warning"
+                       variant="tonal"
+                >
+                  401 /api/auth/me: {{ signalTotals.auth_me_401 || 0 }}
+                </VChip>
+                <VChip color="error"
+                       variant="tonal"
+                >
+                  429 /api/attempts*: {{ signalTotals.attempts_429 || 0 }}
+                </VChip>
+              </div>
+              <div class="signal-footnote text-medium-emphasis mt-3">
+                Generated {{ signalGeneratedAt }}
+              </div>
+            </div>
+          </VCardText>
+        </VCard>
       </VCol>
     </VRow>
   </VContainer>
@@ -77,14 +115,27 @@
 
 <script setup>
 // Home page: fetches demo warning lazily to avoid delaying initial paint.
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 import { resolveDemoWarningState, readDemoWarningCache, writeDemoWarningCache, applyDemoWarningFallback } from '@/utils/demoWarning'
+import { useAuthStore } from '@/stores/auth'
 import tblProcess from '../../assets/images/TBL_Process.webp'
 import gratifyLogo from '../../assets/images/gratify-logo-300x90.webp'
 
 // Start hidden to avoid flash; visibility is decided after we fetch the flag.
 const showDemoWarning = ref(false)
+const signalTotals = ref({ auth_me_401: 0, attempts_429: 0 })
+const signalWindowMinutes = ref(15)
+const signalGeneratedAt = ref('just now')
+const signalsLoading = ref(false)
+const signalsError = ref('')
+const authStore = useAuthStore()
+const isAdmin = computed(() => {
+  const role = authStore.user?.role
+  const normalized = role === 'poobah' ? 'admin' : role
+
+  return normalized === 'admin'
+})
 
 const fetchDemoWarning = async () => {
   try {
@@ -99,6 +150,29 @@ const fetchDemoWarning = async () => {
   }
 }
 
+const fetchOperationalSignals = async () => {
+  if (!isAdmin.value) {
+    return
+  }
+  signalsLoading.value = true
+  signalsError.value = ''
+  try {
+    const { data } = await axios.get('/api/admin/operational-signals')
+
+    signalTotals.value = data?.totals || { auth_me_401: 0, attempts_429: 0 }
+    signalWindowMinutes.value = data?.window_minutes || 15
+    const generated = data?.generated_at ? new Date(data.generated_at) : null
+
+    signalGeneratedAt.value = generated && !Number.isNaN(generated.getTime())
+      ? generated.toLocaleTimeString()
+      : 'just now'
+  } catch (error) {
+    signalsError.value = 'Unable to load operational signal report.'
+  } finally {
+    signalsLoading.value = false
+  }
+}
+
 onMounted(() => {
   const cached = readDemoWarningCache()
   if (cached !== null) {
@@ -109,7 +183,10 @@ onMounted(() => {
   // Defer the network call until idle to avoid blocking first contentful paint.
   const schedule = window.requestIdleCallback || function (cb) { return setTimeout(cb, 150) }
 
-  schedule(() => { fetchDemoWarning() })
+  schedule(() => {
+    fetchDemoWarning()
+    fetchOperationalSignals()
+  })
 })
 </script>
 
@@ -155,6 +232,10 @@ onMounted(() => {
   max-width: 100%;
   max-height: clamp(220px, 50vw, 420px);
   object-fit: contain;
+}
+
+.signal-footnote {
+  font-size: 0.85rem;
 }
 
 @media (max-width: 960px) {

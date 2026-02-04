@@ -281,9 +281,9 @@ export const getRadialBarChartConfig = themeColors => {
               }, 0) / w.globals.series.length
 
               if (totalValue % 1 === 0)
-                return `${totalValue}%`
-              else
-                return `${totalValue.toFixed(2)}%`
+              {return `${totalValue}%`}
+              
+              return `${totalValue.toFixed(2)}%`
             },
           },
         },

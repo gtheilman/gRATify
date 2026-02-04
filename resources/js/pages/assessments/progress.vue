@@ -29,6 +29,7 @@ const assessment = ref(null)
 const pollingId = ref(null)
 const staleNotice = ref('')
 const needsRefresh = computed(() => needsSessionRefresh(error.value))
+const authRedirecting = ref(false)
 
 const loadProgressCache = () => readProgressCache(route.params.id)
 
@@ -36,15 +37,31 @@ const storeProgressCache = data => writeProgressCache(route.params.id, data)
 
 const formatProgressError = (response, data) => formatAssessmentError(response, data, 'progress')
 
+const redirectToLogin = () => {
+  if (authRedirecting.value)
+  {return}
+  authRedirecting.value = true
+  if (pollingId.value) {
+    window.clearInterval(pollingId.value)
+    pollingId.value = null
+  }
+  router.push({ name: 'login', query: { redirect: route.fullPath } })
+}
+
 const fetchProgress = async (silent = false) => {
   if (!silent)
-    loading.value = true
+  {loading.value = true}
   error.value = ''
   if (!silent)
-    staleNotice.value = ''
+  {staleNotice.value = ''}
   try {
     const { data, response } = await fetchJson(`/api/assessment/attempts/${route.params.id}`)
     if (!response.ok) {
+      if (response.status === 401 || response.status === 419) {
+        redirectToLogin()
+
+        return
+      }
       const message = formatProgressError(response, data)
       throw new Error(message)
     }
@@ -64,19 +81,21 @@ const fetchProgress = async (silent = false) => {
   }
   finally {
     if (!silent)
-      loading.value = false
+    {loading.value = false}
   }
 }
 
 onMounted(async () => {
   await fetchProgress()
+  if (authRedirecting.value)
+  {return}
   pollingId.value = window.setInterval(() => fetchProgress(true), 5000)
   window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   if (pollingId.value)
-    window.clearInterval(pollingId.value)
+  {window.clearInterval(pollingId.value)}
   window.removeEventListener('keydown', handleKeydown)
 })
 
@@ -100,7 +119,7 @@ const handleKeydown = e => {
 
 const rows = computed(() => {
   if (!assessment.value?.presentations)
-    return []
+  {return []}
 
   const correctSet = new Set(correctAnswerIds.value)
   const totalCorrect = correctSet.size || 1

@@ -18,9 +18,9 @@ export const getComputedNavLinkToProp = computed(() => link => {
   // If route is string => it assumes string is route name => Create route object from route name
   // If route is not string => It assumes it's route object => returns passed route object
   if (link.to)
-    props.to = typeof link.to === 'string' ? { name: link.to } : link.to
+  {props.to = typeof link.to === 'string' ? { name: link.to } : link.to}
   else
-    props.href = link.href
+  {props.href = link.href}
   
   return props
 })
@@ -33,9 +33,9 @@ export const getComputedNavLinkToProp = computed(() => link => {
  */
 export const resolveNavLinkRouteName = (link, router) => {
   if (!link.to)
-    return null
+  {return null}
   if (typeof link.to === 'string')
-    return link.to
+  {return link.to}
   
   return router.resolve(link.to).name
 }
@@ -51,7 +51,7 @@ export const isNavLinkActive = (link, router) => {
   // Check if provided route matches route's matched route
   const resolveRoutedName = resolveNavLinkRouteName(link, router)
   if (!resolveRoutedName)
-    return false
+  {return false}
   
   return matchedRoutes.some(route => {
     return route.name === resolveRoutedName || route.meta.navActiveLink === resolveRoutedName
@@ -65,7 +65,7 @@ export const isNavLinkActive = (link, router) => {
 export const isNavGroupActive = (children, router) => children.some(child => {
   // If child have children => It's group => Go deeper(recursive)
   if ('children' in child)
-    return isNavGroupActive(child.children, router)
+  {return isNavGroupActive(child.children, router)}
 
   // else it's link => Check for matched Route
   return isNavLinkActive(child, router)
@@ -78,7 +78,7 @@ export const isNavGroupActive = (children, router) => children.some(child => {
 export const _setDirAttr = dir => {
   // Check if document exists for SSR
   if (typeof document !== 'undefined')
-    document.documentElement.setAttribute('dir', dir)
+  {document.documentElement.setAttribute('dir', dir)}
 }
 
 /**
@@ -88,7 +88,7 @@ export const _setDirAttr = dir => {
  */
 export const getDynamicI18nProps = (key, tag = 'span') => {
   if (!layoutConfig.app.i18n.enable)
-    return {}
+  {return {}}
   
   return {
     keypath: key,
@@ -123,7 +123,7 @@ export const switchToVerticalNavOnLtOverlayNavBreakpoint = () => {
       */
   watch(() => configStore.appContentLayoutNav, value => {
     if (!configStore.isLessThanOverlayNavBreakpoint)
-      lgAndUpNav.value = value
+    {lgAndUpNav.value = value}
   })
 
   /*
@@ -144,11 +144,11 @@ export const hexToRgb = hex => {
   // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i
 
-  hex = hex.replace(shorthandRegex, (m, r, g, b) => {
+  const normalizedHex = hex.replace(shorthandRegex, (m, r, g, b) => {
     return r + r + g + g + b + b
   })
 
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalizedHex)
   
   return result ? `${Number.parseInt(result[1], 16)},${Number.parseInt(result[2], 16)},${Number.parseInt(result[3], 16)}` : null
 }

@@ -13,7 +13,7 @@ import { useAbility } from '@casl/vue'
 export const can = (action, subject) => {
   const vm = getCurrentInstance()
   if (!vm)
-    return false
+  {return false}
   const localCan = vm.proxy && '$can' in vm.proxy
     
   return localCan ? vm.proxy?.$can(action, subject) : true
@@ -30,7 +30,7 @@ export const canViewNavMenuGroup = item => {
   // If subject and action is defined in item => Return based on children visibility (Hide group if no child is visible)
   // Else check for ability using provided subject and action along with checking if has any visible child
   if (!(item.action && item.subject))
-    return hasAnyVisibleChild
+  {return hasAnyVisibleChild}
   
   return can(item.action, item.subject) && hasAnyVisibleChild
 }
@@ -42,7 +42,7 @@ export const canNavigate = to => {
 
   // If the target route has specific permissions, check those first
   if (targetRoute?.meta?.action && targetRoute?.meta?.subject)
-    return ability.can(targetRoute.meta.action, targetRoute.meta.subject)
+  {return ability.can(targetRoute.meta.action, targetRoute.meta.subject)}
 
   // If no specific permissions, fall back to checking if any parent route allows access
     

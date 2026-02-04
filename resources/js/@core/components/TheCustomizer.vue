@@ -65,7 +65,7 @@ const customPrimaryColor = ref('#663131')
 watch(() => configStore.theme, () => {
   const cookiePrimaryColor = cookieRef(`${ vuetifyTheme.name.value }ThemePrimaryColor`, null).value
   if (cookiePrimaryColor && !colors.some(color => color.main === cookiePrimaryColor))
-    customPrimaryColor.value = cookiePrimaryColor
+  {customPrimaryColor.value = cookiePrimaryColor}
 }, { immediate: true })
 
 const setPrimaryColor = useDebounceFn(color => {
@@ -191,9 +191,9 @@ const direction = computed(() => {
 
 watch(currentDir, () => {
   if (currentDir.value === 'rtl')
-    configStore.isAppRTL = true
+  {configStore.isAppRTL = true}
   else
-    configStore.isAppRTL = false
+  {configStore.isAppRTL = false}
 })
 
 // check if any value set in cookie

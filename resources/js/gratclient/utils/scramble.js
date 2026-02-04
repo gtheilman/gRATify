@@ -25,7 +25,7 @@ const base64Decode = value => {
 
 const buildMask = key => {
   if (!key)
-    return new Uint8Array([0])
+  {return new Uint8Array([0])}
   
   return toBytes(key)
 }
@@ -40,17 +40,16 @@ const xorBytes = (bytes, mask) => {
 }
 
 export const scramble = (value, key) => {
-  if (typeof value !== 'string')
-    value = JSON.stringify(value ?? '')
+  const normalizedValue = typeof value === 'string' ? value : JSON.stringify(value ?? '')
   const mask = buildMask(key)
-  const bytes = toBytes(value)
+  const bytes = toBytes(normalizedValue)
   
   return base64Encode(xorBytes(bytes, mask))
 }
 
 export const descramble = (value, key) => {
   if (!value || typeof value !== 'string')
-    return value
+  {return value}
   const mask = buildMask(key)
   try {
     const bytes = base64Decode(value)

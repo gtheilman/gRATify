@@ -1,4 +1,8 @@
 # Changelog
+## v0.3.3-beta
+- Fixing more eslint errors
+- Trying to override local "dark mode" browser settings
+- Fixing 429 too many requests
 
 ## v0.3.2-beta
 - Removed remaining Sanctum package/config references and kept authentication on `auth:web`.

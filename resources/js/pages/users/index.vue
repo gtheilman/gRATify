@@ -95,7 +95,7 @@ const usersRangeLabel = computed(() => buildUsersRangeLabel(currentPage.value, p
 
 watch([search, roleFilter], ([term, role], [prevTerm, prevRole]) => {
   if (shouldResetUserPage({ term: prevTerm, role: prevRole }, { term, role }))
-    currentPage.value = 1
+  {currentPage.value = 1}
 })
 
 const registerUser = () => {
@@ -151,7 +151,7 @@ const submitChangePassword = async () => {
     })
 
     if (error.value)
-      throw error.value
+    {throw error.value}
     changePasswordSuccess.value = 'Password Successfully Changed'
     changePasswordTarget.value = null
     changePasswordForm.value = { password: '', confirm: '' }
@@ -184,7 +184,7 @@ const editUser = user => {
 
 const deleteUser = async user => {
   if (!user || !user.id)
-    return
+  {return}
   deleteError.value = ''
   if (isOffline.value) {
     deleteError.value = 'You are offline. Connect to the internet before deleting a user.'
@@ -197,7 +197,7 @@ const deleteUser = async user => {
     return
   }
   if (!confirm(`Are you sure you want to delete ${user.username || 'this user'}?`))
-    return
+  {return}
   try {
     await usersStore.deleteUser(user.id)
   }

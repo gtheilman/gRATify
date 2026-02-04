@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use App\Support\Errors;
+use App\Http\Middleware\TrackOperationalSignals;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             VerifyCsrfToken::class,
+            TrackOperationalSignals::class,
             ThrottleRequests::class . ':api',
             SubstituteBindings::class,
         ]);

@@ -45,12 +45,12 @@ const currentPage = ref(1)
 
 watch(pageSize, (next, prev) => {
   if (shouldResetPageOnPageSizeChange(prev, next))
-    currentPage.value = 1
+  {currentPage.value = 1}
 })
 
 watch(showEditableOnly, (next, prev) => {
   if (shouldResetPageOnToggle(prev, next))
-    currentPage.value = 1
+  {currentPage.value = 1}
 })
 
 const filteredAssessments = computed(() => {
@@ -116,15 +116,15 @@ const downloadBackup = async () => {
   backupSlow.value = false
   backupLoading.value = true
   if (backupSlowTimer)
-    clearTimeout(backupSlowTimer)
+  {clearTimeout(backupSlowTimer)}
   backupSlowTimer = setTimeout(() => {
     if (backupLoading.value)
-      backupSlow.value = true
+    {backupSlow.value = true}
   }, 6000)
   try {
     await authStore.ensureSession()
     if (!authStore.user)
-      throw new Error('You must be logged in as an admin to download a backup.')
+    {throw new Error('You must be logged in as an admin to download a backup.')}
 
     const { blob, response } = await fetchBlobOrThrow('/api/admin/backup/download', {
       method: 'GET',
@@ -132,7 +132,7 @@ const downloadBackup = async () => {
 
     const contentType = response.headers.get('content-type') || ''
     if (contentType.includes('html'))
-      throw new Error('Received HTML instead of backup; check authentication and API route.')
+    {throw new Error('Received HTML instead of backup; check authentication and API route.')}
     backupSlow.value = false
     backupSuccess.value = 'Downloading SQL backup\n'
       + 'To avoid accidental overwrites, this application does not have a "restore database" function.\n'
@@ -152,7 +152,7 @@ const downloadBackup = async () => {
     window.URL.revokeObjectURL(url)
   } catch (err) {
     if (err?.status === 401 || err?.status === 403)
-      backupAuthNeeded.value = true
+    {backupAuthNeeded.value = true}
     backupError.value = getErrorMessage(err, 'Unable to download backup')
   } finally {
     backupLoading.value = false
@@ -177,15 +177,15 @@ const loadShortLinkConfig = async () => {
   try {
     const { data, error } = await api('/shortlink-providers', { method: 'GET' })
     if (error.value)
-      throw error.value
-    const bitly = !!data.value?.bitly
-    const tinyurl = !!data.value?.tinyurl
+    {throw error.value}
+    const bitly = Boolean(data.value?.bitly)
+    const tinyurl = Boolean(data.value?.tinyurl)
 
     shortLinkConfig.value = { bitly, tinyurl }
     if (bitly && !tinyurl)
-      assessmentsStore.setShortLinkProvider('bitly')
+    {assessmentsStore.setShortLinkProvider('bitly')}
     if (tinyurl && !bitly)
-      assessmentsStore.setShortLinkProvider('tinyurl')
+    {assessmentsStore.setShortLinkProvider('tinyurl')}
   }
   catch (err) {
     // ignore config fetch errors
@@ -219,7 +219,7 @@ const addNewAssessment = async () => {
     })
 
     if (created?.id)
-      router.push({ name: 'assessments-id', params: { id: created.id } })
+    {router.push({ name: 'assessments-id', params: { id: created.id } })}
   }
   catch (err) {
     assessmentsActionError.value = getErrorMessage(err, 'Unable to create assessment')
@@ -264,7 +264,7 @@ const cancelDelete = () => {
 
 const performDelete = async () => {
   if (!pendingDelete.value)
-    return
+  {return}
   if (isOffline.value) {
     assessmentsActionError.value = 'You are offline. Connect to the internet before deleting.'
     
@@ -278,9 +278,9 @@ const togglingActiveId = ref(null)
 
 const toggleActive = async assessment => {
   if (!assessment?.id)
-    return
+  {return}
   if (togglingActiveId.value === assessment.id)
-    return
+  {return}
   if (isOffline.value) {
     assessmentsActionError.value = 'You are offline. Connect to the internet before updating the assessment.'
     

@@ -1,7 +1,7 @@
 <script setup>
 // Caches feedback payload locally to allow read-only viewing during transient failures.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { renderMarkdown as renderClientMarkdown } from '@/gratclient/utils/markdown'
 import { applyCachedFallback } from '@/utils/cacheFallback'
 import { clearNotice } from '@/utils/staleNotice'
@@ -15,6 +15,7 @@ import { buildAnswerMap } from '@/utils/answerMap'
 import { useApi } from '@/composables/useApi'
 
 const route = useRoute()
+const router = useRouter()
 const api = useApi
 
 const loading = ref(false)
@@ -26,12 +27,20 @@ const appealsOpen = ref(null)
 const appealsToastDismissed = ref(false)
 const appealsToggleBusy = ref(false)
 const needsRefresh = computed(() => needsSessionRefresh(error.value))
+const authRedirecting = ref(false)
 
 const loadFeedbackCache = () => readFeedbackCache(route.params.id)
 
 const storeFeedbackCache = data => writeFeedbackCache(route.params.id, data)
 
 const formatFeedbackError = (response, data) => formatAssessmentError(response, data, 'feedback')
+
+const redirectToLogin = () => {
+  if (authRedirecting.value)
+  {return}
+  authRedirecting.value = true
+  router.push({ name: 'login', query: { redirect: route.fullPath } })
+}
 
 const fetchFeedback = async () => {
   loading.value = true
@@ -40,12 +49,17 @@ const fetchFeedback = async () => {
   try {
     const { data, response } = await fetchJson(`/api/assessment/attempts/${route.params.id}`)
     if (!response.ok) {
+      if (response.status === 401 || response.status === 419) {
+        redirectToLogin()
+
+        return
+      }
       const message = formatFeedbackError(response, data)
       throw new Error(message)
     }
     assessment.value = data
     if (typeof data?.appeals_open !== 'undefined')
-      appealsOpen.value = !!data.appeals_open
+    {appealsOpen.value = Boolean(data.appeals_open)}
     storeFeedbackCache(data)
   }
   catch (err) {
@@ -76,7 +90,7 @@ const dismissAppealsToast = () => {
 
 const updateAppealsOpen = async nextValue => {
   if (!assessment.value || appealsToggleBusy.value)
-    return
+  {return}
   appealsToggleBusy.value = true
 
   const previous = appealsOpen.value
@@ -88,11 +102,17 @@ const updateAppealsOpen = async nextValue => {
       body: { appeals_open: nextValue },
     })
 
-    if (apiError.value)
+    if (apiError.value) {
+      if (apiError.value.status === 401 || apiError.value.status === 419) {
+        redirectToLogin()
+
+        return
+      }
       throw apiError.value
+    }
     assessment.value = {
       ...assessment.value,
-      appeals_open: !!nextValue,
+      appeals_open: Boolean(nextValue),
     }
     storeFeedbackCache(assessment.value)
     appealsToastDismissed.value = true
@@ -106,7 +126,7 @@ const updateAppealsOpen = async nextValue => {
 
 watch(assessment, value => {
   if (typeof value?.appeals_open !== 'undefined')
-    appealsOpen.value = !!value.appeals_open
+  {appealsOpen.value = Boolean(value.appeals_open)}
 })
 
 const answerMap = computed(() => buildAnswerMap(assessment.value?.questions))
@@ -114,13 +134,13 @@ const answerMap = computed(() => buildAnswerMap(assessment.value?.questions))
 const firstAttemptsByQuestion = computed(() => {
   const attemptMap = new Map()
   if (!assessment.value?.presentations)
-    return attemptMap
+  {return attemptMap}
 
   assessment.value.presentations.forEach(pres => {
     pres.attempts?.forEach(attempt => {
       const meta = answerMap.value.get(attempt.answer_id)
       if (!meta)
-        return
+      {return}
       const key = `${pres.id}-${meta.question_id}`
       const existing = attemptMap.get(key)
       const attemptTime = new Date(attempt.created_at || 0).getTime()
@@ -140,18 +160,18 @@ const firstAttemptsByQuestion = computed(() => {
 
 const answerSizeClass = count => {
   if (count >= 12)
-    return 'answers-xxs'
+  {return 'answers-xxs'}
   if (count >= 9)
-    return 'answers-xs'
+  {return 'answers-xs'}
   if (count >= 7)
-    return 'answers-sm'
+  {return 'answers-sm'}
   
   return 'answers-md'
 }
 
 const questionFeedback = computed(() => {
   if (!assessment.value?.questions)
-    return []
+  {return []}
 
   return assessment.value.questions.map(question => {
     const counts = {}
@@ -190,22 +210,22 @@ const questionFeedback = computed(() => {
 
 const handlePrev = () => {
   if (activeSlide.value > 0)
-    activeSlide.value -= 1
+  {activeSlide.value -= 1}
 }
 
 const handleNext = () => {
   const lastIndex = Math.max(0, questionFeedback.value.length - 1)
   if (activeSlide.value < lastIndex)
-    activeSlide.value += 1
+  {activeSlide.value += 1}
 }
 
 const renderMarkdown = text => renderClientMarkdown(text || '')
 
 const toggleFullscreen = () => {
   if (document.fullscreenElement)
-    document.exitFullscreen?.()
+  {document.exitFullscreen?.()}
   else
-    document.documentElement.requestFullscreen?.()
+  {document.documentElement.requestFullscreen?.()}
 }
 
 onMounted(() => {
@@ -213,7 +233,7 @@ onMounted(() => {
   const ensureFontAwesome = () => {
     const existing = document.querySelector('link[data-fa-cdn]')
     if (existing)
-      return
+    {return}
     const link = document.createElement('link')
 
     link.rel = 'stylesheet'

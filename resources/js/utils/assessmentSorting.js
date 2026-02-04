@@ -33,7 +33,7 @@ export const sortAssessments = (assessments, key, direction) => {
       const bv = isAssessmentLocked(b) ? 1 : 0
       const res = av - bv
       if (res !== 0)
-        return dir === 'asc' ? res : -res
+      {return dir === 'asc' ? res : -res}
       
       return compareStrings(a.title, b.title, dir)
     },
@@ -41,7 +41,7 @@ export const sortAssessments = (assessments, key, direction) => {
 
   const sorter = sorters[key]
   if (!sorter)
-    return list
+  {return list}
   
   return list.sort(sorter)
 }

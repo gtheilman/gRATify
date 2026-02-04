@@ -62,7 +62,7 @@ const fetchScores = async () => {
   staleNotice.value = ''
   try {
     if (isOffline.value)
-      throw new Error('You are offline. Connect to the internet and try again.')
+    {throw new Error('You are offline. Connect to the internet and try again.')}
     const { data, response } = await fetchJson(`/api/presentations/score-by-assessment-id/${route.params.id}?scheme=${encodeURIComponent(scoringScheme.value)}`)
     if (!response.ok) {
       const message = formatScoresError(response, data)
@@ -73,9 +73,9 @@ const fetchScores = async () => {
 
     const assessment = data?.[0]?.assessment
     if (assessment && typeof assessment.active !== 'undefined')
-      assessmentActive.value = parseActiveFlag(assessment.active)
+    {assessmentActive.value = parseActiveFlag(assessment.active)}
     if (assessment?.title)
-      assessmentTitle.value = assessment.title
+    {assessmentTitle.value = assessment.title}
     if (!showResponses.value) {
       openPanelIds.value = presentationsWithAppeals.value.map(p => p.id)
     } else {
@@ -103,13 +103,13 @@ onMounted(fetchScores)
 
 const loadAssessmentActive = async () => {
   if (assessmentActive.value !== null)
-    return
+  {return}
   const { data, error: apiError } = await api(`/assessments/${route.params.id}/edit`, { method: 'GET' })
   if (apiError.value)
-    throw apiError.value
-  assessmentActive.value = !!Number(data.value?.active)
+  {throw apiError.value}
+  assessmentActive.value = Boolean(Number(data.value?.active))
   if (data.value?.title)
-    assessmentTitle.value = data.value.title
+  {assessmentTitle.value = data.value.title}
 }
 
 const sortedPresentations = computed(() => {
@@ -140,7 +140,7 @@ const downloadCsv = () => {
   try {
     const blob = buildCsvBlob(payload)
     if (!blob)
-      throw new Error('csv-blob-failed')
+    {throw new Error('csv-blob-failed')}
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
 
@@ -159,7 +159,7 @@ const downloadCsv = () => {
 
 const copyCsvFallback = async () => {
   if (!csvFallbackText.value)
-    return
+  {return}
   try {
     await navigator.clipboard.writeText(csvFallbackText.value)
     copyCsvStatus.value = 'Copied'
@@ -173,11 +173,11 @@ const copyCsvFallback = async () => {
 }
 
 const buildTimelineHtml = () => {
-  const assessmentTitle = sortedPresentations.value[0]?.assessment?.title || 'gRAT'
+  const timelineAssessmentTitle = sortedPresentations.value[0]?.assessment?.title || 'gRAT'
   
   return buildTimelineReport({
     presentations: sortedPresentations.value,
-    assessmentTitle,
+    assessmentTitle: timelineAssessmentTitle,
     scoringScheme: scoringScheme.value,
   })
 }
@@ -186,7 +186,7 @@ const printTimeline = () => {
   const html = buildTimelineHtml()
   const printWindow = window.open('', '_blank', 'width=900,height=700')
   if (!printWindow)
-    return
+  {return}
   printWindow.document.open()
   printWindow.document.write(html)
   printWindow.document.close()
@@ -196,7 +196,7 @@ const printTimeline = () => {
 
 const toggleActive = async () => {
   if (activeToggleBusy.value)
-    return
+  {return}
   if (isOffline.value) {
     error.value = 'You are offline. Connect to the internet before updating the assessment.'
     
@@ -233,7 +233,7 @@ const toggleActive = async () => {
     })
 
     if (apiError.value)
-      throw apiError.value
+    {throw apiError.value}
   }
   catch (err) {
     assessmentActive.value = !assessmentActive.value
@@ -265,7 +265,7 @@ watch(showResponses, () => {
 
 watch(sortedPresentations, () => {
   if (showResponses.value)
-    applyShowResponses()
+  {applyShowResponses()}
 })
 
 </script>

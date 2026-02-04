@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminBackupController;
+use App\Http\Controllers\AdminOperationalSignalController;
 use App\Http\Controllers\MigrationStatusController;
 use App\Http\Controllers\PresentationController;
 use App\Http\Controllers\QuestionController;
@@ -45,10 +46,12 @@ Route::middleware('api')->group(function () {
     Route::apiResource('questions', QuestionController::class)->middleware('auth:web');
     Route::apiResource('answers', AnswerController::class)->middleware('auth:web');
     // Attempts are created by unauthenticated participants via the client app.
-    Route::post('attempts/bulk', [AttemptController::class, 'bulkStore']);
+    Route::post('attempts/bulk', [AttemptController::class, 'bulkStore'])
+        ->withoutMiddleware('throttle:api');
     Route::post('appeals', [AppealController::class, 'store']);
     Route::apiResource('attempts', AttemptController::class)
-        ->only(['store']);
+        ->only(['store'])
+        ->withoutMiddleware('throttle:api');
     Route::apiResource('attempts', AttemptController::class)
         ->only(['index', 'show', 'update', 'destroy'])
         ->middleware('auth:web');
@@ -128,6 +131,7 @@ Route::middleware('api')->group(function () {
 });
 
 Route::middleware(['api', 'auth:web'])->group(function () {
+    Route::get('/admin/operational-signals', [AdminOperationalSignalController::class, 'index'])->name('admin.operational-signals');
     Route::get('/admin/migration-status', [MigrationStatusController::class, 'status'])->name('admin.migration-status');
     Route::get('/shortlink-providers', function () {
         $userId = auth('web')->id() ?? 'guest';

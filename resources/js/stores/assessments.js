@@ -23,7 +23,7 @@ export const useAssessmentsStore = defineStore('assessments', {
       try {
         const { data, error } = await api('/assessments', { method: 'GET' })
         if (error.value)
-          throw error.value
+        {throw error.value}
         const payload = data.value || []
 
         this.assessments = Array.isArray(payload) ? payload : Object.values(payload)
@@ -40,7 +40,7 @@ export const useAssessmentsStore = defineStore('assessments', {
     },
     setShortLinkProvider(provider) {
       if (!provider)
-        return
+      {return}
       this.shortLinkProvider = provider
       localStorage.setItem('shortLinkProvider', provider)
     },
@@ -59,7 +59,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         })
 
         if (error.value)
-          throw error.value
+        {throw error.value}
         const created = data.value
 
         await this.fetchAssessments()
@@ -76,7 +76,7 @@ export const useAssessmentsStore = defineStore('assessments', {
     },
     async loadAssessment(id) {
       if (!id)
-        return
+      {return null}
       this.loading = true
       this.error = null
       try {
@@ -84,15 +84,15 @@ export const useAssessmentsStore = defineStore('assessments', {
         const providerParam = provider ? `?shortlink_provider=${encodeURIComponent(provider)}` : ''
         const { data, error } = await api(`/assessments/${id}/edit${providerParam}`, { method: 'GET' })
         if (error.value)
-          throw error.value
+        {throw error.value}
 
         // Normalize answers.correct to boolean for checkbox bindings
         const normalizeAssessment = assessment => {
           if (!assessment?.questions)
-            return assessment
+          {return assessment}
           assessment.questions = assessment.questions.map(q => {
             if (q.answers)
-              q.answers = q.answers.map(a => ({ ...a, correct: !!Number(a.correct) }))
+            {q.answers = q.answers.map(a => ({ ...a, correct: Boolean(Number(a.correct)) }))}
             
             return q
           })
@@ -114,7 +114,7 @@ export const useAssessmentsStore = defineStore('assessments', {
     },
     async updateAssessment(payload) {
       if (!payload?.id)
-        return
+      {return null}
 
       this.loading = true
       this.error = null
@@ -125,7 +125,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         })
 
         if (error.value)
-          throw error.value
+        {throw error.value}
         const updated = data.value || {}
 
         // Preserve questions already in state (API response for update does not include them)
@@ -148,7 +148,7 @@ export const useAssessmentsStore = defineStore('assessments', {
     },
     async bulkUpdateAssessment(payload) {
       if (!payload?.assessment?.id)
-        return
+      {return null}
 
       this.loading = true
       this.error = null
@@ -159,7 +159,7 @@ export const useAssessmentsStore = defineStore('assessments', {
         })
 
         if (error.value)
-          throw error.value
+        {throw error.value}
         
         return data.value
       }
@@ -173,15 +173,15 @@ export const useAssessmentsStore = defineStore('assessments', {
     },
     async deleteAssessment(id) {
       if (!id)
-        return
+      {return}
       this.loading = true
       this.error = null
       try {
         const { error } = await api(`/assessments/${id}`, { method: 'DELETE' })
         if (error.value)
-          throw error.value
+        {throw error.value}
         if (this.currentAssessment?.id === id)
-          this.currentAssessment = null
+        {this.currentAssessment = null}
         await this.fetchAssessments()
       }
       catch (err) {
@@ -203,7 +203,7 @@ export const useAssessmentsStore = defineStore('assessments', {
       })
 
       if (error.value)
-        throw error.value
+      {throw error.value}
       const createdQuestion = data.value
 
       // Automatically add two starter answers so the editor isn't empty.
@@ -238,23 +238,23 @@ export const useAssessmentsStore = defineStore('assessments', {
       })
 
       if (error.value)
-        throw error.value
+      {throw error.value}
       if (options.reload !== false)
-        await this.loadAssessment(this.currentAssessment?.id)
+      {await this.loadAssessment(this.currentAssessment?.id)}
       
       return data.value
     },
     async deleteQuestion(questionId) {
       if (!this.currentAssessment)
-        return
+      {return}
       const { error } = await api(`/questions/${questionId}`, { method: 'DELETE' })
       if (error.value)
-        throw error.value
+      {throw error.value}
       await this.loadAssessment(this.currentAssessment.id)
     },
     async promoteQuestion(questionId) {
       if (!this.currentAssessment)
-        return
+      {return}
 
       const { error } = await api('/questions/promote', {
         method: 'POST',
@@ -265,12 +265,12 @@ export const useAssessmentsStore = defineStore('assessments', {
       })
 
       if (error.value)
-        throw error.value
+      {throw error.value}
       await this.loadAssessment(this.currentAssessment.id)
     },
     async demoteQuestion(questionId) {
       if (!this.currentAssessment)
-        return
+      {return}
 
       const { error } = await api('/questions/demote', {
         method: 'POST',
@@ -281,7 +281,7 @@ export const useAssessmentsStore = defineStore('assessments', {
       })
 
       if (error.value)
-        throw error.value
+      {throw error.value}
       await this.loadAssessment(this.currentAssessment.id)
     },
     async addAnswer(questionId) {
@@ -294,7 +294,7 @@ export const useAssessmentsStore = defineStore('assessments', {
       })
 
       if (error.value)
-        throw error.value
+      {throw error.value}
       await this.loadAssessment(this.currentAssessment?.id)
       
       return data.value
@@ -311,16 +311,16 @@ export const useAssessmentsStore = defineStore('assessments', {
       })
 
       if (error.value)
-        throw error.value
+      {throw error.value}
       if (options.reload !== false)
-        await this.loadAssessment(this.currentAssessment?.id)
+      {await this.loadAssessment(this.currentAssessment?.id)}
       
       return data.value
     },
     async deleteAnswer(answerId) {
       const { error } = await api(`/answers/${answerId}`, { method: 'DELETE' })
       if (error.value)
-        throw error.value
+      {throw error.value}
       await this.loadAssessment(this.currentAssessment?.id)
     },
   },

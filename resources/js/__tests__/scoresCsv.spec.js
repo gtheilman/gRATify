@@ -31,7 +31,7 @@ describe('buildScoresCsv', () => {
   })
 
   it('allows formatters to blank invalid scores', () => {
-    const payload = buildScoresCsv([{ user_id: 'u1', score: null }], value => (value == null ? '' : String(value)))
+    const payload = buildScoresCsv([{ user_id: 'u1', score: null }], value => (value === null || value === undefined ? '' : String(value)))
 
     expect(payload).toBe('UserID,Score\r\nu1,')
   })

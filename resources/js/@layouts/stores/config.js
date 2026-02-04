@@ -43,7 +43,7 @@ export const useLayoutConfigStore = defineStore('layoutConfig', () => {
     // If Navbar type is hidden while switching to horizontal nav => Reset it to sticky
     if (val === AppContentLayoutNav.Horizontal) {
       if (navbarType.value === NavbarType.Hidden)
-        navbarType.value = NavbarType.Sticky
+      {navbarType.value = NavbarType.Sticky}
       isVerticalNavCollapsed.value = false
     }
   })

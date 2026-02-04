@@ -103,14 +103,14 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const decorateCorrectFlags = (presentation, password) => {
   const questions = presentation?.assessment?.questions
   if (!Array.isArray(questions) || !password)
-    return
+  {return}
   questions.forEach(question => {
     if (!Array.isArray(question.answers))
-      return
+    {return}
     question.answers.forEach(answer => {
       const decoded = decodeCorrectScrambled(answer?.correct_scrambled, password)
       if (decoded !== null)
-        answer.correct = decoded
+      {answer.correct = decoded}
     })
   })
 }
@@ -143,7 +143,7 @@ export default {
 
   methods: {
     tryAutoResume () {
-      if (this.autoResumeAttempted) return
+      if (this.autoResumeAttempted) {return}
       this.autoResumeAttempted = true
       this.password = this.$route.params.password
 
@@ -222,13 +222,13 @@ export default {
       }
     },
     hydratePresentation (data) {
-      if (!data?.assessment?.questions) return
+      if (!data?.assessment?.questions) {return}
       this.presentation = data
       this.assessmentLoaded = true
       this.disabled = false
     },
     copyErrorCode () {
-      if (!this.errorCode) return
+      if (!this.errorCode) {return}
       if (navigator?.clipboard?.writeText) {
         navigator.clipboard.writeText(this.errorCode).catch(() => {})
       }

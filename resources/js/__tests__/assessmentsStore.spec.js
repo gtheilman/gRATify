@@ -50,7 +50,8 @@ describe('assessments store', () => {
 
     await store.loadAssessment(1)
 
-    const answers = store.currentAssessment.questions[0].answers
+    const [firstQuestion] = store.currentAssessment.questions
+    const { answers } = firstQuestion
 
     expect(answers[0].correct).toBe(true)
     expect(answers[1].correct).toBe(false)

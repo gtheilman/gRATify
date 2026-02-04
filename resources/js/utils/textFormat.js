@@ -1,6 +1,6 @@
 export const truncateText = (text, maxLength = 50) => {
   if (!text)
-    return ''
+  {return ''}
   
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
 }
@@ -13,7 +13,7 @@ export const normalizeUserId = id => {
 
 export const escapeHtml = value => {
   if (value === null || value === undefined)
-    return ''
+  {return ''}
   
   return String(value)
     .replace(/&/g, '&amp;')

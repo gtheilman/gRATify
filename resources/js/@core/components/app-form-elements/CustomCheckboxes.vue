@@ -18,7 +18,7 @@ const emit = defineEmits(['update:selectedCheckbox'])
 
 const updateSelectedOption = value => {
   if (typeof value !== 'boolean' && value !== null)
-    emit('update:selectedCheckbox', value)
+  {emit('update:selectedCheckbox', value)}
 }
 </script>
 

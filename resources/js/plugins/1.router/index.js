@@ -102,7 +102,7 @@ const router = createRouter({
   routes,
   scrollBehavior(to) {
     if (to.hash)
-      return { el: to.hash, behavior: 'smooth', top: 60 }
+    {return { el: to.hash, behavior: 'smooth', top: 60 }}
 
     return { top: 0 }
   },
@@ -111,7 +111,9 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  await authStore.ensureSession()
+  const isPublicStudentClientRoute = to.name === 'client-home' || to.name === 'client-incomplete'
+  if (!isPublicStudentClientRoute)
+  {await authStore.ensureSession()}
 
   const decision = resolveAuthNavigation(to, authStore)
 
@@ -122,7 +124,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (decision.redirect)
-    return next(decision.redirect)
+  {return next(decision.redirect)}
 
   return next()
 })

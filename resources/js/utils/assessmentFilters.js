@@ -3,7 +3,7 @@ import { filterEditableAssessments } from '@/utils/assessmentLocking'
 export const filterAssessments = (assessments, options = {}) => {
   const term = String(options.term || '').trim().toLowerCase()
   const activeFilter = options.activeFilter || 'all'
-  const showEditableOnly = !!options.showEditableOnly
+  const showEditableOnly = Boolean(options.showEditableOnly)
 
   const filtered = (assessments || []).filter(item => {
     const haystack = [

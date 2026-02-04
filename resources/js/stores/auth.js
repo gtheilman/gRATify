@@ -37,9 +37,9 @@ export const useAuthStore = defineStore('auth', {
 
         this.forcePasswordReset = needsReset
         if (needsReset)
-          localStorage.setItem('forcePasswordReset', 'true')
+        {localStorage.setItem('forcePasswordReset', 'true')}
         else
-          localStorage.removeItem('forcePasswordReset')
+        {localStorage.removeItem('forcePasswordReset')}
         await this.fetchUser()
         
         return true
@@ -56,16 +56,16 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data, error } = await api('/auth/me', { method: 'GET' })
         if (error.value)
-          throw error.value
+        {throw error.value}
         this.user = data.value
 
         const needsReset = data.value?.force_password_reset ?? false
 
         this.forcePasswordReset = needsReset
         if (needsReset)
-          localStorage.setItem('forcePasswordReset', 'true')
+        {localStorage.setItem('forcePasswordReset', 'true')}
         else
-          localStorage.removeItem('forcePasswordReset')
+        {localStorage.removeItem('forcePasswordReset')}
         await this.checkMigrationStatus()
         
         return this.user
@@ -81,13 +81,13 @@ export const useAuthStore = defineStore('auth', {
     },
     async ensureSession() {
       if (this.initialized)
-        return this.user
+      {return this.user}
       
       return this.fetchUser()
     },
     async checkMigrationStatus() {
       if (this.migrationWarningChecked)
-        return this.migrationWarning
+      {return this.migrationWarning}
       const role = this.user?.role
       const normalized = role === 'poobah' ? 'admin' : role
       if (normalized !== 'admin') {
@@ -99,12 +99,12 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data, error } = await api('/admin/migration-status', { method: 'GET' })
         if (error.value)
-          throw error.value
+        {throw error.value}
         const payload = data.value || {}
         if (payload?.ok === false && Array.isArray(payload?.missing) && payload.missing.length > 0)
-          this.migrationWarning = payload
+        {this.migrationWarning = payload}
         else
-          this.migrationWarning = null
+        {this.migrationWarning = null}
         
         return this.migrationWarning
       }

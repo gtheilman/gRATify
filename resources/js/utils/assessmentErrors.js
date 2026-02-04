@@ -23,13 +23,13 @@ export const formatAssessmentError = (response, data, context) => {
   const config = contextMap[context] || { label: 'data', forbidden: 'Forbidden.', server: 'Server error.' }
 
   if (response.status === 401)
-    return detail ? `Unauthorized: ${detail}` : 'Unauthorized: please sign in again.'
+  {return detail ? `Unauthorized: ${detail}` : 'Unauthorized: please sign in again.'}
   if (response.status === 403)
-    return detail ? `Forbidden: ${detail}` : config.forbidden
+  {return detail ? `Forbidden: ${detail}` : config.forbidden}
   if (response.status === 404)
-    return detail ? `Not found: ${detail}` : 'Not found: assessment does not exist.'
+  {return detail ? `Not found: ${detail}` : 'Not found: assessment does not exist.'}
   if (response.status >= 500)
-    return detail ? `Server error: ${detail}` : config.server
+  {return detail ? `Server error: ${detail}` : config.server}
 
   return detail || `Unable to load ${config.label}`
 }

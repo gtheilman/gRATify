@@ -29,7 +29,7 @@ const navButtons = computed(() => {
   ]
 
   if (documentationLink)
-    base.push({ label: 'Documentation', href: documentationLink })
+  {base.push({ label: 'Documentation', href: documentationLink })}
 
   return base
 })
@@ -46,11 +46,11 @@ const visibleNavButtons = computed(() =>
 )
 
 const isLogin = computed(() => route.name === 'login')
-const isFullscreen = ref(!!document.fullscreenElement)
+const isFullscreen = ref(Boolean(document.fullscreenElement))
 const isOffline = ref(typeof navigator !== 'undefined' ? !navigator.onLine : false)
 
 const updateFullscreen = () => {
-  isFullscreen.value = !!document.fullscreenElement
+  isFullscreen.value = Boolean(document.fullscreenElement)
 }
 
 const handleOnlineStatus = () => {

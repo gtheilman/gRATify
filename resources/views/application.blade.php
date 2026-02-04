@@ -6,6 +6,7 @@
   <meta name="keywords" content="team-based learning, team based learning, TBL, gRAT, tRAT, readiness assurance, readiness assurance test, readiness assurance process, team assessment, group readiness assurance, individual readiness assurance, quiz, formative assessment, active learning, collaborative learning, flipped classroom, assessment platform" />
   <meta name="description" content="gRAT is a team-based learning assessment platform for readiness assurance tests, team quizzes, and active learning in the classroom." />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="only light" />
   <!-- Favicons -->
   <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">

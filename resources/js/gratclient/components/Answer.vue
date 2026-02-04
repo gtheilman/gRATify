@@ -116,14 +116,14 @@ export default {
       return renderMarkdown(this.answer?.answer_text || '')
     },
     statusLabel () {
-      if (this.isCorrect) return 'Correct answer'
-      if (this.isInCorrect) return 'Incorrect answer'
-      if (this.grayedOut) return 'Answer disabled'
+      if (this.isCorrect) {return 'Correct answer'}
+      if (this.isInCorrect) {return 'Incorrect answer'}
+      if (this.grayedOut) {return 'Answer disabled'}
       
       return 'Answer'
     },
     grayedOut () {
-      return !!(this.answered && !this.isCorrect && !this.isInCorrect)
+      return Boolean(this.answered && !this.isCorrect && !this.isInCorrect)
     },
     wrapperClasses () {
       return {
@@ -204,18 +204,18 @@ export default {
       }
 
       if (import.meta.env.DEV)
-        console.warn('Unexpected attempt response', payload)
+      {console.warn('Unexpected attempt response', payload)}
       
       return false
     },
     getLocalCorrectFlag () {
       if (typeof this.answer?.correct === 'boolean')
-        return this.answer.correct
+      {return this.answer.correct}
       
       return decodeCorrectScrambled(this.answer?.correct_scrambled, this.password)
     },
     startSilentRetry () {
-      if (this.retrying) return
+      if (this.retrying) {return}
       this.retrying = true
       this.retryAvailable = false
       this.errorMessage = ''
@@ -325,7 +325,7 @@ export default {
 
         this.handleAttemptResponse(response.data)
         if (queued?.id)
-          await markAttemptSynced(queued.id)
+        {await markAttemptSynced(queued.id)}
         this.$nextTick(() => {
           this.$refs.resultLive?.focus?.()
         })
@@ -360,9 +360,9 @@ export default {
     this.applyAttempts()
     this.queueUnsubscribe = onQueueEvent(event => {
       if (!this.presentationKey || event.presentationKey !== this.presentationKey)
-        return
+      {return}
       if (event.answerId !== this.answer?.id)
-        return
+      {return}
       if (event.type === 'synced') {
         this.resetRetryState()
         this.errorMessage = ''

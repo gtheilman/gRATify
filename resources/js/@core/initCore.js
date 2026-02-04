@@ -11,13 +11,13 @@ const _syncAppRtl = () => {
 
   // TODO: Handle case where i18n can't read persisted value
   if (locale.value !== storedLang.value && storedLang.value)
-    locale.value = storedLang.value
+  {locale.value = storedLang.value}
 
   // watch and change lang attribute of html on language change
   watch(locale, val => {
     // Update lang attribute of html tag
     if (typeof document !== 'undefined')
-      document.documentElement.setAttribute('lang', val)
+    {document.documentElement.setAttribute('lang', val)}
 
     // Store selected language in cookie
     storedLang.value = val
@@ -26,7 +26,7 @@ const _syncAppRtl = () => {
     if (themeConfig.app.i18n.langConfig && themeConfig.app.i18n.langConfig.length) {
       themeConfig.app.i18n.langConfig.forEach(lang => {
         if (lang.i18nLang === storedLang.value)
-          configStore.isAppRTL = lang.isRTL
+        {configStore.isAppRTL = lang.isRTL}
       })
     }
   }, { immediate: true })
@@ -75,7 +75,7 @@ const initCore = () => {
 
   // ℹ️ We don't want to trigger i18n in SK
   if (themeConfig.app.i18n.enable)
-    _syncAppRtl()
+  {_syncAppRtl()}
 }
 
 export default initCore

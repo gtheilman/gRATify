@@ -60,9 +60,9 @@ const apiFetch = createFetch({
 export const applyApiError = async ctx => {
   const { error, response } = ctx
   if (!response || !error)
-    return ctx
+  {return ctx}
 
-  const status = response.status
+  const { status } = response
 
   error.status = status
 
@@ -75,7 +75,7 @@ export const applyApiError = async ctx => {
 
       const apiMessage = extractApiErrorMessage(payload)
       if (apiMessage && (!error.message || error.message === 'Failed to fetch'))
-        error.message = apiMessage
+      {error.message = apiMessage}
     }
     catch {
       // Ignore parse errors.
@@ -84,19 +84,19 @@ export const applyApiError = async ctx => {
 
   if (!error.message || error.message === 'Failed to fetch') {
     if (status === 401)
-      error.message = 'Unauthorized: please sign in again.'
+    {error.message = 'Unauthorized: please sign in again.'}
     else if (status === 403)
-      error.message = 'Forbidden: you do not have access to this resource.'
+    {error.message = 'Forbidden: you do not have access to this resource.'}
     else if (status === 404)
-      error.message = 'Not found.'
+    {error.message = 'Not found.'}
     else if (status === 409)
-      error.message = 'Conflict: the request could not be completed.'
+    {error.message = 'Conflict: the request could not be completed.'}
     else if (status === 419)
-      error.message = 'Session expired: please refresh and try again.'
+    {error.message = 'Session expired: please refresh and try again.'}
     else if (status === 422)
-      error.message = 'Validation failed.'
+    {error.message = 'Validation failed.'}
     else if (status >= 500)
-      error.message = 'Server error: please try again later.'
+    {error.message = 'Server error: please try again later.'}
   }
 
   return ctx

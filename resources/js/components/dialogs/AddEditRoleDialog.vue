@@ -89,7 +89,7 @@ const checkedCount = computed(() => {
   permissions.value.forEach(permission => {
     Object.entries(permission).forEach(([key, value]) => {
       if (key !== 'name' && value)
-        counter++
+      {counter++}
     })
   })
   
@@ -111,13 +111,13 @@ watch(isSelectAll, val => {
 // if Indeterminate is false, then set isSelectAll to false
 watch(isIndeterminate, () => {
   if (!isIndeterminate.value)
-    isSelectAll.value = false
+  {isSelectAll.value = false}
 })
 
 // if all permissions are checked, then set isSelectAll to true
 watch(permissions, () => {
   if (checkedCount.value === permissions.value.length * 3)
-    isSelectAll.value = true
+  {isSelectAll.value = true}
 }, { deep: true })
 
 // if rolePermissions is not empty, then set permissions

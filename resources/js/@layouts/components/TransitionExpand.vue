@@ -7,14 +7,14 @@ export default defineComponent({
   name: 'TransitionExpand',
   setup(_, { slots }) {
     const onEnter = element => {
-      const width = getComputedStyle(element).width
+      const { width } = getComputedStyle(element)
 
       element.style.width = width
       element.style.position = 'absolute'
       element.style.visibility = 'hidden'
       element.style.height = 'auto'
 
-      const height = getComputedStyle(element).height
+      const { height } = getComputedStyle(element)
 
       element.style.width = ''
       element.style.position = ''
@@ -41,7 +41,7 @@ export default defineComponent({
     }
 
     const onLeave = element => {
-      const height = getComputedStyle(element).height
+      const { height } = getComputedStyle(element)
 
       element.style.height = height
 

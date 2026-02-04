@@ -122,7 +122,8 @@
   },
   "overrides": {
     "postcss": "^8",
-    "@tiptap/core": "^2"
+    "@tiptap/core": "^2",
+    "@isaacs/brace-expansion": "^5.0.1"
   },
   "msw": {
     "workerDirectory": "public"

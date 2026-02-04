@@ -8,7 +8,7 @@ export const isAssessmentLocked = assessment => {
 
 export const filterEditableAssessments = (assessments, showEditableOnly) => {
   if (!showEditableOnly)
-    return assessments || []
+  {return assessments || []}
   
   return (assessments || []).filter(assessment => !isAssessmentLocked(assessment))
 }

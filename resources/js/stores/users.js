@@ -27,7 +27,7 @@ export const useUsersStore = defineStore('users', {
       try {
         const { data, error } = await api('/user-management/users', { method: 'GET' })
         if (error.value)
-          throw error.value
+        {throw error.value}
         const payload = data.value
         const normalizeRole = role => role === 'poobah' ? 'admin' : role
 
@@ -62,7 +62,7 @@ export const useUsersStore = defineStore('users', {
         })
 
         if (error.value)
-          throw error.value
+        {throw error.value}
         await this.fetchUsers()
       }
       catch (err) {
@@ -75,7 +75,7 @@ export const useUsersStore = defineStore('users', {
     },
     async updateUser(id, payload) {
       if (!id)
-        return
+      {return}
       this.loading = true
       this.error = null
       try {
@@ -85,7 +85,7 @@ export const useUsersStore = defineStore('users', {
         })
 
         if (error.value)
-          throw error.value
+        {throw error.value}
         await this.fetchUsers()
       }
       catch (err) {
@@ -98,13 +98,13 @@ export const useUsersStore = defineStore('users', {
     },
     async deleteUser(id) {
       if (!id)
-        return
+      {return}
       this.loading = true
       this.error = null
       try {
         const { error } = await api(`/user-management/users/${id}`, { method: 'DELETE' })
         if (error.value)
-          throw error.value
+        {throw error.value}
         await this.fetchUsers()
       }
       catch (err) {

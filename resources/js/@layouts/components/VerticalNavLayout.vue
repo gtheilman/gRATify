@@ -30,7 +30,7 @@ syncRef(isOverlayNavActive, isLayoutOverlayVisible)
 // ℹ️ Hide overlay if user open overlay nav in <md and increase the window width without closing overlay nav
 watch(windowWidth, () => {
   if (!configStore.isLessThanOverlayNavBreakpoint && isLayoutOverlayVisible.value)
-    isLayoutOverlayVisible.value = false
+  {isLayoutOverlayVisible.value = false}
 })
 
 const verticalNavAttrs = computed(() => {

@@ -1,14 +1,14 @@
 export const buildStaleNotice = (cachedAt, formatter = value => new Date(value).toLocaleString()) => {
   if (!cachedAt)
-    return ''
+  {return ''}
 
   const date = new Date(cachedAt)
   if (Number.isNaN(date.getTime()))
-    return ''
+  {return ''}
 
   const formatted = formatter(date)
   if (!formatted)
-    return ''
+  {return ''}
 
   return `Showing cached data from ${formatted}`
 }

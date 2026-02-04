@@ -29,12 +29,12 @@ onMounted(async () => {
   const preferred = route.query.assessment ? Number(route.query.assessment) : null
   const existsPreferred = assessmentsStore.assessments.find(a => a.id === preferred)
   if (existsPreferred)
-    selectedAssessmentId.value = existsPreferred.id
+  {selectedAssessmentId.value = existsPreferred.id}
   else if (assessmentsStore.assessments.length)
-    selectedAssessmentId.value = assessmentsStore.assessments[0].id
+  {selectedAssessmentId.value = assessmentsStore.assessments[0].id}
 
   if (selectedAssessmentId.value)
-    await assessmentsStore.loadAssessment(selectedAssessmentId.value)
+  {await assessmentsStore.loadAssessment(selectedAssessmentId.value)}
 })
 
 watch(selectedAssessmentId, async newId => {
@@ -47,7 +47,7 @@ watch(selectedAssessmentId, async newId => {
 
 const createQuestion = async () => {
   if (!selectedAssessmentId.value)
-    return
+  {return}
   try {
     busyQuestion.value = 'new'
     await assessmentsStore.createQuestion(selectedAssessmentId.value)

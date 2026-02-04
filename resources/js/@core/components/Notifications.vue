@@ -32,9 +32,9 @@ const isAllMarkRead = computed(() => {
 const markAllReadOrUnread = () => {
   const allNotificationsIds = props.notifications.map(item => item.id)
   if (!isAllMarkRead.value)
-    emit('unread', allNotificationsIds)
+  {emit('unread', allNotificationsIds)}
   else
-    emit('read', allNotificationsIds)
+  {emit('read', allNotificationsIds)}
 }
 
 const totalUnseenNotifications = computed(() => {
@@ -43,9 +43,9 @@ const totalUnseenNotifications = computed(() => {
 
 const toggleReadUnread = (isSeen, Id) => {
   if (isSeen)
-    emit('unread', [Id])
+  {emit('unread', [Id])}
   else
-    emit('read', [Id])
+  {emit('read', [Id])}
 }
 </script>
 
