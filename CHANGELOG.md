@@ -1,4 +1,7 @@
 # Changelog
+## v0.3.4-beta
+- Debounced some client requests to reduce api noise
+
 ## v0.3.3-beta
 - Fixing more eslint errors
 - Trying to override local "dark mode" browser settings

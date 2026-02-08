@@ -2,13 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
 const apiResponses = new Map()
+const apiCallCounts = new Map()
 
 vi.mock('@/composables/useApi', () => {
   return {
-    useApi: url => apiResponses.get(url) ?? ({
-      data: { value: null },
-      error: { value: null },
-    }),
+    useApi: url => {
+      apiCallCounts.set(url, (apiCallCounts.get(url) ?? 0) + 1)
+      
+      return apiResponses.get(url) ?? ({
+        data: { value: null },
+        error: { value: null },
+      })
+    },
   }
 })
 
@@ -46,6 +51,7 @@ describe('auth store', () => {
     setActivePinia(createPinia())
     vi.stubGlobal('localStorage', mockStorage())
     apiResponses.clear()
+    apiCallCounts.clear()
     apiResponses.set('/auth/me', {
       data: { value: { id: 1, force_password_reset: false } },
       error: { value: null },
@@ -119,5 +125,35 @@ describe('auth store', () => {
     await store.fetchUser()
 
     expect(store.migrationWarning).toBe(null)
+  })
+
+  it('dedupes concurrent fetchUser calls', async () => {
+    const deferred = () => {
+      let resolve
+      const promise = new Promise(res => { resolve = res })
+
+      return { promise, resolve }
+    }
+    const authDeferred = deferred()
+
+    apiResponses.set('/auth/me', authDeferred.promise)
+
+    const { useAuthStore } = await import('@/stores/auth')
+    const store = useAuthStore()
+
+    const first = store.fetchUser()
+    const second = store.fetchUser()
+
+    expect(apiCallCounts.get('/auth/me')).toBe(1)
+
+    authDeferred.resolve({
+      data: { value: { id: 10, force_password_reset: false } },
+      error: { value: null },
+    })
+
+    const [firstResult, secondResult] = await Promise.all([first, second])
+
+    expect(firstResult).toEqual(secondResult)
+    expect(store.user).toEqual({ id: 10, force_password_reset: false })
   })
 })

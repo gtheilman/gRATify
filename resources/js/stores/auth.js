@@ -53,31 +53,38 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     async fetchUser() {
-      try {
-        const { data, error } = await api('/auth/me', { method: 'GET' })
-        if (error.value)
-        {throw error.value}
-        this.user = data.value
+      if (this._fetchUserPromise)
+      {return this._fetchUserPromise}
+      this._fetchUserPromise = (async () => {
+        try {
+          const { data, error } = await api('/auth/me', { method: 'GET' })
+          if (error.value)
+          {throw error.value}
+          this.user = data.value
 
-        const needsReset = data.value?.force_password_reset ?? false
+          const needsReset = data.value?.force_password_reset ?? false
 
-        this.forcePasswordReset = needsReset
-        if (needsReset)
-        {localStorage.setItem('forcePasswordReset', 'true')}
-        else
-        {localStorage.removeItem('forcePasswordReset')}
-        await this.checkMigrationStatus()
-        
-        return this.user
-      }
-      catch {
-        this.user = null
-        
-        return null
-      }
-      finally {
-        this.initialized = true
-      }
+          this.forcePasswordReset = needsReset
+          if (needsReset)
+          {localStorage.setItem('forcePasswordReset', 'true')}
+          else
+          {localStorage.removeItem('forcePasswordReset')}
+          await this.checkMigrationStatus()
+          
+          return this.user
+        }
+        catch {
+          this.user = null
+          
+          return null
+        }
+        finally {
+          this.initialized = true
+          this._fetchUserPromise = null
+        }
+      })()
+
+      return this._fetchUserPromise
     },
     async ensureSession() {
       if (this.initialized)
