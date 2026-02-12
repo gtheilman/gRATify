@@ -111,8 +111,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  const isPublicStudentClientRoute = to.name === 'client-home' || to.name === 'client-incomplete'
-  if (!isPublicStudentClientRoute)
+  const isPublicRoute = to.meta?.public === true
+  if (!isPublicRoute)
   {await authStore.ensureSession()}
 
   const decision = resolveAuthNavigation(to, authStore)

@@ -71,7 +71,7 @@
           </VCardText>
         </VCard>
 
-        <VCard v-if="isAdmin"
+        <VCard v-if="isAdmin && operationalSignalsEnabled"
                class="home-card mt-6"
                elevation="2"
         >
@@ -129,6 +129,7 @@ const signalWindowMinutes = ref(15)
 const signalGeneratedAt = ref('just now')
 const signalsLoading = ref(false)
 const signalsError = ref('')
+const operationalSignalsEnabled = ref(false)
 const authStore = useAuthStore()
 const isAdmin = computed(() => {
   const role = authStore.user?.role
@@ -174,10 +175,16 @@ const fetchOperationalSignals = async () => {
 }
 
 onMounted(() => {
+  const signalParam = new URLSearchParams(window.location.search).get('showOperationalSignals') || ''
+
+  operationalSignalsEnabled.value = ['1', 'true', 'yes'].includes(signalParam.toLowerCase())
   const cached = readDemoWarningCache()
   if (cached !== null) {
     showDemoWarning.value = cached
-    
+
+    if (operationalSignalsEnabled.value) {
+      fetchOperationalSignals()
+    }
     return
   }
   // Defer the network call until idle to avoid blocking first contentful paint.
@@ -185,7 +192,9 @@ onMounted(() => {
 
   schedule(() => {
     fetchDemoWarning()
-    fetchOperationalSignals()
+    if (operationalSignalsEnabled.value) {
+      fetchOperationalSignals()
+    }
   })
 })
 </script>

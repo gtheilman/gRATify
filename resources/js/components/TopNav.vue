@@ -66,7 +66,9 @@ const versionLabel = computed(() => {
 })
 
 onMounted(async () => {
-  await authStore.ensureSession()
+  if (route.meta.public !== true) {
+    await authStore.ensureSession()
+  }
   document.addEventListener('fullscreenchange', updateFullscreen)
   window.addEventListener('online', handleOnlineStatus)
   window.addEventListener('offline', handleOnlineStatus)

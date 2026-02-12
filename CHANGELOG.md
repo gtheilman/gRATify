@@ -1,4 +1,10 @@
 # Changelog
+
+## v0.3.5-beta
+- Put "operational warnings" panel behind a url variable
+- Accept ?showOperationalSignals=1 (also true or yes)
+- Trying to eliminate client calls to /auth/me (401 noise)
+
 ## v0.3.4-beta
 - Debounced some client requests to reduce api noise
 
