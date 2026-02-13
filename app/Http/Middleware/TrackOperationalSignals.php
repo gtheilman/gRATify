@@ -15,7 +15,7 @@ class TrackOperationalSignals
         $status = $response->getStatusCode();
         $path = $request->path();
 
-        if ($status === 401 && $path === 'api/auth/me') {
+        if ($status === 401 && $path === 'api/auth/me' && $this->shouldTrackAuthMe401($request)) {
             $this->incrementMinuteBucket('auth_me_401');
         }
 
@@ -28,6 +28,19 @@ class TrackOperationalSignals
         }
 
         return $response;
+    }
+
+    protected function shouldTrackAuthMe401(Request $request): bool
+    {
+        $referer = (string) $request->headers->get('referer', '');
+        if ($referer === '') {
+            return true;
+        }
+
+        $refererPath = (string) parse_url($referer, PHP_URL_PATH);
+
+        // Ignore expected unauthenticated probes from public student client routes.
+        return ! str_starts_with($refererPath, '/client');
     }
 
     protected function incrementMinuteBucket(string $metric): void

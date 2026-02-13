@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.53-beta
+- Cleaning up "noise" from 401 client calls
+
 ## v0.3.5-beta
 - Put "operational warnings" panel behind a url variable
 - Accept ?showOperationalSignals=1 (also true or yes)
