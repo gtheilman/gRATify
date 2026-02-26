@@ -1,10 +1,11 @@
 <script setup>
 // Projector view: shows the student URL as text + QR, with fullscreen support.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAssessmentsStore } from '@/stores/assessments'
 
 const route = useRoute()
+const router = useRouter()
 const assessmentsStore = useAssessmentsStore()
 
 const assessment = ref(null)
@@ -124,6 +125,10 @@ const copyUrl = async () => {
   }, 1200)
 }
 
+const goToProgress = () => {
+  router.push({ name: 'assessment-progress', params: { id: route.params.id } })
+}
+
 onMounted(async () => {
   try {
     if (!assessmentsStore.assessments.length)
@@ -241,13 +246,15 @@ onBeforeUnmount(() => {
               QR code unavailable.
             </div>
           </VCardText>
-          <div class="progress-link">
-            <RouterLink
-              :to="{ name: 'assessment-progress', params: { id: route.params.id } }"
-              class="progress-link__anchor"
+          <div class="feedback-link-wrap">
+            <VBtn
+              variant="text"
+              color="secondary"
+              prepend-icon="tabler-messages"
+              @click="goToProgress"
             >
               View progress for this gRAT
-            </RouterLink>
+            </VBtn>
           </div>
         </VCard>
       </VCol>
@@ -339,20 +346,10 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
-.progress-link {
+.feedback-link-wrap {
+  display: flex;
+  justify-content: flex-start;
   margin-top: 12px;
-  font-size: 0.75rem;
-  text-align: center;
-}
-
-.progress-link__anchor {
-  color: rgba(11, 18, 32, 0.7);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.progress-link__anchor:hover {
-  color: rgba(11, 18, 32, 0.95);
 }
 
 .projector-url {

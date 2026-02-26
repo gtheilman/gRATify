@@ -328,7 +328,7 @@ const goToFeedback = () => {
                   prepend-icon="tabler-messages"
                   @click="goToFeedback"
                 >
-                  View feedback
+                  View instructor feedback
                 </VBtn>
               </div>
             </div>

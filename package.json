@@ -45,7 +45,7 @@
     "qrcode": "^1.5.4",
     "roboto-fontface": "0.10.0",
     "shepherd.js": "13.0.3",
-    "swiper": "11.2.10",
+    "swiper": "^12.1.2",
     "ufo": "1.6.1",
     "universal-cookie": "^7.2.1",
     "unplugin-vue-define-options": "1.5.5",
@@ -61,7 +61,7 @@
     "webfontloader": "1.6.28"
   },
   "devDependencies": {
-    "@antfu/eslint-config-vue": "0.43.1",
+    "@antfu/eslint-config-vue": "^0.43.1",
     "@antfu/utils": "0.7.10",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
@@ -91,7 +91,7 @@
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-promise": "6.6.0",
     "eslint-plugin-regex": "1.10.0",
-    "eslint-plugin-sonarjs": "3.0.6",
+    "eslint-plugin-sonarjs": "^4.0.0",
     "eslint-plugin-unicorn": "51.0.1",
     "eslint-plugin-vue": "9.33.0",
     "laravel-vite-plugin": "^2.0.1",

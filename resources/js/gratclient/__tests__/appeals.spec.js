@@ -126,4 +126,66 @@ describe('Appeals', () => {
 
     expect(axios.post).not.toHaveBeenCalled()
   })
+
+  it('stops appeals polling when refresh gets 401', async () => {
+    const ctx = {
+      appealRefreshInFlight: false,
+      password: 'abc',
+      user_id: 'team1',
+      presentation: {
+        assessment: { appeals_open: true },
+        appeals: [],
+      },
+      stopAppealsPolling: vi.fn(),
+    }
+
+    axios.get.mockRejectedValue({ response: { status: 401 } })
+
+    await AssessmentComponent.methods.refreshAppealsState.call(ctx)
+
+    expect(ctx.stopAppealsPolling).toHaveBeenCalledTimes(1)
+    expect(writePresentationCache).not.toHaveBeenCalled()
+    expect(ctx.appealRefreshInFlight).toBe(false)
+  })
+
+  it('stops appeals polling when refresh gets 403', async () => {
+    const ctx = {
+      appealRefreshInFlight: false,
+      password: 'abc',
+      user_id: 'team1',
+      presentation: {
+        assessment: { appeals_open: true },
+        appeals: [],
+      },
+      stopAppealsPolling: vi.fn(),
+    }
+
+    axios.get.mockRejectedValue({ response: { status: 403 } })
+
+    await AssessmentComponent.methods.refreshAppealsState.call(ctx)
+
+    expect(ctx.stopAppealsPolling).toHaveBeenCalledTimes(1)
+    expect(writePresentationCache).not.toHaveBeenCalled()
+    expect(ctx.appealRefreshInFlight).toBe(false)
+  })
+
+  it('keeps appeals polling on transient refresh failures', async () => {
+    const ctx = {
+      appealRefreshInFlight: false,
+      password: 'abc',
+      user_id: 'team1',
+      presentation: {
+        assessment: { appeals_open: true },
+        appeals: [],
+      },
+      stopAppealsPolling: vi.fn(),
+    }
+
+    axios.get.mockRejectedValue({ response: { status: 500 } })
+
+    await AssessmentComponent.methods.refreshAppealsState.call(ctx)
+
+    expect(ctx.stopAppealsPolling).not.toHaveBeenCalled()
+    expect(ctx.appealRefreshInFlight).toBe(false)
+  })
 })

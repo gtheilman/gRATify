@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.6-beta
+- Still cleaning up "noise" from 401 client calls
+- Consistent formatting for links to progress and feedback screens
+
 ## v0.3.53-beta
 - Cleaning up "noise" from 401 client calls
 

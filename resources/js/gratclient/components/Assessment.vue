@@ -456,7 +456,11 @@ export default {
           await writePresentationCache(this.password, this.user_id, this.presentation)
         }
       } catch (error) {
-        // Silent refresh; UI will retry on next poll.
+        const status = error?.response?.status
+        if (status === 401 || status === 403) {
+          this.stopAppealsPolling()
+        }
+        // Silent refresh for transient failures; UI retries on next poll.
       } finally {
         this.appealRefreshInFlight = false
       }

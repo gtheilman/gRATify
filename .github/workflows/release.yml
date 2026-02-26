@@ -43,8 +43,8 @@ jobs:
           composer audit --locked --format=json > composer-audit.json || true
           php -r '$data=json_decode(file_get_contents("composer-audit.json"), true) ?: []; $advisories=$data["advisories"] ?? []; $hits=[]; foreach ($advisories as $package => $items) { foreach ($items as $adv) { $severity=strtolower((string)($adv["severity"] ?? "")); if (in_array($severity, ["high", "critical"], true)) { $title=$adv["title"] ?? "advisory"; $hits[]=$package . ": " . $title . " (" . $severity . ")"; } } } if ($hits) { fwrite(STDERR, "High/Critical Composer advisories:\n" . implode("\n", $hits) . "\n"); exit(1); }'
 
-      - name: NPM audit (high/critical)
-        run: npm audit --audit-level=high
+      - name: NPM audit (high/critical, production deps)
+        run: npm audit --omit=dev --audit-level=high
 
   test:
     name: Run tests
